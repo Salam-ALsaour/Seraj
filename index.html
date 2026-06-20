@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#121414">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>سراج</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Alpine.js CDN -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root{
+      --bg:#121414;
+      --bg2:#0c0e0e;
+      --glass:rgba(255,255,255,.03);
+      --glass2:rgba(255,255,255,.05);
+      --stroke:rgba(255,255,255,.08);
+      --stroke2:rgba(255,255,255,.14);
+      --emerald:#059669;
+      --emerald-glow:rgba(5,150,105,.45);
+      --orange:#F97316;
+      --orange-glow:rgba(249,115,22,.45);
+      --red:#EF4444;
+      --red-glow:rgba(239,68,68,.4);
+      --txt:#f4f6f6;
+      --txt-dim:#8b9494;
+      --txt-faint:#5a6363;
+      --nav-h:74px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{height:100%;overflow:hidden;}
+    body{
+      font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;
+      background:var(--bg2);
+      color:var(--txt);
+      -webkit-font-smoothing:antialiased;
+      overscroll-behavior:none;
+      position:fixed;width:100%;
+    }
+    
+    /* ambient atmosphere */
+    #atmos{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    #atmos::before{content:"";position:absolute;top:-15%;right:-25%;width:350px;height:350px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 62%);filter:blur(60px);opacity:.35;}
+    #atmos::after{content:"";position:absolute;bottom:5%;left:-30%;width:400px;height:400px;
+      background:radial-gradient(circle,var(--emerald-glow),transparent 62%);filter:blur(70px);opacity:.28;}
+
+    #app{
+      position:relative;
+      z-index:1;
+      height:100dvh;
+      display:flex;
+      flex-direction:column;
+      max-width:480px;
+      margin:0 auto;
+      border-left:1px solid var(--stroke);
+      border-right:1px solid var(--stroke);
+      box-shadow:0 0 50px rgba(0,0,0,0.8);
+      background:var(--bg);
+    }
+    #scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+      padding:calc(env(safe-area-inset-top) + 14px) 16px calc(var(--nav-h) + env(safe-area-inset-bottom) + 18px);}
+    #scroll::-webkit-scrollbar{display:none;}
+
+    .glass{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      border:1px solid var(--stroke);border-radius:22px;box-shadow:0 18px 40px -22px rgba(0,0,0,.8);}
+
+    /* header */
+    .app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:0 2px;}
+    .brand{display:flex;align-items:center;gap:11px;}
+    .brand-mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(150deg,rgba(249,115,22,.22),rgba(5,150,105,.16));
+      border:1px solid var(--stroke2);position:relative;}
+    .brand-mark::after{content:"";position:absolute;inset:-6px;border-radius:18px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 70%);filter:blur(9px);opacity:.7;z-index:-1;}
+    .brand-mark svg{width:23px;height:23px;}
+    .brand-txt h1{font-size:26px;font-weight:700;letter-spacing:-.3px;line-height:1;}
+    .brand-txt span{font-size:11px;color:var(--txt-dim);font-weight:400;}
+    .screen-pill{font-size:12px;color:var(--txt-dim);background:var(--glass);border:1px solid var(--stroke);
+      padding:7px 13px;border-radius:30px;font-weight:500;}
+
+    .page{animation:fade .35s ease;}
+    @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+    .sect-title{font-size:13px;color:var(--txt-dim);font-weight:600;margin:22px 4px 12px;display:flex;align-items:center;gap:7px;}
+    .sect-title i{width:15px;height:15px;}
+
+    /* ===== PODIUM ===== */
+    .podium-wrap{position:relative;padding:14px 6px 0;margin-bottom:6px;}
+    .podium{display:flex;align-items:flex-end;justify-content:center;gap:10px;height:210px;}
+    .pod{display:flex;flex-direction:column;align-items:center;flex:1;max-width:33%;animation:rise .6s cubic-bezier(.2,.9,.3,1) both;}
+    .pod-1{animation-delay:.15s;}.pod-2{animation-delay:.05s;}.pod-3{animation-delay:.1s;}
+    @keyframes rise{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+    
+    .pod-av{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:21px;
+      position:relative;margin-bottom:9px;border:2px solid;color:#fff;}
+    .pod-1 .pod-av{width:68px;height:68px;font-size:25px;border-color:var(--orange);
+      background:linear-gradient(160deg,rgba(249,115,22,.3),rgba(249,115,22,.05));color:#ffd9b8;}
+    .pod-1 .pod-av::after{content:"";position:absolute;inset:-9px;border-radius:50%;
+      background:radial-gradient(circle,var(--orange-glow),transparent 68%);filter:blur(11px);z-index:-1;}
+    .pod-2 .pod-av,.pod-3 .pod-av{border-color:var(--emerald);
+      background:linear-gradient(160deg,rgba(5,150,105,.28),rgba(5,150,105,.04));color:#a7f3d0;}
+    .pod-2 .pod-av::after,.pod-3 .pod-av::after{content:"";position:absolute;inset:-7px;border-radius:50%;
+      background:radial-gradient(circle,var(--emerald-glow),transparent 68%);filter:blur(9px);z-index:-1;}
+    .pod-crown{position:absolute;top:-19px;left:50%;transform:translateX(-50%);color:var(--orange);}
+    .pod-crown svg{width:21px;height:21px;filter:drop-shadow(0 0 6px var(--orange-glow));}
+    .pod-name{font-size:13px;font-weight:600;text-align:center;line-height:1.2;margin-bottom:2px;max-width:96px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pod-meta{font-size:10px;color:var(--txt-faint);margin-bottom:7px;}
+    
+    .pod-base{width:100%;border-radius:16px 16px 0 0;display:flex;flex-direction:column;align-items:center;
+      justify-content:flex-start;padding-top:13px;border:1px solid var(--stroke);border-bottom:none;
+      backdrop-filter:blur(14px);}
+    .pod-1 .pod-base{height:118px;background:linear-gradient(180deg,rgba(249,115,22,.16),rgba(249,115,22,.02));
+      border-color:rgba(249,115,22,.3);box-shadow:0 0 34px -8px var(--orange-glow);}
+    .pod-2 .pod-base{height:90px;background:linear-gradient(180deg,rgba(5,150,105,.13),rgba(5,150,105,.02));border-color:rgba(5,150,105,.25);}
+    .pod-3 .pod-base{height:70px;background:linear-gradient(180deg,rgba(5,150,105,.1),rgba(5,150,105,.02));border-color:rgba(5,150,105,.22);}
+    
+    .pod-rank{font-size:27px;font-weight:700;line-height:1;}
+    .pod-1 .pod-rank{color:var(--orange);}.pod-2 .pod-rank,.pod-3 .pod-rank{color:var(--emerald);}
+    .pod-pts{font-size:13px;font-weight:600;margin-top:3px;}
+    .pod-pts.o{color:#ffd9b8;}.pod-pts.e{color:#a7f3d0;}
+
+    /* toggle switch */
+    .toggle{display:flex;background:var(--glass);border:1px solid var(--stroke);border-radius:30px;padding:5px;
+      margin:18px 0 16px;position:relative;}
+    .toggle-ind{position:absolute;top:5px;bottom:5px;width:calc(50% - 5px);border-radius:26px;
+      background:linear-gradient(135deg,rgba(5,150,105,.35),rgba(5,150,105,.15));border:1px solid rgba(5,150,105,.4);
+      box-shadow:0 0 20px -4px var(--emerald-glow);transition:transform .32s cubic-bezier(.4,1.2,.4,1);right:5px;}
+    .toggle-ind.team{transform:translateX(-100%);}
+    .toggle button{flex:1;background:none;border:none;color:var(--txt-dim);font-family:inherit;font-size:14px;
+      font-weight:600;padding:11px 0;z-index:1;display:flex;align-items:center;justify-content:center;gap:7px;
+      transition:color .3s;cursor:pointer;}
+    .toggle button.active{color:var(--txt);}
+    .toggle button i{width:16px;height:16px;}
+
+    /* leaderboard rows */
+    .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:9px;}
+    .lb-rank{width:26px;text-align:center;font-size:16px;font-weight:700;color:var(--txt-faint);flex-shrink:0;}
+    .lb-av{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:16px;
+      flex-shrink:0;background:linear-gradient(150deg,var(--glass2),transparent);border:1px solid var(--stroke);color:var(--txt);}
+    .lb-info{flex:1;min-width:0;}
+    .lb-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .lb-sub{font-size:11px;color:var(--txt-faint);margin-top:2px;display:flex;align-items:center;gap:6px;}
+    .lb-tag{padding:1px 7px;border-radius:20px;background:var(--glass2);border:1px solid var(--stroke);font-size:10px;color:var(--txt-dim);}
+    
+    .lb-pts{text-align:left;flex-shrink:0;}
+    .lb-pts-val{font-size:16px;font-weight:700;color:#34d399;text-shadow:0 0 12px var(--emerald-glow);
+      display:flex;align-items:center;gap:4px;justify-content:flex-end;}
+    .lb-pts-val i{width:13px;height:13px;}
+    .arrow-up{color:#34d399;}.arrow-dn{color:var(--red);}
+    .lb-pts-lbl{font-size:10px;color:var(--txt-faint);}
+
+    /* ===== PROFILE ===== */
+    .prof-hero{display:flex;flex-direction:column;align-items:center;padding:26px 18px 22px;text-align:center;position:relative;overflow:hidden;}
+    .prof-ring{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;font-size:34px;font-weight:700;
+      background:linear-gradient(160deg,rgba(249,115,22,.25),rgba(5,150,105,.18));border:2px solid var(--stroke2);
+      position:relative;margin-bottom:14px;color:#fff;}
+    .prof-ring::after{content:"";position:absolute;inset:-11px;border-radius:50%;
+      background:radial-gradient(circle,var(--orange-glow),transparent 65%);filter:blur(13px);z-index:-1;opacity:.85;}
+    .prof-name{font-size:21px;font-weight:700;}
+    .prof-meta{font-size:13px;color:var(--txt-dim);margin-top:5px;display:flex;gap:8px;align-items:center;justify-content:center;}
+    .prof-meta .lb-tag{font-size:11px;}
+    
+    .dual{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:15px;}
+    .stat{padding:17px 14px;text-align:center;position:relative;overflow:hidden;}
+    .stat-ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;margin:0 auto 9px;}
+    .stat-ic i{width:18px;height:18px;}
+    .stat.wallet .stat-ic{background:rgba(249,115,22,.14);border:1px solid rgba(249,115,22,.3);}
+    .stat.wallet .stat-ic i{color:var(--orange);}
+    .stat.total .stat-ic{background:rgba(5,150,105,.14);border:1px solid rgba(5,150,105,.3);}
+    .stat.total .stat-ic i{color:var(--emerald);}
+    .stat-val{font-size:27px;font-weight:700;line-height:1;}
+    .stat.wallet .stat-val{color:#ffb27a;text-shadow:0 0 16px var(--orange-glow);}
+    .stat.total .stat-val{color:#34d399;text-shadow:0 0 16px var(--emerald-glow);}
+    .stat-lbl{font-size:11px;color:var(--txt-dim);margin-top:7px;line-height:1.3;}
+
+    .badge-strip{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 8px;}
+    .badge-strip::-webkit-scrollbar{display:none;}
+    
+    .mini-badge{flex-shrink:0;width:78px;text-align:center;}
+    .mini-badge-ic{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;margin:0 auto 7px;position:relative;
+      background:var(--glass);border:1px solid var(--stroke);color:var(--txt-faint);}
+    .mini-badge-ic i{width:28px;height:28px;}
+    .mini-badge.lit .mini-badge-ic{border-color:rgba(249,115,22,.4);background:linear-gradient(160deg,rgba(249,115,22,.18),rgba(5,150,105,.1));}
+    .mini-badge.lit .mini-badge-ic::after{content:"";position:absolute;inset:-6px;border-radius:22px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 68%);filter:blur(9px);z-index:-1;opacity:.7;}
+    .mini-badge.lit i{color:#ffb27a;}
+    .mini-badge-lbl{font-size:10px;color:var(--txt-dim);line-height:1.25;}
+    
+    .empty-note{font-size:12px;color:var(--txt-faint);text-align:center;padding:20px;}
+
+    .log-item{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--stroke);}
+    .log-item:last-child{border-bottom:none;}
+    .log-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;}
+    .log-ic i{width:16px;height:16px;}
+    .log-ic.pos{background:rgba(5,150,105,.14);border:1px solid rgba(5,150,105,.3);color:var(--emerald);}
+    .log-ic.neg{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+    .log-info{flex:1;min-width:0;}
+    .log-reason{font-size:14px;font-weight:500;}
+    .log-time{font-size:11px;color:var(--txt-faint);margin-top:2px;}
+    .log-delta{font-size:15px;font-weight:700;flex-shrink:0;}
+    .log-delta.pos{color:#34d399;}.log-delta.neg{color:var(--red);}
+
+    /* ===== STORE ===== */
+    .store-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+    .reward{padding:17px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;}
+    .reward-ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;margin-bottom:12px;position:relative;
+      background:linear-gradient(160deg,rgba(249,115,22,.16),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.25);}
+    .reward-ic::after{content:"";position:absolute;inset:-5px;border-radius:20px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 70%);filter:blur(8px);z-index:-1;opacity:.6;}
+    .reward-ic i{width:26px;height:26px;color:#ffb27a;}
+    .reward-name{font-size:14px;font-weight:600;line-height:1.3;margin-bottom:4px;min-height:36px;display:flex;align-items:center;justify-content:center;}
+    .reward-desc{font-size:11px;color:var(--txt-faint);margin-bottom:13px;line-height:1.3;}
+    .reward-price{font-size:18px;font-weight:700;color:#ffb27a;text-shadow:0 0 12px var(--orange-glow);
+      display:flex;align-items:center;gap:5px;margin-bottom:12px;}
+    .reward-price i{width:15px;height:15px;}
+    
+    .btn-redeem{width:100%;padding:11px;border-radius:14px;border:1px solid rgba(5,150,105,.4);font-family:inherit;
+      font-size:13px;font-weight:600;background:linear-gradient(135deg,rgba(5,150,105,.3),rgba(5,150,105,.12));
+      color:#a7f3d0;cursor:pointer;transition:.2s;box-shadow:0 0 18px -6px var(--emerald-glow);}
+    .btn-redeem:active{transform:scale(.96);}
+    .btn-redeem:disabled{background:var(--glass);border-color:var(--stroke);color:var(--txt-faint);
+      box-shadow:none;cursor:not-allowed;}
+
+    /* ===== ACHIEVEMENTS ===== */
+    .ach-card{display:flex;gap:15px;padding:17px;margin-bottom:13px;align-items:center;position:relative;overflow:hidden;text-align:right;}
+    .ach-ic{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;flex-shrink:0;position:relative;
+      background:var(--glass);border:1px solid var(--stroke);}
+    .ach-ic i{width:29px;height:29px;color:var(--txt-faint);transition:.4s;}
+    
+    .ach-card.unlocked .ach-ic{border-color:rgba(249,115,22,.4);
+      background:linear-gradient(160deg,rgba(249,115,22,.18),rgba(5,150,105,.1));}
+    .ach-card.unlocked .ach-ic::after{content:"";position:absolute;inset:-6px;border-radius:22px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 68%);filter:blur(10px);z-index:-1;opacity:.75;}
+    .ach-card.unlocked .ach-ic i{color:#ffb27a;}
+    .ach-info{flex:1;min-width:0;}
+    .ach-name{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+    .ach-card:not(.unlocked) .ach-name{color:var(--txt-dim);}
+    .ach-lock{width:14px;height:14px;color:var(--txt-faint);}
+    .ach-desc{font-size:12px;color:var(--txt-dim);margin-top:5px;line-height:1.4;}
+    
+    .ach-pts{display:inline-flex;align-items:center;gap:4px;margin-top:9px;font-size:12px;font-weight:600;
+      padding:3px 10px;border-radius:20px;background:rgba(5,150,105,.14);border:1px solid rgba(5,150,105,.28);color:#34d399;}
+    .ach-card:not(.unlocked) .ach-pts{background:var(--glass);border-color:var(--stroke);color:var(--txt-faint);}
+
+    /* ===== CHALLENGE ===== */
+    .chal-card{padding:26px 22px;text-align:center;position:relative;overflow:hidden;margin-top:6px;}
+    .chal-eyebrow{font-size:12px;color:var(--orange);font-weight:600;letter-spacing:.5px;margin-bottom:14px;
+      display:flex;align-items:center;justify-content:center;gap:7px;}
+    .chal-eyebrow i{width:15px;height:15px;}
+    .chal-title{font-size:24px;font-weight:700;line-height:1.3;margin-bottom:10px;}
+    .chal-sub{font-size:14px;color:var(--txt-dim);line-height:1.5;margin-bottom:24px;}
+    
+    .timer{display:flex;justify-content:center;gap:10px;margin-bottom:22px;}
+    .timer-unit{display:flex;flex-direction:column;align-items:center;}
+    .timer-box{width:74px;height:84px;border-radius:18px;display:grid;place-items:center;font-size:38px;font-weight:700;
+      background:linear-gradient(180deg,rgba(249,115,22,.14),rgba(249,115,22,.02));border:1px solid rgba(249,115,22,.3);
+      color:#ffb27a;text-shadow:0 0 18px var(--orange-glow);position:relative;font-variant-numeric:tabular-nums;}
+    .timer-box::after{content:"";position:absolute;inset:-4px;border-radius:22px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 72%);filter:blur(11px);z-index:-1;opacity:.5;}
+    .timer-lbl{font-size:11px;color:var(--txt-faint);margin-top:8px;}
+    .timer-colon{font-size:34px;font-weight:700;color:var(--txt-faint);align-self:center;padding-bottom:24px;}
+    
+    .chal-prize{display:inline-flex;align-items:center;gap:9px;padding:12px 22px;border-radius:30px;margin-bottom:20px;
+      background:linear-gradient(135deg,rgba(5,150,105,.22),rgba(5,150,105,.08));border:1px solid rgba(5,150,105,.35);
+      box-shadow:0 0 24px -8px var(--emerald-glow);}
+    .chal-prize i{width:20px;height:20px;color:var(--emerald);}
+    .chal-prize span{font-size:16px;font-weight:700;color:#34d399;}
+    .chal-prize small{font-size:12px;color:var(--txt-dim);font-weight:400;}
+    
+    .chal-ctrl{display:flex;gap:11px;}
+    .chal-btn{flex:1;padding:14px;border-radius:16px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;border:1px solid;}
+    .chal-btn:active{transform:scale(.96);}
+    .chal-btn i{width:18px;height:18px;}
+    .chal-btn.start{background:linear-gradient(135deg,rgba(5,150,105,.3),rgba(5,150,105,.12));
+      border-color:rgba(5,150,105,.45);color:#a7f3d0;box-shadow:0 0 20px -6px var(--emerald-glow);}
+    .chal-btn.stop{background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(239,68,68,.1));
+      border-color:rgba(239,68,68,.4);color:#fca5a5;}
+    .chal-btn.reset{flex:0 0 56px;background:var(--glass);border-color:var(--stroke);color:var(--txt-dim);}
+    .admin-only-tag{font-size:11px;color:var(--txt-faint);margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;}
+    .admin-only-tag i{width:13px;height:13px;}
+
+    /* ===== ADMIN ===== */
+    .pin-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;animation:fade .35s ease;}
+    .pin-lock{width:72px;height:72px;border-radius:22px;display:grid;place-items:center;margin-bottom:18px;position:relative;
+      background:linear-gradient(160deg,rgba(249,115,22,.18),rgba(5,150,105,.1));border:1px solid var(--stroke2);}
+    .pin-lock::after{content:"";position:absolute;inset:-8px;border-radius:26px;
+      background:radial-gradient(circle,var(--orange-glow),transparent 68%);filter:blur(12px);z-index:-1;opacity:.6;}
+    .pin-lock i{width:34px;height:34px;color:var(--orange);}
+    .pin-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+    .pin-sub{font-size:13px;color:var(--txt-dim);margin-bottom:26px;}
+    .pin-dots{display:flex;gap:14px;margin-bottom:30px;}
+    
+    .pin-dot{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--stroke2);transition:.2s;}
+    .pin-dot.filled{background:var(--orange);border-color:var(--orange);box-shadow:0 0 12px var(--orange-glow);}
+    .pin-dot.err{background:var(--red);border-color:var(--red);box-shadow:0 0 12px var(--red-glow);}
+    
+    .pin-pad{display:grid;grid-template-columns:repeat(3,76px);gap:14px;justify-content:center;}
+    .pin-key{width:76px;height:76px;border-radius:50%;font-family:inherit;font-size:28px;font-weight:600;color:var(--txt);
+      background:var(--glass);border:1px solid var(--stroke);cursor:pointer;transition:.12s;display:grid;place-items:center;}
+    .pin-key:active{transform:scale(.92);background:var(--glass2);border-color:var(--stroke2);}
+    .pin-key.fn{font-size:20px;color:var(--txt-dim);}
+    .pin-key.empty{background:none;border:none;cursor:default;}
+    .pin-key i{width:24px;height:24px;}
+
+    .admin-bar{display:flex;gap:11px;overflow-x:auto;padding:4px 2px 14px;margin-bottom:6px;}
+    .admin-bar::-webkit-scrollbar{display:none;}
+    
+    .admin-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:13px 10px;border-radius:18px;
+      background:var(--glass);border:1px solid var(--stroke);cursor:pointer;transition:.2s;min-width:88px;}
+    .admin-chip.active{border-color:var(--emerald);background:linear-gradient(160deg,rgba(5,150,105,.18),transparent);
+      box-shadow:0 0 22px -6px var(--emerald-glow);}
+    .admin-chip-av{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:17px;
+      background:linear-gradient(150deg,var(--glass2),transparent);border:1px solid var(--stroke);}
+    .admin-chip.active .admin-chip-av{border-color:rgba(5,150,105,.5);color:#a7f3d0;}
+    .admin-chip-name{font-size:12px;font-weight:600;white-space:nowrap;}
+    .admin-chip-pts{font-size:11px;color:var(--txt-faint);}
+    .admin-chip.active .admin-chip-pts{color:#34d399;}
+
+    .active-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:16px;
+      border-color:rgba(5,150,105,.35) !important;background:linear-gradient(135deg,rgba(5,150,105,.14),transparent) !important;}
+    .active-banner .ab-av{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:700;
+      background:rgba(5,150,105,.18);border:1px solid rgba(5,150,105,.4);color:#a7f3d0;flex-shrink:0;}
+    .active-banner .ab-info{flex:1;}
+    .active-banner .ab-name{font-size:15px;font-weight:700;}
+    .active-banner .ab-meta{font-size:11px;color:var(--txt-dim);margin-top:2px;}
+    .active-banner .ab-pts{text-align:left;}
+    .active-banner .ab-pts-val{font-size:18px;font-weight:700;color:#34d399;}
+    .active-banner .ab-pts-lbl{font-size:10px;color:var(--txt-faint);}
+
+    .macro-label{font-size:12px;font-weight:600;margin:16px 4px 10px;display:flex;align-items:center;gap:7px;}
+    .macro-label i{width:14px;height:14px;}
+    .macro-label.pos{color:#34d399;}.macro-label.neg{color:#fca5a5;}
+    
+    .macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+    .macro-btn{padding:15px 12px;border-radius:16px;font-family:inherit;cursor:pointer;text-align:right;transition:.15s;border:1px solid;
+      display:flex;flex-direction:column;gap:5px;}
+    .macro-btn:active{transform:scale(.95);}
+    
+    .macro-btn.pos{background:linear-gradient(135deg,rgba(5,150,105,.16),rgba(5,150,105,.04));border-color:rgba(5,150,105,.3);
+      box-shadow:0 0 16px -8px var(--emerald-glow);}
+    .macro-btn.neg{background:linear-gradient(135deg,rgba(239,68,68,.14),rgba(239,68,68,.03));border-color:rgba(239,68,68,.28);}
+    
+    .macro-btn-top{display:flex;align-items:center;justify-content:space-between;}
+    .macro-btn-reason{font-size:13px;font-weight:600;color:var(--txt);}
+    .macro-btn-delta{font-size:17px;font-weight:700;}
+    .macro-btn.pos .macro-btn-delta{color:#34d399;}.macro-btn.neg .macro-btn-delta{color:#fca5a5;}
+    .macro-btn i{width:17px;height:17px;}
+    .macro-btn.pos i{color:var(--emerald);}.macro-btn.neg i{color:var(--red);}
+
+    .data-row{display:flex;gap:11px;margin-top:22px;}
+    .data-btn{flex:1;padding:14px;border-radius:16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:8px;background:var(--glass);border:1px solid var(--stroke);
+      color:var(--txt-dim);transition:.2s;}
+    .data-btn:active{transform:scale(.96);background:var(--glass2);}
+    .data-btn i{width:17px;height:17px;}
+    
+    .admin-logout{width:100%;margin-top:14px;padding:12px;border-radius:14px;background:none;border:1px solid var(--stroke);
+      color:var(--txt-faint);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:flex;
+      align-items:center;justify-content:center;gap:7px;transition:.2s;}
+    .admin-logout:active{background:var(--glass2);}
+    .admin-logout i{width:15px;height:15px;}
+
+    /* ===== BOTTOM NAV ===== */
+    #nav{position:fixed;bottom:0;left:0;right:0;z-index:50;height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+      padding-bottom:env(safe-area-inset-bottom);background:rgba(12,14,14,.72);backdrop-filter:blur(28px);
+      -webkit-backdrop-filter:blur(28px);border-top:1px solid var(--stroke);display:flex;max-width:480px;margin:0 auto;}
+    
+    .nav-btn{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:4px;cursor:pointer;color:var(--txt-faint);transition:.2s;position:relative;padding-top:10px;}
+    .nav-btn i{width:23px;height:23px;transition:.2s;}
+    .nav-btn span{font-size:10px;font-weight:500;font-family:inherit;}
+    .nav-btn.active{color:var(--orange);}
+    .nav-btn.active i{filter:drop-shadow(0 0 8px var(--orange-glow));}
+    .nav-btn.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:3px;
+      border-radius:3px;background:var(--orange);box-shadow:0 0 10px var(--orange-glow);}
+
+    /* toast */
+    #toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 18px);left:50%;transform:translateX(-50%) translateY(20px);
+      z-index:100;padding:13px 20px;border-radius:30px;background:rgba(12,14,14,.9);backdrop-filter:blur(20px);
+      border:1px solid var(--stroke2);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.35s;
+      display:flex;align-items:center;gap:9px;max-width:88vw;box-shadow:0 14px 40px -10px rgba(0,0,0,.8);}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    #toast i{width:18px;height:18px;flex-shrink:0;}
+    #toast.pos{color:#34d399;}#toast.pos i{color:#34d399;}
+    #toast.neg{color:#fca5a5;}#toast.neg i{color:var(--red);}
+    #toast.info{color:#ffb27a;}#toast.info i{color:var(--orange);}
+
+    /* Keyframes and Animations */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shake 0.2s ease-in-out 0s 2;
+    }
+
+    @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+  </style>
+</head>
+<body>
+
+  <!-- PWA Container -->
+  <div id="app" x-data="serajApp()" x-init="init()">
+    
+    <!-- Ambient background glow layers (moved inside app) -->
+    <div id="atmos"></div>
+    
+    <div id="scroll">
+      <!-- HEADER -->
+      <div class="app-head">
+        <div class="brand">
+          <div class="brand-mark">
+            <!-- Sleek Lantern SVG -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-orange-500 filter drop-shadow-[0_0_5px_rgba(249,115,22,0.8)]">
+              <circle cx="12" cy="3" r="1.5" />
+              <path d="M8 6h8l-1-2H9L8 6z" fill="currentColor" opacity="0.2" />
+              <path d="M8 6h8M9 4h6" />
+              <path d="M7 11c0-2.5 1.5-4 5-4s5 1.5 5 4c0 3-1.5 5-2 6H9c-.5-1-2-3-2-6z" fill="currentColor" opacity="0.1" />
+              <path d="M7 11c0-2.5 1.5-4 5-4s5 1.5 5 4c0 3-1.5 5-2 6H9c-.5-1-2-3-2-6z" />
+              <path d="M12 8.5c-.8 1.2-.8 2.2 0 3 .8-.8.8-1.8 0-3z" fill="#F97316" class="animate-pulse filter drop-shadow-[0_0_3px_rgba(249,115,22,0.8)]" />
+              <path d="M8 17h8v2H8v-2z" fill="currentColor" opacity="0.3" />
+              <path d="M8 17h8v2H8zM10 19v2h4v-2" />
+            </svg>
+          </div>
+          <div class="brand-txt">
+            <h1>سراج</h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Switcher (visible on Student-focused tabs) -->
+      <div x-show="['profile', 'store', 'badges'].includes(currentScreen)" class="glass mb-4 p-3 flex items-center justify-between border-dashed border-white/10" style="border-radius:16px;">
+        <span class="text-xs text-[#8b9494]">تصفح كطالب:</span>
+        <select x-model="activeId" @change="saveState(); render();" class="text-xs bg-[#121414] border border-white/10 text-[#f4f6f6] py-1.5 px-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-orange-500/40">
+          <template x-for="st in students" :key="st.id">
+            <option :value="st.id" x-text="st.name" class="bg-[#121414] text-[#f4f6f6]"></option>
+          </template>
+        </select>
+      </div>
+
+      <!-- VIEWS -->
+      
+      <!-- ============================================== -->
+      <!-- 1. 🏆 LEADERBOARD VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'leaderboard'" class="page">
+        <!-- Podium (only for individual mode) -->
+        <template x-if="lbMode === 'individual'">
+          <div class="podium-wrap">
+            <div class="podium">
+              
+              <!-- 2nd Place -->
+              <template x-if="getPodiumStudents()[0] && getPodiumStudents()[0].id !== 'dummy'">
+                <div class="pod pod-2">
+                  <div class="pod-av" 
+                       :style="{
+                         'border-color': avatarColorMap[getPodiumStudents()[0].avatarColor || 'emerald'],
+                         'background': 'linear-gradient(160deg,' + avatarColorGlowMap[getPodiumStudents()[0].avatarColor || 'emerald'] + ',rgba(5,150,105,.04))',
+                         'color': avatarColorLightMap[getPodiumStudents()[0].avatarColor || 'emerald'],
+                         'box-shadow': '0 0 15px ' + avatarColorGlowMap[getPodiumStudents()[0].avatarColor || 'emerald']
+                       }">
+                    <div style="width:24px; height:24px;" x-html="avatarIconsSvg[getPodiumStudents()[0].avatarIcon || 'user']"></div>
+                  </div>
+                  <div class="pod-name" x-text="getPodiumStudents()[0].name"></div>
+                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[0].stage) + ' · ' + getTeamLabel(getPodiumStudents()[0].team)"></div>
+                  <div class="pod-base">
+                    <div class="pod-rank">2</div>
+                    <div class="pod-pts e" x-text="getPodiumStudents()[0].total"></div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- 1st Place (Center & Tallest) -->
+              <template x-if="getPodiumStudents()[1] && getPodiumStudents()[1].id !== 'dummy'">
+                <div class="pod pod-1">
+                  <div class="pod-av"
+                       :style="{
+                         'border-color': avatarColorMap[getPodiumStudents()[1].avatarColor || 'orange'],
+                         'background': 'linear-gradient(160deg,' + avatarColorGlowMap[getPodiumStudents()[1].avatarColor || 'orange'] + ',rgba(249,115,22,.05))',
+                         'color': avatarColorLightMap[getPodiumStudents()[1].avatarColor || 'orange'],
+                         'box-shadow': '0 0 25px ' + avatarColorGlowMap[getPodiumStudents()[1].avatarColor || 'orange']
+                       }">
+                    <div class="pod-crown">
+                      <!-- Crown Icon -->
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" fill="currentColor" opacity="0.3"/>
+                        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
+                        <circle cx="12" cy="19" r="1"/>
+                      </svg>
+                    </div>
+                    <div style="width:28px; height:28px;" x-html="avatarIconsSvg[getPodiumStudents()[1].avatarIcon || 'user']"></div>
+                  </div>
+                  <div class="pod-name" x-text="getPodiumStudents()[1].name"></div>
+                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[1].stage) + ' · ' + getTeamLabel(getPodiumStudents()[1].team)"></div>
+                  <div class="pod-base">
+                    <div class="pod-rank">1</div>
+                    <div class="pod-pts o" x-text="getPodiumStudents()[1].total"></div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- 3rd Place -->
+              <template x-if="getPodiumStudents()[2] && getPodiumStudents()[2].id !== 'dummy'">
+                <div class="pod pod-3">
+                  <div class="pod-av"
+                       :style="{
+                         'border-color': avatarColorMap[getPodiumStudents()[2].avatarColor || 'emerald'],
+                         'background': 'linear-gradient(160deg,' + avatarColorGlowMap[getPodiumStudents()[2].avatarColor || 'emerald'] + ',rgba(5,150,105,.04))',
+                         'color': avatarColorLightMap[getPodiumStudents()[2].avatarColor || 'emerald'],
+                         'box-shadow': '0 0 15px ' + avatarColorGlowMap[getPodiumStudents()[2].avatarColor || 'emerald']
+                       }">
+                    <div style="width:24px; height:24px;" x-html="avatarIconsSvg[getPodiumStudents()[2].avatarIcon || 'user']"></div>
+                  </div>
+                  <div class="pod-name" x-text="getPodiumStudents()[2].name"></div>
+                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[2].stage) + ' · ' + getTeamLabel(getPodiumStudents()[2].team)"></div>
+                  <div class="pod-base">
+                    <div class="pod-rank">3</div>
+                    <div class="pod-pts e" x-text="getPodiumStudents()[2].total"></div>
+                  </div>
+                </div>
+              </template>
+
+            </div>
+          </div>
+        </template>
+
+        <!-- Mode Toggle Switch -->
+        <div class="toggle">
+          <div class="toggle-ind" :class="lbMode === 'team' ? 'team' : ''"></div>
+          <button :class="lbMode === 'individual' ? 'active' : ''" @click="setMode('individual')">
+            <i data-lucide="user"></i>الأفراد
+          </button>
+          <button :class="lbMode === 'team' ? 'active' : ''" @click="setMode('team')">
+            <i data-lucide="users"></i>الفرق
+          </button>
+        </div>
+
+        <!-- Scrollable Rows -->
+        <div class="glass" style="padding:8px;">
+          <!-- Individual Rows -->
+          <template x-if="lbMode === 'individual'">
+            <div>
+              <template x-for="(st, index) in getSortedStudents().slice(3)" :key="st.id">
+                <div class="lb-row glass" style="border-radius:16px;margin-bottom:8px;">
+                  <div class="lb-rank" x-text="index + 4"></div>
+                  <div class="lb-av" 
+                       :style="{
+                         'border-color': avatarColorMap[st.avatarColor || 'orange'] + '40',
+                         'background': 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)',
+                         'color': avatarColorLightMap[st.avatarColor || 'orange'],
+                         'box-shadow': '0 0 10px ' + avatarColorGlowMap[st.avatarColor || 'orange']
+                       }">
+                    <div style="width:20px; height:20px;" x-html="avatarIconsSvg[st.avatarIcon || 'user']"></div>
+                  </div>
+                  <div class="lb-info">
+                    <div class="lb-name" x-text="st.name"></div>
+                    <div class="lb-sub">
+                      <span class="lb-tag" x-text="getStageLabel(st.stage)"></span>
+                      <span class="lb-tag" x-text="getTeamLabel(st.team)"></span>
+                    </div>
+                  </div>
+                  <div class="lb-pts">
+                    <div class="lb-pts-val">
+                      <template x-if="st.trend >= 0">
+                        <i data-lucide="trending-up" class="arrow-up"></i>
+                      </template>
+                      <template x-if="st.trend < 0">
+                        <i data-lucide="trending-down" class="arrow-dn"></i>
+                      </template>
+                      <span x-text="st.total"></span>
+                    </div>
+                    <div class="lb-pts-lbl">شعلة</div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Team Rows -->
+          <template x-if="lbMode === 'team'">
+            <div>
+              <template x-for="(team, index) in getTeamStats()" :key="team.name">
+                <div class="lb-row glass" style="border-radius:16px;margin-bottom:8px;">
+                  <div class="lb-rank" x-text="index + 1"></div>
+                  <div class="lb-av">
+                    <i data-lucide="shield" style="width:20px;height:20px;" :style="{color: index === 0 ? '#ffb27a' : '#34d399'}"></i>
+                  </div>
+                  <div class="lb-info">
+                    <div class="lb-name" x-text="'فريق ' + team.name"></div>
+                    <div class="lb-sub">
+                      <span class="lb-tag" x-text="team.memberCount + ' أعضاء'"></span>
+                      <span>متوسط الشعلات</span>
+                    </div>
+                  </div>
+                  <div class="lb-pts">
+                    <div class="lb-pts-val">
+                      <template x-if="team.trend >= 0">
+                        <i data-lucide="trending-up" class="arrow-up"></i>
+                      </template>
+                      <template x-if="team.trend < 0">
+                        <i data-lucide="trending-down" class="arrow-dn"></i>
+                      </template>
+                      <span x-text="team.avgPoints"></span>
+                    </div>
+                    <div class="lb-pts-lbl">معدل</div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 2. 👤 PROFILE VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'profile'" class="page" x-data="{ currentStudent: null }" x-init="$watch('activeId', id => currentStudent = getStudentById(id)); currentStudent = getStudentById(activeId);">
+        <template x-if="currentStudent">
+          <div>
+            <div class="glass prof-hero">
+              <div class="prof-ring" 
+                   @click="openAvatarModal(currentStudent.id)"
+                   style="cursor:pointer; position:relative; overflow:visible;"
+                   :style="{
+                     'border-color': avatarColorMap[currentStudent.avatarColor || 'orange'],
+                     'background': 'linear-gradient(160deg,' + avatarColorGlowMap[currentStudent.avatarColor || 'orange'] + ',rgba(12,14,14,0.3))',
+                     'color': '#fff',
+                     'box-shadow': '0 0 20px ' + avatarColorGlowMap[currentStudent.avatarColor || 'orange']
+                   }">
+                <div style="width:38px; height:38px;" :style="{'color': avatarColorLightMap[currentStudent.avatarColor || 'orange']}" x-html="avatarIconsSvg[currentStudent.avatarIcon || 'user']"></div>
+                <!-- Edit Indicator badge -->
+                <div style="position:absolute; bottom:-3px; right:-3px; width:26px; height:26px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); display:grid; place-items:center; z-index:10;">
+                  <i data-lucide="edit-2" style="width:12px; height:12px; color:var(--orange);"></i>
+                </div>
+              </div>
+              <div class="prof-name" x-text="currentStudent.name" style="margin-top: 6px;"></div>
+              
+              <!-- Nickname / Headline status textbox -->
+              <div style="margin: 6px auto 14px; position: relative; display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 220px;">
+                <input type="text" 
+                       x-model="currentStudent.headline" 
+                       @input="saveState()" 
+                       placeholder="اكتب لقبك الخاص هنا..."
+                       maxlength="30"
+                       style="width: 100%; background: var(--glass); border: 1px solid var(--stroke); border-radius: 12px; padding: 6px 28px 6px 12px; font-size: 11px; color: var(--txt-dim); text-align: center; font-family: inherit; outline: none; transition: all 0.2s;"
+                       @focus="$el.style.borderColor = 'rgba(249,115,22,0.4)'; $el.style.background = 'var(--glass2)';"
+                       @blur="$el.style.borderColor = 'var(--stroke)'; $el.style.background = 'var(--glass)';" />
+                <i data-lucide="edit-3" style="position: absolute; right: 10px; width: 11px; height: 11px; color: var(--txt-faint); pointer-events: none;"></i>
+              </div>
+
+              <div class="prof-meta" style="margin-top: 0px;">
+                <span class="lb-tag" x-text="getStageLabel(currentStudent.stage)"></span>
+                <span class="lb-tag" x-text="getTeamLabel(currentStudent.team)"></span>
+                <span class="lb-tag" x-text="'المركز ' + getStudentRank(currentStudent.id)"></span>
+              </div>
+            </div>
+            
+            <div class="dual">
+              <div class="glass stat wallet">
+                <div class="stat-ic"><i data-lucide="wallet"></i></div>
+                <div class="stat-val" x-text="currentStudent.wallet"></div>
+                <div class="stat-lbl">المحفظة المتاحة للصرف</div>
+              </div>
+              <div class="glass stat total">
+                <div class="stat-ic"><i data-lucide="bar-chart-3"></i></div>
+                <div class="stat-val" x-text="currentStudent.total"></div>
+                <div class="stat-lbl">الشعلات التراكمية للترتيب</div>
+              </div>
+            </div>
+
+            <!-- Badges Strip -->
+            <div class="sect-title"><i data-lucide="award"></i>أوسمتي المضيئة</div>
+            <div class="glass" style="padding:16px 12px;">
+              <template x-if="currentStudent.badges.length > 0">
+                <div class="badge-strip">
+                  <template x-for="ach in achievements" :key="ach.id">
+                    <div class="mini-badge" :class="hasBadge(currentStudent.id, ach.id) ? 'lit' : ''">
+                      <div class="mini-badge-ic"><div style="width:28px; height:28px;" x-html="avatarIconsSvg[ach.icon === 'cpu' ? 'zap' : (ach.icon === 'users' ? 'shield' : 'calendar-check')]"></div></div>
+                      <div class="mini-badge-lbl" x-text="ach.name"></div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template x-if="currentStudent.badges.length === 0">
+                <div class="empty-note">لم تُضِئ أي وسام بعد. ابدأ بالحضور المبكر لإشعال أول وسام.</div>
+              </template>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="sect-title"><i data-lucide="history"></i>آخر ٥ عمليات</div>
+            <div class="glass" style="padding:4px 0;">
+              <template x-for="l in getStudentActivities(currentStudent.id)" :key="l.id">
+                <div class="log-item">
+                  <div class="log-ic" :class="l.pos ? 'pos' : 'neg'"><i :data-lucide="l.pos ? 'plus' : 'minus'"></i></div>
+                  <div class="log-info">
+                    <div class="log-reason" x-text="l.reason"></div>
+                    <div class="log-time" x-text="l.t"></div>
+                  </div>
+                  <div class="log-delta" :class="l.pos ? 'pos' : 'neg'" x-text="(l.delta > 0 ? '+' : '') + l.delta"></div>
+                </div>
+              </template>
+              <template x-if="getStudentActivities(currentStudent.id).length === 0">
+                <div class="empty-note">لا توجد عمليات مسجلة حالياً.</div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 3. 🎁 REWARDS STORE VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'store'" class="page" x-data="{ currentStudent: null }" x-init="$watch('activeId', id => currentStudent = getStudentById(id)); currentStudent = getStudentById(activeId);">
+        <template x-if="currentStudent">
+          <div>
+            <div class="glass stat wallet" style="display:flex;flex-direction:row;align-items:center;gap:14px;text-align:right;padding:16px 18px;margin-bottom:18px;">
+              <div class="stat-ic" style="margin:0;"><i data-lucide="wallet"></i></div>
+              <div style="flex:1;">
+                <div class="stat-lbl" style="margin:0 0 2px;" x-text="'محفظة ' + currentStudent.name.split(' ')[0]"></div>
+                <div style="font-size:22px;font-weight:700;color:#ffb27a;text-shadow:0 0 14px var(--orange-glow);" x-text="currentStudent.wallet + ' شعلة'"></div>
+              </div>
+            </div>
+            
+            <div class="store-grid">
+              <template x-for="(r, index) in rewards" :key="index">
+                <div class="glass reward">
+                  <div class="reward-ic"><i :data-lucide="r.icon"></i></div>
+                  <div class="reward-name" x-text="r.name"></div>
+                  <div class="reward-desc" x-text="r.desc"></div>
+                  <div class="reward-price"><i data-lucide="flame"></i><span x-text="r.price"></span></div>
+                  <button class="btn-redeem" 
+                          :disabled="currentStudent.wallet < r.price" 
+                          @click="purchaseReward(currentStudent.id, r)"
+                          x-text="currentStudent.wallet >= r.price ? 'استبدال' : 'شعلات غير كافية'"></button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 4. 🏅 ACHIEVEMENTS VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'badges'" class="page" x-data="{ currentStudent: null }" x-init="$watch('activeId', id => currentStudent = getStudentById(id)); currentStudent = getStudentById(activeId);">
+        <template x-if="currentStudent">
+          <div>
+            <div class="sect-title" style="margin-top:6px;"><i data-lucide="award"></i>التحديات الكبرى — تضيء فور تحقيقها</div>
+            <template x-for="b in achievements" :key="b.id">
+              <div class="glass ach-card" :class="hasBadge(currentStudent.id, b.id) ? 'unlocked' : ''">
+                <div class="ach-ic"><i :data-lucide="b.icon"></i></div>
+                <div class="ach-info">
+                  <div class="ach-name">
+                    <span x-text="b.name"></span>
+                    <template x-if="!hasBadge(currentStudent.id, b.id)">
+                      <i data-lucide="lock" class="ach-lock"></i>
+                    </template>
+                  </div>
+                  <div class="ach-desc" x-text="b.desc"></div>
+                  <span class="ach-pts"><i data-lucide="flame" style="width:13px;height:13px;"></i><span x-text="'+' + b.reward + ' شعلة'"></span></span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 5. 🎲 WEEKLY CHALLENGE VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'challenge'" class="page">
+        <div class="glass chal-card">
+          <div class="chal-eyebrow"><i data-lucide="zap"></i>تحدي اللقاء الحالي</div>
+          <div class="chal-title" x-text="weeklyChallenge.title"></div>
+          <div class="chal-sub" x-text="weeklyChallenge.desc"></div>
+          
+          <div class="timer">
+            <div class="timer-unit">
+              <div class="timer-box" id="tMin" x-text="formatChallengeMinutes(weeklyChallenge.timeLeft)">10</div>
+              <div class="timer-lbl">دقيقة</div>
+            </div>
+            <div class="timer-colon">:</div>
+            <div class="timer-unit">
+              <div class="timer-box" id="tSec" x-text="formatChallengeSeconds(weeklyChallenge.timeLeft)">00</div>
+              <div class="timer-lbl">ثانية</div>
+            </div>
+          </div>
+          
+          <div class="chal-prize">
+            <i data-lucide="gift"></i>
+            <span x-text="'+' + weeklyChallenge.points + ' شعلة'"></span>
+            <small>للفريق الفائز</small>
+          </div>
+          
+          <div class="chal-ctrl">
+            <button class="chal-btn" :class="weeklyChallenge.isRunning ? 'stop' : 'start'" @click="toggleChallengeTimer()">
+              <i :data-lucide="weeklyChallenge.isRunning ? 'pause' : 'play'"></i>
+              <span x-text="weeklyChallenge.isRunning ? 'إيقاف مؤقت' : 'بدء التحدي'"></span>
+            </button>
+            <button class="chal-btn reset" @click="resetChallengeTimer()"><i data-lucide="rotate-ccw"></i></button>
+          </div>
+          
+          <div class="admin-only-tag"><i data-lucide="shield"></i>يتحكم المشرف بالمؤقت من هذه الشاشة</div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 6. ⚙️ ADMIN PANEL VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'admin'" class="page">
+        
+        <!-- Passcode Pad overlay -->
+        <template x-if="!adminUnlocked">
+          <div class="pin-wrap">
+            <div class="pin-lock"><i data-lucide="lock-keyhole"></i></div>
+            <div class="pin-title">غرفة الإدارة</div>
+            <div class="pin-sub">أدخل الرمز السري للمتابعة</div>
+            
+            <div class="pin-dots" :class="pinShake ? 'animate-shake' : ''">
+              <template x-for="i in [1, 2, 3, 4]">
+                <div class="pin-dot" :class="adminPin.length >= i ? (pinError ? 'err' : 'filled') : ''"></div>
+              </template>
+            </div>
+            
+            <div class="pin-pad">
+              <button class="pin-key" @click="enterPinDigit('1')">1</button>
+              <button class="pin-key" @click="enterPinDigit('2')">2</button>
+              <button class="pin-key" @click="enterPinDigit('3')">3</button>
+              <button class="pin-key" @click="enterPinDigit('4')">4</button>
+              <button class="pin-key" @click="enterPinDigit('5')">5</button>
+              <button class="pin-key" @click="enterPinDigit('6')">6</button>
+              <button class="pin-key" @click="enterPinDigit('7')">7</button>
+              <button class="pin-key" @click="enterPinDigit('8')">8</button>
+              <button class="pin-key" @click="enterPinDigit('9')">9</button>
+              <button class="pin-key fn" @click="deletePinLast()"><i data-lucide="delete"></i></button>
+              <button class="pin-key" @click="enterPinDigit('0')">0</button>
+              <button class="pin-key fn" @click="verifyPin()"><i data-lucide="check"></i></button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Core Admin controls -->
+        <template x-if="adminUnlocked">
+          <div>
+            <!-- Students Horizontal Carousel -->
+            <div class="admin-bar">
+              <template x-for="st in students" :key="st.id">
+                <div class="admin-chip" :class="st.id === adminActiveStudentId ? 'active' : ''" @click="adminActiveStudentId = st.id">
+                  <div class="admin-chip-av"
+                       :style="{
+                         'border-color': st.id === adminActiveStudentId ? avatarColorMap[st.avatarColor || 'orange'] : 'var(--stroke)',
+                         'color': avatarColorLightMap[st.avatarColor || 'orange'],
+                         'background': st.id === adminActiveStudentId ? 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)' : 'linear-gradient(150deg,var(--glass2),transparent)'
+                       }">
+                    <div style="width:20px; height:20px;" x-html="avatarIconsSvg[st.avatarIcon || 'user']"></div>
+                  </div>
+                  <div class="admin-chip-name" x-text="st.name.split(' ')[0]"></div>
+                  <div class="admin-chip-pts" x-text="st.total + ' شعلة'"></div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Active Selection Banner -->
+            <div class="glass active-banner" x-data="{ activeStudent: null }" x-init="$watch('adminActiveStudentId', id => activeStudent = getStudentById(id)); activeStudent = getStudentById(adminActiveStudentId);">
+              <div class="ab-av"
+                   :style="{
+                     'border-color': avatarColorMap[activeStudent.avatarColor || 'orange'] + '60',
+                     'background': 'rgba(255,255,255,0.01)',
+                     'color': avatarColorLightMap[activeStudent.avatarColor || 'orange']
+                   }">
+                <div style="width:20px; height:20px;" x-html="avatarIconsSvg[activeStudent.avatarIcon || 'user']"></div>
+              </div>
+              <div class="ab-info">
+                <div class="ab-name" x-text="activeStudent.name"></div>
+                <div class="ab-meta" x-text="getStageLabel(activeStudent.stage) + ' · ' + getTeamLabel(activeStudent.team) + ' · المركز ' + getStudentRank(activeStudent.id)"></div>
+              </div>
+              <div class="ab-pts">
+                <div class="ab-pts-val" x-text="activeStudent.total"></div>
+                <div class="ab-pts-lbl">إجمالي</div>
+              </div>
+            </div>
+
+            <!-- Positive Macros Grid -->
+            <div class="macro-label pos"><i data-lucide="plus-circle"></i>إضافة شعلات</div>
+            <div class="macro-grid">
+              <template x-for="(m, index) in macrosPos" :key="index">
+                <button class="macro-btn pos" @click="awardPoints(adminActiveStudentId, m.delta, m.reason)">
+                  <div class="macro-btn-top">
+                    <i :data-lucide="m.icon"></i>
+                    <span class="macro-btn-delta" x-text="'+' + m.delta"></span>
+                  </div>
+                  <span class="macro-btn-reason" x-text="m.reason"></span>
+                </button>
+              </template>
+            </div>
+
+            <!-- Negative Macros Grid -->
+            <div class="macro-label neg"><i data-lucide="minus-circle"></i>خصم شعلات</div>
+            <div class="macro-grid">
+              <template x-for="(m, index) in macrosNeg" :key="index">
+                <button class="macro-btn neg" @click="deductPoints(adminActiveStudentId, m.delta, m.reason)">
+                  <div class="macro-btn-top">
+                    <i :data-lucide="m.icon"></i>
+                    <span class="macro-btn-delta" x-text="m.delta"></span>
+                  </div>
+                  <span class="macro-btn-reason" x-text="m.reason"></span>
+                </button>
+              </template>
+            </div>
+
+            <!-- Glowing Badges Administration Controls -->
+            <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;"><i data-lucide="award"></i>إدارة الأوسمة المضيئة للطالب</div>
+            <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+              <template x-for="ach in achievements" :key="ach.id">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.01); border:1px solid var(--stroke);">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <i :data-lucide="ach.icon" style="width:16px; height:16px; color:var(--orange);"></i>
+                    <div>
+                      <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="ach.name"></span>
+                      <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="ach.desc"></span>
+                    </div>
+                  </div>
+                  <button @click="toggleStudentBadge(adminActiveStudentId, ach.id)"
+                          style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.2s;"
+                          :style="hasBadge(adminActiveStudentId, ach.id) 
+                                  ? 'background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0;' 
+                                  : 'background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim);'"
+                          x-text="hasBadge(adminActiveStudentId, ach.id) ? 'سحب الوسام' : 'منح الوسام'"></button>
+                </div>
+              </template>
+            </div>
+
+            <!-- Backup Management -->
+            <div class="data-row">
+              <button class="data-btn" @click="exportData()"><i data-lucide="download"></i>تصدير JSON</button>
+              <button class="data-btn" @click="$refs.importFileInput.click()"><i data-lucide="upload"></i>استيراد JSON</button>
+              <input type="file" x-ref="importFileInput" accept="application/json" style="display:none" @change="importData($event)">
+            </div>
+            
+            <button class="data-btn w-full mt-3 bg-red-950/20 border-red-900/40 text-red-400" @click="resetToDefault()" style="margin-top:8px; width:100%;">
+              <i data-lucide="rotate-ccw"></i>
+              إعادة تعيين البيانات الافتراضية
+            </button>
+            
+            <button class="admin-logout" @click="lockAdmin()"><i data-lucide="lock"></i>قفل غرفة الإدارة</button>
+          </div>
+        </template>
+        
+      </div>
+
+    </div>
+
+  <!-- Avatar Icon & Color Selector Modal Overlay -->
+  <div x-show="avatarModalOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95"
+       style="position:absolute; inset:0; z-index:100; background:rgba(12,14,14,0.94); backdrop-filter:blur(16px); display:flex; align-items:center; justify-content:center; padding:20px; direction:rtl;"
+       @click.self="avatarModalOpen = false">
+    
+    <div class="glass" style="width:100%; max-width:320px; padding:22px; border-radius:24px; border:1px solid var(--stroke2); position:relative; z-index:110;">
+      
+      <div style="text-align:center; margin-bottom:20px;">
+        <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:4px;">تخصيص الشارة الرمزية</h3>
+        <p style="font-size:11px; color:var(--txt-dim);">اختر أيقونة ولون الوهج لشارتك الشخصية</p>
+      </div>
+
+      <!-- Live Preview -->
+      <div style="display:flex; justify-content:center; margin-bottom:22px;">
+        <div style="width:80px; height:80px; border-radius:50%; display:grid; place-items:center; border:2px solid; transition:all 0.3s;"
+             :style="{
+               'border-color': avatarColorMap[tempAvatarColor],
+               'background': 'linear-gradient(160deg,' + avatarColorGlowMap[tempAvatarColor] + ',rgba(12,14,14,0.6))',
+               'color': avatarColorLightMap[tempAvatarColor],
+               'box-shadow': '0 0 25px ' + avatarColorGlowMap[tempAvatarColor]
+             }">
+          <div style="width:34px; height:34px;" x-html="avatarIconsSvg[tempAvatarIcon]"></div>
+        </div>
+      </div>
+
+      <!-- Icon Selector Grid -->
+      <div style="margin-bottom:18px;">
+        <span style="font-size:10px; color:var(--txt-dim); font-weight:600; display:block; margin-bottom:8px;">اختر الأيقونة:</span>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
+          <template x-for="ic in selectableIcons" :key="ic">
+            <button @click="tempAvatarIcon = ic;"
+                    style="height:44px; border-radius:12px; border:1px solid; display:grid; place-items:center; cursor:pointer; transition:all 0.2s;"
+                    :style="tempAvatarIcon === ic 
+                            ? 'border-color:var(--orange); background:rgba(249,115,22,0.1); color:#ffb27a;' 
+                            : 'border-color:var(--stroke); background:var(--glass); color:var(--txt-faint);'">
+              <div style="width:18px; height:18px;" x-html="avatarIconsSvg[ic]"></div>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Color Selector Grid -->
+      <div style="margin-bottom:24px;">
+        <span style="font-size:10px; color:var(--txt-dim); font-weight:600; display:block; margin-bottom:8px;">اختر لون الوهج:</span>
+        <div style="display:flex; justify-content:space-between; gap:6px;">
+          <template x-for="col in selectableColors" :key="col">
+            <button @click="tempAvatarColor = col;"
+                    style="flex:1; height:34px; border-radius:10px; border:1px solid; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.2s;"
+                    :style="tempAvatarColor === col 
+                            ? {
+                                'border-color': avatarColorMap[col],
+                                'background': avatarColorGlowMap[col],
+                                'color': '#fff'
+                              }
+                            : {
+                                'border-color': 'var(--stroke)',
+                                'background': 'var(--glass)',
+                                'color': varColorLabelMap[col]
+                              }"
+                    x-text="colorNamesMap[col]"></button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex; gap:10px;">
+        <button @click="avatarModalOpen = false" 
+                class="data-btn" style="flex:1; padding:10px; font-size:12px; margin-top:0;">إلغاء</button>
+        <button @click="saveAvatar(activeId)" 
+                class="btn-redeem" style="flex:1; padding:10px; font-size:12px; border-radius:16px;">حفظ</button>
+      </div>
+
+    </div>
+  </div>
+
+    <!-- BOTTOM FIXED NAV BAR -->
+    <nav id="nav">
+      <template x-for="n in navItems" :key="n.id">
+        <button class="nav-btn" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
+          <i :data-lucide="n.icon"></i>
+          <span x-text="n.label"></span>
+        </button>
+      </template>
+    </nav>
+
+  </div>
+
+
+
+  <!-- Reactive Toast System -->
+  <div id="toast" :class="toast.show ? (toast.type + ' show') : ''">
+    <i :data-lucide="toast.icon"></i>
+    <span x-text="toast.message"></span>
+  </div>
+
+  <!-- Logic & PWA Service Worker Engine -->
+  <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registered successfully!', reg))
+          .catch(err => console.log('Service Worker registration failed.', err));
+      });
+    }
+
+    function serajApp() {
+      // Mock data in the exact same shape as the second model's code
+      const DEFAULT_STUDENTS = [
+        { id: 's1', name: 'يوسف العتيبي', stage: 'high', team: 'khwarizmi', wallet: 120, total: 340, trend: 1,
+          avatarIcon: 'flame', avatarColor: 'orange', headline: 'سفير سراج المتميز 👑',
+          badges: ['committed', 'digital'], log: [
+            { reason: 'إنجاز مهمة', delta: 40, t: 'قبل ساعة', pos: true },
+            { reason: 'حضور مبكر', delta: 15, t: 'اليوم 5:02م', pos: true },
+            { reason: 'تفاعل ومشاركة', delta: 10, t: 'أمس 6:15م', pos: true },
+            { reason: 'تأخير', delta: -10, t: 'الأحد 5:20م', pos: false },
+            { reason: 'تميز إبداعي', delta: 15, t: 'الأحد 6:00م', pos: true }
+          ]},
+        { id: 's2', name: 'عبدالله القحطاني', stage: 'high', team: 'haytham', wallet: 90, total: 295, trend: 1,
+          avatarIcon: 'trophy', avatarColor: 'emerald', headline: 'طموح يعلو سماء العلا 🌟',
+          badges: ['committed'], log: [
+            { reason: 'تميز الفريق', delta: 20, t: 'قبل ٣ ساعات', pos: true },
+            { reason: 'حضور في الموعد', delta: 10, t: 'اليوم 5:08م', pos: true },
+            { reason: 'إنجاز مهمة', delta: 40, t: 'أمس 6:30م', pos: true }
+          ]},
+        { id: 's3', name: 'سلمان الدوسري', stage: 'middle', team: 'khwarizmi', wallet: 60, total: 250, trend: -1,
+          avatarIcon: 'shield', avatarColor: 'blue', headline: 'التميز هدفي الدائم 🚀',
+          badges: ['unity'], log: [
+            { reason: 'تفاعل ومشاركة', delta: 10, t: 'اليوم 5:30م', pos: true },
+            { reason: 'شغب وتشتيت', delta: -15, t: 'أمس 6:00م', pos: false },
+            { reason: 'حضور مبكر', delta: 15, t: 'أمس 5:01م', pos: true }
+          ]},
+        { id: 's4', name: 'فيصل الشهري', stage: 'middle', team: 'haytham', wallet: 40, total: 185, trend: 1,
+          avatarIcon: 'star', avatarColor: 'purple', headline: 'قادم بقوة للتنافس 🔥',
+          badges: [], log: [
+            { reason: 'حضور في الموعد', delta: 10, t: 'اليوم 5:09م', pos: true },
+            { reason: 'عدم تسليم المهمة', delta: -20, t: 'أمس 6:40م', pos: false }
+          ]},
+        { id: 's5', name: 'تركي المالكي', stage: 'high', team: 'khwarizmi', wallet: 25, total: 140, trend: -1,
+          avatarIcon: 'zap', avatarColor: 'red', headline: 'لا يأس مع الشعلات',
+          badges: [], log: [
+            { reason: 'تفاعل ومشاركة', delta: 10, t: 'اليوم 5:25م', pos: true },
+            { reason: 'عدم التعاون', delta: -10, t: 'أمس 6:10م', pos: false }
+          ]},
+        { id: 's6', name: 'ماجد الغامدي', stage: 'middle', team: 'haytham', wallet: 15, total: 95, trend: 1,
+          avatarIcon: 'coffee', avatarColor: 'orange', headline: 'عاشق القهوة والشغل ☕',
+          badges: [], log: [
+            { reason: 'حضور في الموعد', delta: 10, t: 'اليوم 5:10م', pos: true },
+            { reason: 'تأخير', delta: -10, t: 'أمس 5:30م', pos: false }
+          ]}
+      ];
+
+      return {
+        // App State
+        students: [],
+        activeId: 's1',
+        currentScreen: 'leaderboard',
+        lbMode: 'individual',
+        
+        // Avatar Editor Modal State
+        avatarModalOpen: false,
+        tempAvatarIcon: 'user',
+        tempAvatarColor: 'orange',
+        
+        selectableIcons: ['user', 'flame', 'zap', 'crown', 'star', 'shield', 'trophy', 'coffee'],
+        selectableColors: ['orange', 'emerald', 'blue', 'purple', 'red'],
+        
+        avatarIconsSvg: {
+          user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+          flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+          zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+          crown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><circle cx="12" cy="19" r="1"/></svg>',
+          star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+          shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+          trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/><path d="M12 2a6.38 6.38 0 0 1 6 6.5A6.62 6.62 0 0 1 12 15a6.62 6.62 0 0 1-6-6.5A6.38 6.38 0 0 1 12 2z"/></svg>',
+          coffee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>'
+        },
+        
+        avatarColorMap: {
+          orange: '#F97316',
+          emerald: '#059669',
+          blue: '#3b82f6',
+          purple: '#a855f7',
+          red: '#EF4444'
+        },
+        avatarColorGlowMap: {
+          orange: 'rgba(249,115,22,.45)',
+          emerald: 'rgba(5,150,105,.45)',
+          blue: 'rgba(59,130,246,.4)',
+          purple: 'rgba(168,85,247,.4)',
+          red: 'rgba(239,68,68,.4)'
+        },
+        avatarColorLightMap: {
+          orange: '#ffb27a',
+          emerald: '#a7f3d0',
+          blue: '#93c5fd',
+          purple: '#c084fc',
+          red: '#fca5a5'
+        },
+        colorNamesMap: {
+          orange: 'برتقالي',
+          emerald: 'أخضر',
+          blue: 'أزرق',
+          purple: 'بنفسجي',
+          red: 'أحمر'
+        },
+        varColorLabelMap: {
+          orange: '#ffb27a',
+          emerald: '#a7f3d0',
+          blue: '#93c5fd',
+          purple: '#c084fc',
+          red: '#fca5a5'
+        },
+        
+        // Timer State
+        weeklyChallenge: {
+          title: 'معركة الكلمات السريعة',
+          desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
+          points: 30,
+          duration: 600, // 10 minutes
+          timeLeft: 600,
+          isRunning: false
+        },
+        timerIntervalId: null,
+
+        // Security Pin Buffer
+        adminUnlocked: false,
+        adminPin: '',
+        adminActiveStudentId: 's1',
+        pinShake: false,
+        pinError: false,
+
+        // Static Configurations
+        achievements: [
+          { id: 'committed', name: 'الملتزم', icon: 'calendar-check', reward: 50, desc: 'الحضور المبكر ٤ أسابيع متتالية دون انقطاع.' },
+          { id: 'digital', name: 'المبدع الرقمي', icon: 'sparkles', reward: 60, desc: 'تسليم المهمة العملية بتميز مرتين متتاليتين.' },
+          { id: 'unity', name: 'القلب الواحد', icon: 'heart-handshake', reward: 40, desc: 'أسبوع كامل دون أي مخالفة من أي عضو في الفريق.' }
+        ],
+        
+        rewards: [
+          { name: 'إعفاء من التأخير', desc: 'يلغي خصم تأخير واحد', icon: 'clock', price: 80 },
+          { name: 'قائد الأسبوع', desc: 'لقب يُعرض للجميع', icon: 'crown', price: 150 },
+          { name: 'طلب شاي', desc: 'ضيافة على حساب المقر', icon: 'coffee', price: 50 },
+          { name: 'إعفاء من مهمة', desc: 'تجاوز مهمة واحدة', icon: 'file-x', price: 120 }
+        ],
+
+        macrosPos: [
+          { reason: 'حضور مبكر', delta: 15, icon: 'sunrise' },
+          { reason: 'حضور في الموعد', delta: 10, icon: 'log-in' },
+          { reason: 'تفاعل ومشاركة', delta: 10, icon: 'message-circle' },
+          { reason: 'إنجاز مهمة', delta: 40, icon: 'check-check' },
+          { reason: 'تميز إبداعي', delta: 15, icon: 'wand-2' },
+          { reason: 'تميز الفريق', delta: 20, icon: 'users' }
+        ],
+
+        macrosNeg: [
+          { reason: 'تأخير', delta: -10, icon: 'timer-off' },
+          { reason: 'شغب وتشتيت', delta: -15, icon: 'volume-2' },
+          { reason: 'عدم تسليم المهمة', delta: -20, icon: 'file-warning' },
+          { reason: 'عدم التعاون', delta: -10, icon: 'user-x' }
+        ],
+
+        navItems: [
+          { id: 'leaderboard', label: 'الصدارة', icon: 'trophy' },
+          { id: 'profile', label: 'الملف', icon: 'user' },
+          { id: 'store', label: 'المتجر', icon: 'gift' },
+          { id: 'badges', label: 'الأوسمة', icon: 'award' },
+          { id: 'challenge', label: 'المسابقة', icon: 'dices' },
+          { id: 'admin', label: 'الإدارة', icon: 'settings' }
+        ],
+
+        // Toast Messages
+        toast: {
+          show: false,
+          message: '',
+          type: 'pos', // 'pos', 'neg', 'info'
+          icon: 'check'
+        },
+        toastTimeout: null,
+
+        // Init
+        init() {
+          this.loadState();
+          
+          // Re-render Lucide icons on view change
+          this.$watch('currentScreen', () => {
+            this.$nextTick(() => lucide.createIcons());
+          });
+
+          this.$watch('lbMode', () => {
+            this.$nextTick(() => lucide.createIcons());
+          });
+
+          this.$watch('adminUnlocked', () => {
+            this.$nextTick(() => lucide.createIcons());
+          });
+
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        // Persistence
+        loadState() {
+          const st = localStorage.getItem('seraj_pwa_students');
+          if (st) {
+            this.students = JSON.parse(st);
+          } else {
+            this.students = DEFAULT_STUDENTS;
+          }
+          
+          const active = localStorage.getItem('seraj_pwa_activeId');
+          if (active) this.activeId = active;
+
+          const ch = localStorage.getItem('seraj_pwa_challenge');
+          if (ch) {
+            const parsed = JSON.parse(ch);
+            this.weeklyChallenge.timeLeft = parsed.timeLeft || this.weeklyChallenge.duration;
+          }
+        },
+
+        saveState() {
+          localStorage.setItem('seraj_pwa_students', JSON.stringify(this.students));
+          localStorage.setItem('seraj_pwa_activeId', this.activeId);
+          localStorage.setItem('seraj_pwa_challenge', JSON.stringify({
+            timeLeft: this.weeklyChallenge.timeLeft
+          }));
+        },
+
+        // Helpers
+        getStudentById(id) {
+          return this.students.find(s => s.id === id);
+        },
+
+        getSortedStudents() {
+          return [...this.students].sort((a, b) => b.total - a.total);
+        },
+
+        getPodiumStudents() {
+          const list = this.getSortedStudents();
+          const top3 = list.slice(0, 3);
+          while (top3.length < 3) {
+            top3.push({ id: 'dummy', name: '-', total: 0, stage: '-', team: '-', badges: [] });
+          }
+          return [top3[1], top3[0], top3[2]]; // 2nd, 1st, 3rd order for podium layout
+        },
+
+        getStudentRank(studentId) {
+          const sorted = this.getSortedStudents();
+          return sorted.findIndex(s => s.id === studentId) + 1;
+        },
+
+        getStudentActivities(studentId) {
+          const st = this.getStudentById(studentId);
+          return st ? st.log.slice(0, 5) : [];
+        },
+
+        hasBadge(studentId, badgeId) {
+          const st = this.getStudentById(studentId);
+          return st ? st.badges.includes(badgeId) : false;
+        },
+
+        getStageLabel(s) {
+          return s === 'high' ? 'ثانوي' : 'متوسط';
+        },
+
+        getTeamLabel(t) {
+          return t === 'khwarizmi' ? 'الخوارزمي' : 'ابن الهيثم';
+        },
+
+        getScreenLabel() {
+          const item = this.navItems.find(n => n.id === this.currentScreen);
+          if (!item) return 'لوحة الصدارة';
+          if (item.label === 'الصدارة') return 'لوحة الصدارة';
+          return {
+            profile: 'الملف الشخصي',
+            store: 'متجر الامتيازات',
+            badges: 'الأوسمة والتحديات',
+            challenge: 'المسابقة الأسبوعية',
+            admin: 'غرفة الإدارة'
+          }[this.currentScreen] || item.label;
+        },
+
+        initials(name) {
+          if (!name || name === '-') return '-';
+          return name.trim().split(' ')[0].charAt(0);
+        },
+
+        // Toast Trigger
+        showToast(message, type = 'pos') {
+          this.toast.message = message;
+          this.toast.type = type;
+          this.toast.icon = type === 'pos' ? 'check' : type === 'neg' ? 'minus' : 'info';
+          this.toast.show = true;
+          this.$nextTick(() => lucide.createIcons());
+          clearTimeout(this.toastTimeout);
+          this.toastTimeout = setTimeout(() => {
+            this.toast.show = false;
+          }, 2200);
+        },
+
+        // Team stats calc
+        getTeamStats() {
+          const teams = {};
+          this.students.forEach(st => {
+            if (!teams[st.team]) {
+              teams[st.team] = { totalPoints: 0, count: 0, trendSum: 0 };
+            }
+            teams[st.team].totalPoints += st.total;
+            teams[st.team].count += 1;
+            teams[st.team].trendSum += st.trend;
+          });
+
+          return Object.keys(teams).map(tName => {
+            const avg = teams[tName].count > 0 ? Math.round(teams[tName].totalPoints / teams[tName].count) : 0;
+            return {
+              name: tName === 'khwarizmi' ? 'الخوارزمي' : 'ابن الهيثم',
+              avgPoints: avg,
+              memberCount: teams[tName].count,
+              trend: teams[tName].trendSum >= 0 ? 1 : -1
+            };
+          }).sort((a, b) => b.avgPoints - a.avgPoints);
+        },
+
+        // Nav
+        go(id) {
+          this.currentScreen = id;
+          $('#scroll').scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        setMode(m) {
+          this.lbMode = m;
+        },
+
+        // Store Redeem
+        purchaseReward(studentId, reward) {
+          const st = this.getStudentById(studentId);
+          if (!st || st.wallet < reward.price) {
+            this.showToast('شعلات المحفظة غير كافية', 'neg');
+            return;
+          }
+
+          st.wallet -= reward.price;
+          st.log.unshift({
+            reason: `استبدال: ${reward.name}`,
+            delta: -reward.price,
+            t: 'الآن',
+            pos: false
+          });
+
+          this.saveState();
+          this.showToast(`تم استبدال: ${reward.name}`, 'pos');
+        },
+
+        // Weekly Challenge Countdown Timer
+        formatChallengeMinutes(timeLeft) {
+          return String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        },
+
+        formatChallengeSeconds(timeLeft) {
+          return String(timeLeft % 60).padStart(2, '0');
+        },
+
+        toggleChallengeTimer() {
+          if (this.weeklyChallenge.isRunning) {
+            clearInterval(this.timerIntervalId);
+            this.weeklyChallenge.isRunning = false;
+          } else {
+            if (this.weeklyChallenge.timeLeft <= 0) {
+              this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+            }
+            this.weeklyChallenge.isRunning = true;
+            this.timerIntervalId = setInterval(() => {
+              if (this.weeklyChallenge.timeLeft > 0) {
+                this.weeklyChallenge.timeLeft--;
+                this.saveState();
+              } else {
+                clearInterval(this.timerIntervalId);
+                this.weeklyChallenge.isRunning = false;
+                this.playBeepSound();
+                this.showToast('انتهى وقت التحدي الأسبوعي!', 'info');
+              }
+            }, 1000);
+          }
+        },
+
+        resetChallengeTimer() {
+          clearInterval(this.timerIntervalId);
+          this.weeklyChallenge.isRunning = false;
+          this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+          this.saveState();
+          this.showToast('تمت إعادة ضبط المؤقت', 'info');
+        },
+
+        playBeepSound() {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.3);
+
+            setTimeout(() => {
+              let osc2 = audioCtx.createOscillator();
+              let gain2 = audioCtx.createGain();
+              osc2.connect(gain2);
+              gain2.connect(audioCtx.destination);
+              osc2.type = 'sine';
+              osc2.frequency.setValueAtTime(800, audioCtx.currentTime);
+              gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
+              gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+              osc2.start(audioCtx.currentTime);
+              osc2.stop(audioCtx.currentTime + 0.4);
+            }, 250);
+          } catch (e) {
+            console.log("Audio API issue", e);
+          }
+        },
+
+        // Security PIN Pad Admin
+        enterPinDigit(digit) {
+          if (this.adminPin.length < 4) {
+            this.adminPin += digit;
+            if (this.adminPin.length === 4) {
+              setTimeout(() => {
+                this.verifyPin();
+              }, 150);
+            }
+          }
+        },
+
+        deletePinLast() {
+          if (this.adminPin.length > 0) {
+            this.adminPin = this.adminPin.slice(0, -1);
+          }
+        },
+
+        verifyPin() {
+          if (this.adminPin === '1234') {
+            this.adminUnlocked = true;
+            this.adminPin = '';
+            this.showToast('تم فتح غرفة الإدارة', 'pos');
+          } else {
+            this.pinShake = true;
+            this.pinError = true;
+            this.adminPin = '';
+            this.showToast('الرمز غير صحيح', 'neg');
+            setTimeout(() => {
+              this.pinShake = false;
+              this.pinError = false;
+            }, 500);
+          }
+        },
+
+        openAvatarModal(studentId) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+          this.tempAvatarIcon = st.avatarIcon || 'user';
+          this.tempAvatarColor = st.avatarColor || 'orange';
+          this.avatarModalOpen = true;
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        saveAvatar(studentId) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+          st.avatarIcon = this.tempAvatarIcon;
+          st.avatarColor = this.tempAvatarColor;
+          this.saveState();
+          this.avatarModalOpen = false;
+          this.showToast('تم تحديث الشارة الرمزية واللون بنجاح', 'pos');
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        lockAdmin() {
+          this.adminUnlocked = false;
+          this.adminPin = '';
+          this.showToast('تم قفل غرفة الإدارة', 'info');
+        },
+
+        // Admin actions
+        awardPoints(studentId, amount, reason) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+
+          st.total += amount;
+          st.wallet += amount;
+          st.trend = 1;
+          st.log.unshift({
+            reason: reason,
+            delta: amount,
+            t: 'الآن',
+            pos: true
+          });
+          st.log = st.log.slice(0, 12);
+
+          this.saveState();
+          this.showToast(`${reason} +${amount} · ${st.name.split(' ')[0]}`, 'pos');
+        },
+
+        deductPoints(studentId, amount, reason) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+
+          st.total = Math.max(0, st.total + amount); // amount is already negative in macro details
+          st.wallet = Math.max(0, st.wallet + amount);
+          st.trend = -1;
+          st.log.unshift({
+            reason: reason,
+            delta: amount,
+            t: 'الآن',
+            pos: false
+          });
+          st.log = st.log.slice(0, 12);
+
+          this.saveState();
+          this.showToast(`${reason} ${amount} · ${st.name.split(' ')[0]}`, 'neg');
+        },
+
+        // Badge Award/Revoke
+        toggleStudentBadge(studentId, badgeId) {
+          const st = this.getStudentById(studentId);
+          const ach = this.achievements.find(a => a.id === badgeId);
+          if (!st || !ach) return;
+
+          const idx = st.badges.indexOf(badgeId);
+          if (idx > -1) {
+            // Revoke Badge
+            st.badges.splice(idx, 1);
+            st.total = Math.max(0, st.total - ach.reward);
+            st.wallet = Math.max(0, st.wallet - ach.reward);
+            st.log.unshift({
+              reason: `سحب وسام: ${ach.name}`,
+              delta: -ach.reward,
+              t: 'الآن',
+              pos: false
+            });
+            this.showToast(`تم سحب وسام ${ach.name}`, 'neg');
+          } else {
+            // Award Badge
+            st.badges.push(badgeId);
+            st.total += ach.reward;
+            st.wallet += ach.reward;
+            st.log.unshift({
+              reason: `منح وسام: ${ach.name}`,
+              delta: ach.reward,
+              t: 'الآن',
+              pos: true
+            });
+            this.showToast(`تم منح وسام ${ach.name}`, 'pos');
+          }
+
+          this.saveState();
+        },
+
+        // Export/Import JSON Backup
+        exportData() {
+          const dataBlob = new Blob([JSON.stringify({
+            students: this.students,
+            activeId: this.activeId
+          }, null, 2)], { type: 'application/json' });
+          const dlUrl = URL.createObjectURL(dataBlob);
+          const anchor = document.createElement('a');
+          anchor.href = dlUrl;
+          anchor.download = `seraj_backup_${new Date().toISOString().slice(0,10)}.json`;
+          anchor.click();
+          URL.revokeObjectURL(dlUrl);
+          this.showToast('تم تصدير البيانات بنجاح', 'pos');
+        },
+
+        importData(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const imported = JSON.parse(e.target.result);
+              if (imported.students && Array.isArray(imported.students)) {
+                this.students = imported.students;
+                if (imported.activeId) this.activeId = imported.activeId;
+                this.saveState();
+                this.showToast('تم استيراد البيانات بنجاح', 'pos');
+                this.$nextTick(() => lucide.createIcons());
+              } else {
+                this.showToast('الملف غير صالح', 'neg');
+              }
+            } catch (err) {
+              this.showToast('تعذر قراءة ملف JSON', 'neg');
+            }
+          };
+          reader.readAsText(file);
+          event.target.value = '';
+        },
+
+        // Factory Reset Data
+        resetToDefault() {
+          if (confirm('هل تريد بالتأكيد إعادة تعيين كافة البيانات إلى الحالة الافتراضية؟')) {
+            this.students = DEFAULT_STUDENTS;
+            this.activeId = 's1';
+            this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+            this.saveState();
+            this.showToast('تمت إعادة ضبط البيانات', 'info');
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>
