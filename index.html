@@ -370,6 +370,47 @@
     .active-banner .ab-pts-val{font-size:18px;font-weight:700;color:#34d399;}
     .active-banner .ab-pts-lbl{font-size:10px;color:var(--txt-faint);}
 
+    /* XP & Level Progress Bar */
+    .xp-card{padding:14px 16px;border-radius:20px;margin-bottom:16px;background:rgba(255,255,255,0.01);}
+    .xp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .xp-title{font-size:12px;font-weight:700;color:var(--txt);}
+    .xp-lbl{font-size:10px;color:var(--txt-dim);}
+    .xp-track{height:8px;border-radius:99px;background:rgba(255,255,255,0.05);border:1px solid var(--stroke);overflow:hidden;position:relative;}
+    .xp-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--orange),#ffb27a);
+      box-shadow:0 0 10px var(--orange-glow);transition:width .6s cubic-bezier(.4, 0, .2, 1);}
+
+    /* Inventory Grid & Cards */
+    .inv-title{font-size:12px;color:var(--txt-dim);font-weight:600;margin:20px 4px 10px;display:flex;align-items:center;gap:6px;}
+    .inv-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+    .inv-card{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:18px;
+      background:rgba(255,255,255,0.01);border:1px solid var(--stroke);transition:all 0.2s;}
+    .inv-card-info{display:flex;align-items:center;gap:10px;}
+    .inv-card-av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--glass2);border:1px solid var(--stroke);color:var(--txt-dim);}
+    .inv-card-av.active{color:var(--orange);border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.05);}
+    .inv-card-name{font-size:12px;font-weight:700;color:var(--txt);display:block;}
+    .inv-card-desc{font-size:9px;color:var(--txt-faint);display:block;margin-top:2px;}
+    .inv-status-tag{font-size:10px;font-weight:600;padding:4px 8px;border-radius:8px;}
+    .inv-status-tag.pending{background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.3);color:#fef08a;}
+    .inv-status-tag.used{background:rgba(255,255,255,0.03);border:1px solid var(--stroke);color:var(--txt-faint);}
+    .inv-use-btn{padding:6px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;
+      background:rgba(249,115,22,0.18);border:1px solid rgba(249,115,22,0.4);color:#ffb27a;transition:all 0.2s;}
+    .inv-use-btn:hover{background:rgba(249,115,22,0.3);box-shadow:0 0 12px var(--orange-glow);}
+
+    /* Gifting Console */
+    .gift-box{padding:14px 16px;border-radius:20px;margin-top:20px;border:1px dashed var(--stroke);background:rgba(255,255,255,0.01);}
+    .gift-title{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+    .gift-input-row{display:flex;gap:8px;align-items:center;}
+    .gift-input{flex:1;background:var(--bg);border:1px solid var(--stroke);border-radius:12px;color:var(--txt);
+      font-size:13px;padding:8px 12px;outline:none;text-align:center;font-weight:700;}
+    .gift-input:focus{border-color:rgba(249,115,22,0.5);box-shadow:0 0 8px rgba(249,115,22,0.15);}
+    .gift-quick-btn{padding:8px;background:var(--glass2);border:1px solid var(--stroke);border-radius:10px;
+      font-size:11px;font-weight:700;color:var(--txt-dim);cursor:pointer;transition:.15s;}
+    .gift-quick-btn:hover{border-color:rgba(249,115,22,0.3);color:var(--txt);}
+    .gift-send-btn{padding:8px 16px;background:linear-gradient(135deg,var(--orange),#ffb27a);border:none;
+      border-radius:12px;font-size:12px;font-weight:700;color:#121414;cursor:pointer;transition:.15s;
+      box-shadow:0 4px 15px -4px var(--orange-glow);display:flex;align-items:center;gap:4px;}
+    .gift-send-btn:hover{box-shadow:0 4px 20px -2px var(--orange-glow);transform:translateY(-1px);}
+
     .macro-label{font-size:12px;font-weight:600;margin:16px 4px 10px;display:flex;align-items:center;gap:7px;}
     .macro-label i{width:14px;height:14px;}
     .macro-label.pos{color:#34d399;}.macro-label.neg{color:#fca5a5;}
@@ -730,6 +771,29 @@
                 <span class="lb-tag" x-text="'المركز ' + getStudentRank(currentStudent.id)"></span>
               </div>
             </div>
+
+            <!-- Level / XP progress bar -->
+            <div class="glass xp-card" x-data="{ lvl: getStudentLevelInfo(currentStudent.total) }">
+              <div class="xp-header">
+                <div class="xp-title" style="display:flex; align-items:center; gap:6px;">
+                  <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg('award')"></div>
+                  <span x-text="lvl.current.label"></span>
+                </div>
+                <div class="xp-lbl" x-text="'المستوى ' + lvl.current.level"></div>
+              </div>
+              <div class="xp-track">
+                <div class="xp-fill" :style="'width: ' + lvl.percent + '%'"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:10px; color:var(--txt-faint);">
+                <span x-text="currentStudent.total + ' شعلة تراكمية'"></span>
+                <template x-if="lvl.next">
+                  <span x-text="'تبقي ' + lvl.needed + ' شعلة للمستوى التالي (' + lvl.next.label + ')'"></span>
+                </template>
+                <template x-if="!lvl.next">
+                  <span>لقد وصلت للرتبة القصوى!</span>
+                </template>
+              </div>
+            </div>
             
             <div class="dual">
               <div class="glass stat wallet">
@@ -774,6 +838,41 @@
                 <div class="empty-note">لا توجد عمليات مسجلة حالياً.</div>
               </template>
             </div>
+
+            <!-- Inventory -->
+            <div class="inv-title"><i data-lucide="briefcase" style="width:14px; height:14px; margin-left:6px; display:inline-block; vertical-align:middle;"></i>حقيبة الامتيازات (المخزون)</div>
+            <div class="glass" style="padding:14px 12px; background:rgba(255,255,255,0.01); margin-bottom: 16px;">
+              <div class="inv-grid">
+                <template x-for="item in (currentStudent.inventory || [])" :key="item.id">
+                  <div class="inv-card">
+                    <div class="inv-card-info">
+                      <div class="inv-card-av" :class="item.status === 'available' ? 'active' : ''">
+                        <div style="width:16px; height:16px;" x-html="getIconSvg(item.icon)"></div>
+                      </div>
+                      <div>
+                        <span class="inv-card-name" x-text="item.name"></span>
+                        <span class="inv-card-desc" x-text="item.desc"></span>
+                      </div>
+                    </div>
+                    <div>
+                      <template x-if="item.status === 'available'">
+                        <button class="inv-use-btn" @click="useInventoryReward(currentStudent.id, item.id)">استخدام</button>
+                      </template>
+                      <template x-if="item.status === 'pending'">
+                        <span class="inv-status-tag pending">قيد المراجعة</span>
+                      </template>
+                      <template x-if="item.status === 'used'">
+                        <span class="inv-status-tag used">مستعملة</span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+                <template x-if="!(currentStudent.inventory && currentStudent.inventory.length)">
+                  <div class="empty-note" style="text-align:center; padding:10px; color:var(--txt-faint); font-size:11px;">الحقيبة فارغة حالياً. قم بشراء امتيازات من المتجر لتظهر هنا.</div>
+                </template>
+              </div>
+            </div>
+
           </div>
         </template>
       </div>
@@ -1026,6 +1125,61 @@
                   </div>
                 </template>
               </div>
+
+              <!-- Pending Inventory Requests in Admin Panel -->
+              <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('briefcase')"></div>
+                طلبات تفعيل الجوائز المعلقة للطالب
+              </div>
+              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+                <template x-for="item in (activeStudent.inventory || []).filter(i => i.status === 'pending')" :key="item.id">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(234,179,8,0.03); border:1px solid rgba(234,179,8,0.2);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <div style="width:16px; height:16px; color:var(--orange);" x-html="getIconSvg(item.icon)"></div>
+                      <div>
+                        <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="item.name"></span>
+                        <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="item.desc"></span>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                      <button @click="adminApproveReward(activeStudent.id, item.id)"
+                              style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0; border:none;">
+                        قبول
+                      </button>
+                      <button @click="adminRejectReward(activeStudent.id, item.id)"
+                              style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border:none;">
+                        رفض
+                      </button>
+                    </div>
+                  </div>
+                </template>
+                <template x-if="!(activeStudent.inventory && activeStudent.inventory.filter(i => i.status === 'pending').length)">
+                  <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد طلبات تفعيل معلقة لهذا الطالب حالياً.</div>
+                </template>
+              </div>
+
+              <!-- Inventory Review in Admin Panel -->
+              <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('briefcase')"></div>
+                حقيبة جوائز الطالب (المخزون الحالي)
+              </div>
+              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+                <template x-for="item in (activeStudent.inventory || []).filter(i => i.status !== 'pending')" :key="item.id">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.01); border:1px solid var(--stroke);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <div style="width:16px; height:16px; color:var(--txt-dim);" x-html="getIconSvg(item.icon)"></div>
+                      <div>
+                        <span style="font-size:12px; font-weight:700; color:var(--txt-dim);" x-text="item.name"></span>
+                        <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="item.desc"></span>
+                      </div>
+                    </div>
+                    <span class="inv-status-tag used" style="font-size:9px; padding:2px 6px;">جاهزة للاستخدام</span>
+                  </div>
+                </template>
+                <template x-if="!(activeStudent.inventory && activeStudent.inventory.filter(i => i.status !== 'pending').length)">
+                  <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد جوائز جاهزة في حقيبة الطالب حالياً.</div>
+                </template>
+              </div>
             </div>
 
             <!-- Backup Management -->
@@ -1233,6 +1387,26 @@
           </div>
         </div>
 
+        <!-- Level / XP progress bar -->
+        <div class="glass xp-card" x-data="{ lvl: getStudentLevelInfo(s.total) }" style="margin-bottom:14px; padding:10px 12px; border-radius:16px;">
+          <div class="xp-header" style="margin-bottom:6px;">
+            <div class="xp-title" style="font-size:11px; display:flex; align-items:center; gap:4px;">
+              <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg('award')"></div>
+              <span x-text="lvl.current.label"></span>
+            </div>
+            <div class="xp-lbl" style="font-size:9px;" x-text="'المستوى ' + lvl.current.level"></div>
+          </div>
+          <div class="xp-track" style="height:6px;">
+            <div class="xp-fill" :style="'width: ' + lvl.percent + '%'"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:9px; color:var(--txt-faint);">
+            <span x-text="s.total + ' شعلة تراكمية'"></span>
+            <template x-if="lvl.next">
+              <span x-text="'تبقي ' + lvl.needed + ' شعلة للمستوى التالي'"></span>
+            </template>
+          </div>
+        </div>
+
         <!-- Stats -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
           <div class="glass" style="padding:12px; text-align:center; background:rgba(249,115,22,0.06); border-color:rgba(249,115,22,0.15);">
@@ -1266,6 +1440,82 @@
             </div>
           </div>
         </div>
+
+        <!-- Inventory (Read-only view) -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:12px; color:var(--txt-dim); font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg('briefcase')"></div>
+            حقيبة الامتيازات
+          </div>
+          <div class="glass" style="padding:10px; background:rgba(255,255,255,0.01); max-height:160px; overflow-y:auto;">
+            <div class="inv-grid">
+              <template x-for="item in (s.inventory || [])" :key="item.id">
+                <div class="inv-card" style="padding:8px 10px; border-radius:12px;">
+                  <div class="inv-card-info" style="gap:8px;">
+                    <div class="inv-card-av" :class="item.status === 'available' ? 'active' : ''" style="width:28px; height:28px; border-radius:8px;">
+                      <div style="width:12px; height:12px;" x-html="getIconSvg(item.icon)"></div>
+                    </div>
+                    <div>
+                      <span class="inv-card-name" style="font-size:11px;" x-text="item.name"></span>
+                      <span class="inv-card-desc" style="font-size:8px;" x-text="item.desc"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <template x-if="item.status === 'available'">
+                      <span class="inv-status-tag used" style="font-size:9px; padding:2px 6px;">جاهزة</span>
+                    </template>
+                    <template x-if="item.status === 'pending'">
+                      <span class="inv-status-tag pending" style="font-size:9px; padding:2px 6px;">طلب تفعيل</span>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <template x-if="!(s.inventory && s.inventory.length)">
+                <div class="empty-note" style="text-align:center; padding:6px; color:var(--txt-faint); font-size:10px;">لا توجد جوائز في الحقيبة حالياً.</div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gifting Console (only shown if not viewing own profile) -->
+        <template x-if="s.id !== activeId">
+          <div class="gift-box" style="margin-bottom:20px; padding:12px; border-radius:16px;">
+            <div class="gift-title" style="font-size:11px; margin-bottom:8px; display:flex; align-items:center; gap:4px;">
+              <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg('gift')"></div>
+              <span>أهدِ شعلات من محفظتك لهذا الطالب</span>
+            </div>
+            
+            <div x-data="{ giftVal: 10 }" style="display:flex; flex-direction:column; gap:8px;">
+              <!-- Quick buttons -->
+              <div style="display:flex; gap:6px;">
+                <button class="gift-quick-btn" style="flex:1; padding:4px;" @click="giftVal = 5">+5</button>
+                <button class="gift-quick-btn" style="flex:1; padding:4px;" @click="giftVal = 10">+10</button>
+                <button class="gift-quick-btn" style="flex:1; padding:4px;" @click="giftVal = 25">+25</button>
+                <button class="gift-quick-btn" style="flex:1; padding:4px;" @click="giftVal = 50">+50</button>
+              </div>
+              
+              <!-- Input row -->
+              <div class="gift-input-row">
+                <input type="number" 
+                       x-model="giftVal" 
+                       min="1"
+                       :max="currentStudent.wallet"
+                       class="gift-input" 
+                       style="padding:6px; border-radius:10px; font-size:12px;" />
+                
+                <button class="gift-send-btn" 
+                        style="padding:6px 12px; border-radius:10px; font-size:11px; gap:4px;" 
+                        @click="giftFlames(s.id, giftVal)">
+                  <div style="width:11px; height:11px;" x-html="getIconSvg('send')"></div>
+                  إرسال
+                </button>
+              </div>
+              <div style="font-size:9px; color:var(--txt-faint); text-align:center;">
+                رصيد محفظتك المتاح للإهداء: <span style="color:#ffb27a; font-weight:700;" x-text="currentStudent.wallet + ' شعلة'"></span>
+              </div>
+            </div>
+          </div>
+        </template>
 
         <!-- Action Button -->
         <button @click="viewOnlyStudentId = null" 
@@ -1655,6 +1905,11 @@
           } else {
             this.students = DEFAULT_STUDENTS;
           }
+
+          // Ensure inventory is initialized for all students
+          this.students.forEach(s => {
+            if (!s.inventory) s.inventory = [];
+          });
           
           const active = localStorage.getItem('seraj_pwa_activeId');
           if (active) this.activeId = active;
@@ -1690,6 +1945,32 @@
 
         getStudentById(id) {
           return this.students.find(s => s.id === id);
+        },
+
+        getStudentLevelInfo(total) {
+          const config = [
+            { level: 1, min: 0, max: 100, label: 'مبتدئ سراج' },
+            { level: 2, min: 100, max: 250, label: 'شعلة نشيطة' },
+            { level: 3, min: 250, max: 500, label: 'منارة المعرفة' },
+            { level: 4, min: 500, max: 800, label: 'فارس سراج' },
+            { level: 5, min: 800, max: 999999, label: 'سفير سراج' }
+          ];
+          let cur = config[0];
+          for (let i = 0; i < config.length; i++) {
+            if (total >= config[i].min) {
+              cur = config[i];
+            }
+          }
+          const next = config.find(c => c.level === cur.level + 1) || null;
+          let percent = 100;
+          let needed = 0;
+          if (next) {
+            const range = next.min - cur.min;
+            const currentProgress = total - cur.min;
+            percent = Math.min(100, Math.max(0, Math.round((currentProgress / range) * 100)));
+            needed = next.min - total;
+          }
+          return { current: cur, next, percent, needed };
         },
 
         getSortedStudents() {
@@ -1804,14 +2085,117 @@
 
           st.wallet -= reward.price;
           st.log.unshift({
-            reason: `استبدال: ${reward.name}`,
+            reason: `شراء: ${reward.name}`,
             delta: -reward.price,
             t: 'الآن',
             pos: false
           });
 
+          if (!st.inventory) st.inventory = [];
+          st.inventory.unshift({
+            id: 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            name: reward.name,
+            desc: reward.desc,
+            icon: reward.icon || 'gift',
+            price: reward.price,
+            purchasedAt: 'الآن',
+            status: 'available'
+          });
+
           this.saveState();
-          this.showToast(`تم استبدال: ${reward.name}`, 'pos');
+          this.showToast(`تم شراء ${reward.name} وإضافتها للحقيبة`, 'pos');
+        },
+
+        useInventoryReward(studentId, rewardId) {
+          const st = this.getStudentById(studentId);
+          if (!st || !st.inventory) return;
+          const item = st.inventory.find(i => i.id === rewardId);
+          if (item && item.status === 'available') {
+            item.status = 'pending';
+            st.log.unshift({
+              reason: `طلب استخدام: ${item.name}`,
+              delta: 0,
+              t: 'الآن',
+              pos: true
+            });
+            this.saveState();
+            this.showToast(`تم إرسال طلب تفعيل ${item.name} للمشرف`, 'pos');
+          }
+        },
+
+        adminApproveReward(studentId, rewardId) {
+          const st = this.getStudentById(studentId);
+          if (!st || !st.inventory) return;
+          const item = st.inventory.find(i => i.id === rewardId);
+          if (item) {
+            item.status = 'used';
+            st.inventory = st.inventory.filter(i => i.id !== rewardId);
+            st.log.unshift({
+              reason: `تفعيل جائزة: ${item.name}`,
+              delta: 0,
+              t: 'الآن',
+              pos: true
+            });
+            this.saveState();
+            this.showToast(`تم قبول وتفعيل جائزة ${item.name}`, 'pos');
+          }
+        },
+
+        adminRejectReward(studentId, rewardId) {
+          const st = this.getStudentById(studentId);
+          if (!st || !st.inventory) return;
+          const item = st.inventory.find(i => i.id === rewardId);
+          if (item) {
+            item.status = 'available';
+            st.log.unshift({
+              reason: `رفض تفعيل: ${item.name}`,
+              delta: 0,
+              t: 'الآن',
+              pos: false
+            });
+            this.saveState();
+            this.showToast(`تم رفض طلب تفعيل ${item.name}`, 'neg');
+          }
+        },
+
+        giftFlames(recipientId, amountStr) {
+          const amount = parseInt(amountStr);
+          if (isNaN(amount) || amount <= 0) {
+            this.showToast('الرجاء إدخال عدد شعلات صحيح', 'neg');
+            return;
+          }
+          const sender = this.currentStudent;
+          const recipient = this.getStudentById(recipientId);
+          if (!sender || !recipient) return;
+          if (sender.id === recipient.id) {
+            this.showToast('لا يمكنك إهداء شعلات لنفسك', 'neg');
+            return;
+          }
+          if (sender.wallet < amount) {
+            this.showToast('شعلات محفظتك غير كافية لإرسال الهدية', 'neg');
+            return;
+          }
+
+          sender.wallet -= amount;
+          sender.log.unshift({
+            reason: `إهداء شعلات إلى: ${recipient.name.split(' ')[0]}`,
+            delta: -amount,
+            t: 'الآن',
+            pos: false
+          });
+
+          recipient.wallet += amount;
+          recipient.total += amount;
+          recipient.log.unshift({
+            reason: `هدية شعلات من: ${sender.name.split(' ')[0]}`,
+            delta: amount,
+            t: 'الآن',
+            pos: true
+          });
+
+          this.saveState();
+          this.showToast(`تم إهداء ${amount} شعلة إلى ${recipient.name}`, 'pos');
+          this.viewOnlyStudentId = null;
         },
 
         // Weekly Challenge Countdown Timer
