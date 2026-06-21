@@ -928,25 +928,7 @@
               </template>
             </div>
 
-            <!-- Active Selection Banner -->
-            <div class="glass active-banner" style="cursor:pointer;" @click="viewOnlyStudentId = activeStudent.id">
-              <div class="ab-av"
-                   :style="{
-                     'border-color': avatarColorMap[activeStudent.avatarColor || 'orange'] + '60',
-                     'background': 'rgba(255,255,255,0.01)',
-                     'color': avatarColorLightMap[activeStudent.avatarColor || 'orange']
-                   }">
-                <div style="width:20px; height:20px;" x-html="getIconSvg(activeStudent.avatarIcon || 'user')"></div>
-              </div>
-              <div class="ab-info">
-                <div class="ab-name" x-text="activeStudent.name"></div>
-                <div class="ab-meta" x-text="getStageLabel(activeStudent.stage) + ' · ' + getTeamLabel(activeStudent.team) + ' · المركز ' + getStudentRank(activeStudent.id)"></div>
-              </div>
-              <div class="ab-pts">
-                <div class="ab-pts-val" x-text="activeStudent.total"></div>
-                <div class="ab-pts-lbl">إجمالي</div>
-              </div>
-            </div>
+
 
             <!-- Admin Controls Switcher Toggle -->
             <div class="admin-toggle">
