@@ -609,7 +609,12 @@
                       <span style="font-size:8px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 4px; border-radius:4px;">أنت</span>
                     </template>
                   </div>
-                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[0].stage) + ' · ' + getStudentLevelInfo(getPodiumStudents()[0].total).current.label"></div>
+                  <div class="pod-meta" style="display:inline-flex; align-items:center; gap:3px; justify-content:center;">
+                    <span x-text="getStageLabel(getPodiumStudents()[0].stage)"></span>
+                    <span>·</span>
+                    <div style="width:10px; height:10px; color:var(--txt-faint);" x-html="getIconSvg(getStudentLevelInfo(getPodiumStudents()[0].total).current.icon)"></div>
+                    <span x-text="getStudentLevelInfo(getPodiumStudents()[0].total).current.label"></span>
+                  </div>
                   <div class="pod-base" :style="getPodiumStudents()[0].id === activeId ? 'border-color:rgba(249,115,22,0.6) !important; box-shadow:0 0 20px rgba(249,115,22,0.3) !important;' : ''">
                     <div class="pod-rank">2</div>
                     <div class="pod-pts e" x-text="getPodiumStudents()[0].total"></div>
@@ -643,7 +648,12 @@
                       <span style="font-size:8px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 4px; border-radius:4px;">أنت</span>
                     </template>
                   </div>
-                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[1].stage) + ' · ' + getStudentLevelInfo(getPodiumStudents()[1].total).current.label"></div>
+                  <div class="pod-meta" style="display:inline-flex; align-items:center; gap:3px; justify-content:center;">
+                    <span x-text="getStageLabel(getPodiumStudents()[1].stage)"></span>
+                    <span>·</span>
+                    <div style="width:10px; height:10px; color:var(--txt-faint);" x-html="getIconSvg(getStudentLevelInfo(getPodiumStudents()[1].total).current.icon)"></div>
+                    <span x-text="getStudentLevelInfo(getPodiumStudents()[1].total).current.label"></span>
+                  </div>
                   <div class="pod-base" :style="getPodiumStudents()[1].id === activeId ? 'border-color:rgba(249,115,22,0.8) !important; box-shadow:0 0 25px rgba(249,115,22,0.4) !important;' : ''">
                     <div class="pod-rank">1</div>
                     <div class="pod-pts o" x-text="getPodiumStudents()[1].total"></div>
@@ -669,7 +679,12 @@
                       <span style="font-size:8px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 4px; border-radius:4px;">أنت</span>
                     </template>
                   </div>
-                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[2].stage) + ' · ' + getStudentLevelInfo(getPodiumStudents()[2].total).current.label"></div>
+                  <div class="pod-meta" style="display:inline-flex; align-items:center; gap:3px; justify-content:center;">
+                    <span x-text="getStageLabel(getPodiumStudents()[2].stage)"></span>
+                    <span>·</span>
+                    <div style="width:10px; height:10px; color:var(--txt-faint);" x-html="getIconSvg(getStudentLevelInfo(getPodiumStudents()[2].total).current.icon)"></div>
+                    <span x-text="getStudentLevelInfo(getPodiumStudents()[2].total).current.label"></span>
+                  </div>
                   <div class="pod-base" :style="getPodiumStudents()[2].id === activeId ? 'border-color:rgba(249,115,22,0.6) !important; box-shadow:0 0 20px rgba(249,115,22,0.3) !important;' : ''">
                     <div class="pod-rank">3</div>
                     <div class="pod-pts e" x-text="getPodiumStudents()[2].total"></div>
@@ -710,7 +725,10 @@
                   </div>
                   <div class="lb-sub">
                     <span class="lb-tag" x-text="getStageLabel(st.stage)"></span>
-                    <span class="lb-tag" x-text="getStudentLevelInfo(st.total).current.label"></span>
+                    <span class="lb-tag" style="display:inline-flex; align-items:center; gap:4px;">
+                      <div style="width:10px; height:10px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+                      <span x-text="getStudentLevelInfo(st.total).current.label"></span>
+                    </span>
                   </div>
                 </div>
                 <div class="lb-pts">
@@ -770,7 +788,10 @@
 
               <div class="prof-meta" style="margin-top: 0px;">
                 <span class="lb-tag" x-text="getStageLabel(currentStudent.stage)"></span>
-                <span class="lb-tag" x-text="getStudentLevelInfo(currentStudent.total).current.label"></span>
+                <span class="lb-tag" style="display:inline-flex; align-items:center; gap:4px;">
+                  <div style="width:10px; height:10px;" x-html="getIconSvg(getStudentLevelInfo(currentStudent.total).current.icon)"></div>
+                  <span x-text="getStudentLevelInfo(currentStudent.total).current.label"></span>
+                </span>
                 <span class="lb-tag" x-text="'المركز ' + getStudentRank(currentStudent.id)"></span>
               </div>
             </div>
@@ -779,7 +800,7 @@
             <div class="glass xp-card">
               <div class="xp-header">
                 <div class="xp-title" style="display:flex; align-items:center; gap:6px;">
-                  <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg('award')"></div>
+                  <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg(getStudentLevelInfo(currentStudent.total).current.icon)"></div>
                   <span x-text="getStudentLevelInfo(currentStudent.total).current.label"></span>
                 </div>
                 <div class="xp-lbl" x-text="'المستوى ' + getStudentLevelInfo(currentStudent.total).current.level"></div>
@@ -1404,7 +1425,10 @@
           
           <div style="display:flex; gap:6px; align-items:center; justify-content:center; margin-top:2px;">
             <span class="lb-tag" x-text="getStageLabel(s.stage)"></span>
-            <span class="lb-tag" x-text="getStudentLevelInfo(s.total).current.label"></span>
+            <span class="lb-tag" style="display:inline-flex; align-items:center; gap:4px;">
+              <div style="width:10px; height:10px;" x-html="getIconSvg(getStudentLevelInfo(s.total).current.icon)"></div>
+              <span x-text="getStudentLevelInfo(s.total).current.label"></span>
+            </span>
             <span class="lb-tag" x-text="'المركز ' + getStudentRank(s.id)"></span>
           </div>
         </div>
@@ -1413,7 +1437,7 @@
         <div class="card-pane xp-card" style="margin-bottom:14px; padding:10px 12px; border-radius:16px;">
           <div class="xp-header" style="margin-bottom:6px;">
             <div class="xp-title" style="font-size:11px; display:flex; align-items:center; gap:4px;">
-              <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg('award')"></div>
+              <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg(getStudentLevelInfo(s.total).current.icon)"></div>
               <span x-text="getStudentLevelInfo(s.total).current.label"></span>
             </div>
             <div class="xp-lbl" style="font-size:9px;" x-text="'المستوى ' + getStudentLevelInfo(s.total).current.level"></div>
@@ -1972,11 +1996,11 @@
 
         getStudentLevelInfo(total) {
           const config = [
-            { level: 1, min: 0, max: 100, label: 'مبتدئ سراج' },
-            { level: 2, min: 100, max: 250, label: 'شعلة نشيطة' },
-            { level: 3, min: 250, max: 500, label: 'منارة المعرفة' },
-            { level: 4, min: 500, max: 800, label: 'فارس سراج' },
-            { level: 5, min: 800, max: 999999, label: 'سفير سراج' }
+            { level: 1, min: 0, max: 100, label: 'مبتدئ سراج', icon: 'sprout' },
+            { level: 2, min: 100, max: 250, label: 'شعلة نشيطة', icon: 'flame' },
+            { level: 3, min: 250, max: 500, label: 'منارة المعرفة', icon: 'book-open' },
+            { level: 4, min: 500, max: 800, label: 'فارس سراج', icon: 'shield' },
+            { level: 5, min: 800, max: 999999, label: 'سفير سراج', icon: 'crown' }
           ];
           let cur = config[0];
           for (let i = 0; i < config.length; i++) {
