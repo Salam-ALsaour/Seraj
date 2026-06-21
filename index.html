@@ -606,7 +606,7 @@
                       <span style="font-size:8px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 4px; border-radius:4px;">أنت</span>
                     </template>
                   </div>
-                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[0].stage) + ' · ' + getTeamLabel(getPodiumStudents()[0].team)"></div>
+                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[0].stage) + ' · ' + getStudentLevelInfo(getPodiumStudents()[0].total).current.label"></div>
                   <div class="pod-base" :style="getPodiumStudents()[0].id === activeId ? 'border-color:rgba(249,115,22,0.6) !important; box-shadow:0 0 20px rgba(249,115,22,0.3) !important;' : ''">
                     <div class="pod-rank">2</div>
                     <div class="pod-pts e" x-text="getPodiumStudents()[0].total"></div>
@@ -640,7 +640,7 @@
                       <span style="font-size:8px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 4px; border-radius:4px;">أنت</span>
                     </template>
                   </div>
-                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[1].stage) + ' · ' + getTeamLabel(getPodiumStudents()[1].team)"></div>
+                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[1].stage) + ' · ' + getStudentLevelInfo(getPodiumStudents()[1].total).current.label"></div>
                   <div class="pod-base" :style="getPodiumStudents()[1].id === activeId ? 'border-color:rgba(249,115,22,0.8) !important; box-shadow:0 0 25px rgba(249,115,22,0.4) !important;' : ''">
                     <div class="pod-rank">1</div>
                     <div class="pod-pts o" x-text="getPodiumStudents()[1].total"></div>
@@ -666,7 +666,7 @@
                       <span style="font-size:8px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 4px; border-radius:4px;">أنت</span>
                     </template>
                   </div>
-                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[2].stage) + ' · ' + getTeamLabel(getPodiumStudents()[2].team)"></div>
+                  <div class="pod-meta" x-text="getStageLabel(getPodiumStudents()[2].stage) + ' · ' + getStudentLevelInfo(getPodiumStudents()[2].total).current.label"></div>
                   <div class="pod-base" :style="getPodiumStudents()[2].id === activeId ? 'border-color:rgba(249,115,22,0.6) !important; box-shadow:0 0 20px rgba(249,115,22,0.3) !important;' : ''">
                     <div class="pod-rank">3</div>
                     <div class="pod-pts e" x-text="getPodiumStudents()[2].total"></div>
@@ -707,7 +707,7 @@
                   </div>
                   <div class="lb-sub">
                     <span class="lb-tag" x-text="getStageLabel(st.stage)"></span>
-                    <span class="lb-tag" x-text="getTeamLabel(st.team)"></span>
+                    <span class="lb-tag" x-text="getStudentLevelInfo(st.total).current.label"></span>
                   </div>
                 </div>
                 <div class="lb-pts">
@@ -767,29 +767,29 @@
 
               <div class="prof-meta" style="margin-top: 0px;">
                 <span class="lb-tag" x-text="getStageLabel(currentStudent.stage)"></span>
-                <span class="lb-tag" x-text="getTeamLabel(currentStudent.team)"></span>
+                <span class="lb-tag" x-text="getStudentLevelInfo(currentStudent.total).current.label"></span>
                 <span class="lb-tag" x-text="'المركز ' + getStudentRank(currentStudent.id)"></span>
               </div>
             </div>
 
             <!-- Level / XP progress bar -->
-            <div class="glass xp-card" x-data="{ lvl: getStudentLevelInfo(currentStudent.total) }">
+            <div class="glass xp-card">
               <div class="xp-header">
                 <div class="xp-title" style="display:flex; align-items:center; gap:6px;">
                   <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg('award')"></div>
-                  <span x-text="lvl.current.label"></span>
+                  <span x-text="getStudentLevelInfo(currentStudent.total).current.label"></span>
                 </div>
-                <div class="xp-lbl" x-text="'المستوى ' + lvl.current.level"></div>
+                <div class="xp-lbl" x-text="'المستوى ' + getStudentLevelInfo(currentStudent.total).current.level"></div>
               </div>
               <div class="xp-track">
-                <div class="xp-fill" :style="'width: ' + lvl.percent + '%'"></div>
+                <div class="xp-fill" :style="'width: ' + getStudentLevelInfo(currentStudent.total).percent + '%'"></div>
               </div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:10px; color:var(--txt-faint);">
                 <span x-text="currentStudent.total + ' شعلة تراكمية'"></span>
-                <template x-if="lvl.next">
-                  <span x-text="'تبقي ' + lvl.needed + ' شعلة للمستوى التالي (' + lvl.next.label + ')'"></span>
+                <template x-if="getStudentLevelInfo(currentStudent.total).next">
+                  <span x-text="'تبقي ' + getStudentLevelInfo(currentStudent.total).needed + ' شعلة للمستوى التالي (' + getStudentLevelInfo(currentStudent.total).next.label + ')'"></span>
                 </template>
-                <template x-if="!lvl.next">
+                <template x-if="!getStudentLevelInfo(currentStudent.total).next">
                   <span>لقد وصلت للرتبة القصوى!</span>
                 </template>
               </div>
@@ -1382,27 +1382,27 @@
           
           <div style="display:flex; gap:6px; align-items:center; justify-content:center; margin-top:2px;">
             <span class="lb-tag" x-text="getStageLabel(s.stage)"></span>
-            <span class="lb-tag" x-text="getTeamLabel(s.team)"></span>
+            <span class="lb-tag" x-text="getStudentLevelInfo(s.total).current.label"></span>
             <span class="lb-tag" x-text="'المركز ' + getStudentRank(s.id)"></span>
           </div>
         </div>
 
         <!-- Level / XP progress bar -->
-        <div class="glass xp-card" x-data="{ lvl: getStudentLevelInfo(s.total) }" style="margin-bottom:14px; padding:10px 12px; border-radius:16px;">
+        <div class="glass xp-card" style="margin-bottom:14px; padding:10px 12px; border-radius:16px;">
           <div class="xp-header" style="margin-bottom:6px;">
             <div class="xp-title" style="font-size:11px; display:flex; align-items:center; gap:4px;">
               <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg('award')"></div>
-              <span x-text="lvl.current.label"></span>
+              <span x-text="getStudentLevelInfo(s.total).current.label"></span>
             </div>
-            <div class="xp-lbl" style="font-size:9px;" x-text="'المستوى ' + lvl.current.level"></div>
+            <div class="xp-lbl" style="font-size:9px;" x-text="'المستوى ' + getStudentLevelInfo(s.total).current.level"></div>
           </div>
           <div class="xp-track" style="height:6px;">
-            <div class="xp-fill" :style="'width: ' + lvl.percent + '%'"></div>
+            <div class="xp-fill" :style="'width: ' + getStudentLevelInfo(s.total).percent + '%'"></div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:9px; color:var(--txt-faint);">
             <span x-text="s.total + ' شعلة تراكمية'"></span>
-            <template x-if="lvl.next">
-              <span x-text="'تبقي ' + lvl.needed + ' شعلة للمستوى التالي'"></span>
+            <template x-if="getStudentLevelInfo(s.total).next">
+              <span x-text="'تبقي ' + getStudentLevelInfo(s.total).needed + ' شعلة للمستوى التالي'"></span>
             </template>
           </div>
         </div>
