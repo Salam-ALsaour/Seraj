@@ -78,6 +78,9 @@
 
     .glass{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
       border:1px solid var(--stroke);border-radius:22px;box-shadow:0 18px 40px -22px rgba(0,0,0,.8);}
+    .modal-card{background:rgba(18,20,20,0.96);border:1px solid var(--stroke2);border-radius:24px;box-shadow:0 25px 60px rgba(0,0,0,0.95);color:var(--txt);}
+    .card-pane{background:rgba(255,255,255,0.03);border:1px solid var(--stroke);border-radius:16px;}
+    .dropdown-card{background:rgba(18,20,20,0.98);border:1px solid var(--stroke2);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.9);color:var(--txt);}
 
     /* header */
     .app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:0 2px;}
@@ -1205,15 +1208,25 @@
   <!-- Avatar Icon & Color Selector Modal Overlay -->
   <div x-show="avatarModalOpen" 
        x-transition:enter="transition ease-out duration-300"
-       x-transition:enter-start="opacity-0 scale-95"
-       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
        x-transition:leave="transition ease-in duration-200"
-       x-transition:leave-start="opacity-100 scale-100"
-       x-transition:leave-end="opacity-0 scale-95"
-       style="position:absolute; inset:0; z-index:100; background:rgba(12,14,14,0.95); backdrop-filter:blur(16px); padding:20px; direction:rtl;"
-       @click.self="avatarModalOpen = false">
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:100; direction:rtl;">
     
-    <div class="glass" style="width:calc(100% - 32px); max-width:320px; padding:22px; border-radius:24px; border:1px solid var(--stroke2); position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:110; box-shadow:0 25px 60px rgba(0,0,0,0.95);">
+    <!-- Backdrop Blur (rendered as sibling to prevent fuzzy text inside child) -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="avatarModalOpen = false"></div>
+    
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:320px; padding:22px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:110; overflow-y:auto; max-height:85vh;">
       
       <div style="text-align:center; margin-bottom:20px;">
         <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:4px;">تخصيص الشارة الرمزية</h3>
@@ -1240,8 +1253,8 @@
         <!-- Toggle Button -->
         <button @click="showDropdown = !showDropdown" 
                 type="button"
-                class="glass"
-                style="width:100%; height:48px; padding:0 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border:1px solid var(--stroke2); color:var(--txt); border-radius:14px; background:var(--glass);">
+                class="card-pane"
+                style="width:100%; height:48px; padding:0 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-radius:14px; color:var(--txt); border:1px solid var(--stroke2);">
           <div style="display:flex; align-items:center; gap:10px;">
             <div style="width:22px; height:22px;" :style="{ 'color': avatarColorLightMap[tempAvatarColor] }" x-html="getIconSvg(tempAvatarIcon)"></div>
             <span style="font-size:13px; font-weight:500;" x-text="selectableIcons.find(i => i.id === tempAvatarIcon)?.label || 'اختر أيقونة'"></span>
@@ -1261,8 +1274,8 @@
              x-transition:leave="transition ease-in duration-100"
              x-transition:leave-start="opacity-100 transform scale-100 translate-y-0"
              x-transition:leave-end="opacity-0 transform scale-95 -translate-y-2"
-             class="glass"
-             style="position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:150; max-height:220px; overflow-y:auto; padding:8px; border:1px solid var(--stroke2); border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,0.9); background:rgba(18,20,20,0.98); backdrop-filter:blur(24px);">
+             class="dropdown-card"
+             style="position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:150; max-height:220px; overflow-y:auto; padding:8px;">
           
           <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
             <template x-for="ic in selectableIcons" :key="ic.id">
@@ -1287,8 +1300,8 @@
         <!-- Toggle Button -->
         <button @click="showDropdown = !showDropdown" 
                 type="button"
-                class="glass"
-                style="width:100%; height:48px; padding:0 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border:1px solid var(--stroke2); color:var(--txt); border-radius:14px; background:var(--glass);">
+                class="card-pane"
+                style="width:100%; height:48px; padding:0 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-radius:14px; color:var(--txt); border:1px solid var(--stroke2);">
           <div style="display:flex; align-items:center; gap:10px;">
             <div style="width:16px; height:16px; border-radius:50%;" 
                  :style="{ 'background-color': avatarColorMap[tempAvatarColor], 'box-shadow': '0 0 10px ' + avatarColorGlowMap[tempAvatarColor] }"></div>
@@ -1309,8 +1322,8 @@
              x-transition:leave="transition ease-in duration-100"
              x-transition:leave-start="opacity-100 transform scale-100 translate-y-0"
              x-transition:leave-end="opacity-0 transform scale-95 -translate-y-2"
-             class="glass"
-             style="position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:140; max-height:200px; overflow-y:auto; padding:8px; border:1px solid var(--stroke2); border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,0.9); background:rgba(18,20,20,0.98); backdrop-filter:blur(24px);">
+             class="dropdown-card"
+             style="position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:140; max-height:200px; overflow-y:auto; padding:8px;">
           
           <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
             <template x-for="col in selectableColors" :key="col.id">
@@ -1342,18 +1355,27 @@
   <!-- View-Only Student Profile Modal Overlay -->
   <div x-show="viewOnlyStudentId !== null" 
        x-transition:enter="transition ease-out duration-300"
-       x-transition:enter-start="opacity-0 scale-95"
-       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
        x-transition:leave="transition ease-in duration-200"
-       x-transition:leave-start="opacity-100 scale-100"
-       x-transition:leave-end="opacity-0 scale-95"
-       style="position:absolute; inset:0; z-index:200; background:rgba(12,14,14,0.95); backdrop-filter:blur(16px); padding:20px; direction:rtl;"
-       @click.self="viewOnlyStudentId = null">
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:200; direction:rtl;">
+    
+    <!-- Backdrop Blur (rendered as sibling to prevent fuzzy text inside child) -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="viewOnlyStudentId = null"></div>
     
     <template x-if="viewOnlyStudentId !== null && getStudentById(viewOnlyStudentId)">
-      <div class="glass" 
+      <div class="modal-card" 
            x-data="{ s: getStudentById(viewOnlyStudentId) }"
-           style="width:calc(100% - 32px); max-width:340px; padding:22px; border-radius:24px; border:1px solid var(--stroke2); position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:210; box-shadow:0 25px 60px rgba(0,0,0,0.95); overflow-y:auto; max-height:85vh;">
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 scale-95"
+           x-transition:enter-end="opacity-100 scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 scale-95"
+           style="width:calc(100% - 32px); max-width:340px; padding:22px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:210; overflow-y:auto; max-height:85vh;">
         
         <!-- Header -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -1388,7 +1410,7 @@
         </div>
 
         <!-- Level / XP progress bar -->
-        <div class="glass xp-card" style="margin-bottom:14px; padding:10px 12px; border-radius:16px;">
+        <div class="card-pane xp-card" style="margin-bottom:14px; padding:10px 12px; border-radius:16px;">
           <div class="xp-header" style="margin-bottom:6px;">
             <div class="xp-title" style="font-size:11px; display:flex; align-items:center; gap:4px;">
               <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg('award')"></div>
@@ -1409,11 +1431,11 @@
 
         <!-- Stats -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-          <div class="glass" style="padding:12px; text-align:center; background:rgba(249,115,22,0.06); border-color:rgba(249,115,22,0.15);">
+          <div class="card-pane" style="padding:12px; text-align:center; background:rgba(249,115,22,0.06); border-color:rgba(249,115,22,0.15);">
             <div style="font-size:20px; font-weight:700; color:#ffb27a; text-shadow:0 0 12px var(--orange-glow);" x-text="s.wallet"></div>
             <div style="font-size:10px; color:var(--txt-dim); margin-top:4px;">المحفظة الحالية</div>
           </div>
-          <div class="glass" style="padding:12px; text-align:center; background:rgba(5,150,105,0.06); border-color:rgba(5,150,105,0.15);">
+          <div class="card-pane" style="padding:12px; text-align:center; background:rgba(5,150,105,0.06); border-color:rgba(5,150,105,0.15);">
             <div style="font-size:20px; font-weight:700; color:#34d399; text-shadow:0 0 12px var(--emerald-glow);" x-text="s.total"></div>
             <div style="font-size:10px; color:var(--txt-dim); margin-top:4px;">إجمالي الشعلات</div>
           </div>
@@ -1425,7 +1447,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--orange);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             الأوسمة المضيئة
           </div>
-          <div class="glass" style="padding:14px 10px; background:rgba(255,255,255,0.01);">
+          <div class="card-pane" style="padding:14px 10px; background:rgba(255,255,255,0.01);">
             <div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;">
               <template x-for="ach in achievements" :key="ach.id">
                 <div style="flex-shrink:0; width:70px; text-align:center;">
@@ -1447,7 +1469,7 @@
             <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg('briefcase')"></div>
             حقيبة الامتيازات
           </div>
-          <div class="glass" style="padding:10px; background:rgba(255,255,255,0.01); max-height:160px; overflow-y:auto;">
+          <div class="card-pane" style="padding:10px; background:rgba(255,255,255,0.01); max-height:160px; overflow-y:auto;">
             <div class="inv-grid">
               <template x-for="item in (s.inventory || [])" :key="item.id">
                 <div class="inv-card" style="padding:8px 10px; border-radius:12px;">
@@ -1528,17 +1550,26 @@
   <!-- Badge Details Modal Overlay -->
   <div x-show="selectedBadge !== null" 
        x-transition:enter="transition ease-out duration-300"
-       x-transition:enter-start="opacity-0 scale-95"
-       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
        x-transition:leave="transition ease-in duration-200"
-       x-transition:leave-start="opacity-100 scale-100"
-       x-transition:leave-end="opacity-0 scale-95"
-       style="position:absolute; inset:0; z-index:300; background:rgba(12,14,14,0.92); backdrop-filter:blur(16px); padding:20px; direction:rtl;"
-       @click.self="selectedBadge = null">
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:300; direction:rtl;">
+    
+    <!-- Backdrop Blur (rendered as sibling to prevent fuzzy text inside child) -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="selectedBadge = null"></div>
     
     <template x-if="selectedBadge !== null && selectedBadgeStudent">
-      <div class="glass" 
-           style="width:calc(100% - 32px); max-width:320px; padding:24px; border-radius:24px; border:1px solid var(--stroke2); position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:310; box-shadow:0 25px 60px rgba(0,0,0,0.95); text-align:center;">
+      <div class="modal-card" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 scale-95"
+           x-transition:enter-end="opacity-100 scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 scale-95"
+           style="width:calc(100% - 32px); max-width:320px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:310; text-align:center; overflow-y:auto; max-height:85vh;">
         
         <!-- Header -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
