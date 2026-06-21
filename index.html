@@ -915,17 +915,35 @@
               </div>
             </div>
             
-            <div class="store-grid">
+            <div style="display:flex; flex-direction:column; gap:12px;">
               <template x-for="(r, index) in rewards" :key="index">
-                <div class="glass reward">
-                  <div class="reward-ic"><i :data-lucide="r.icon"></i></div>
-                  <div class="reward-name" x-text="r.name"></div>
-                  <div class="reward-desc" x-text="r.desc"></div>
-                  <div class="reward-price"><i data-lucide="flame"></i><span x-text="r.price"></span></div>
-                  <button class="btn-redeem" 
-                          :disabled="currentStudent.wallet < r.price" 
-                          @click="purchaseReward(currentStudent.id, r)"
-                          x-text="currentStudent.wallet >= r.price ? 'استبدال' : 'شعلات غير كافية'"></button>
+                <div class="glass" 
+                     style="display:flex; flex-direction:row; align-items:center; gap:14px; padding:12px 16px; border-radius:18px; border:1px solid var(--stroke2);">
+                  
+                  <!-- Icon -->
+                  <div class="reward-ic" style="margin-bottom:0; flex-shrink:0;">
+                    <div style="width:24px; height:24px; color:#ffb27a;" x-html="getIconSvg(r.icon)"></div>
+                  </div>
+                  
+                  <!-- Info (Middle) -->
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:right;">
+                    <span style="font-size:13px; font-weight:700; color:var(--txt);" x-text="r.name"></span>
+                    <span style="font-size:10px; color:var(--txt-faint); line-height:1.25;" x-text="r.desc"></span>
+                  </div>
+                  
+                  <!-- Actions (Left) -->
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
+                    <div style="font-size:14px; font-weight:700; color:#ffb27a; text-shadow:0 0 10px var(--orange-glow); display:flex; align-items:center; gap:4px;">
+                      <div style="width:12px; height:12px;" x-html="getIconSvg('flame')"></div>
+                      <span x-text="r.price"></span>
+                    </div>
+                    <button class="btn-redeem" 
+                            style="width:auto; min-width:80px; padding:5px 10px; font-size:11px; border-radius:10px; margin-top:0;"
+                            :disabled="currentStudent.wallet < r.price" 
+                            @click="purchaseReward(currentStudent.id, r)"
+                            x-text="currentStudent.wallet >= r.price ? 'استبدال' : 'غير كافٍ'"></button>
+                  </div>
+
                 </div>
               </template>
             </div>
@@ -1887,9 +1905,7 @@
         
         rewards: [
           { name: 'إعفاء من التأخير', desc: 'يلغي خصم تأخير واحد', icon: 'clock', price: 80 },
-          { name: 'قائد الأسبوع', desc: 'لقب يُعرض للجميع', icon: 'crown', price: 150 },
           { name: 'طلب شاي', desc: 'ضيافة على حساب المقر', icon: 'coffee', price: 50 },
-          { name: 'إعفاء من مهمة', desc: 'تجاوز مهمة واحدة', icon: 'file-x', price: 120 },
           { name: 'اختيار موضوع التحدي', desc: 'حق اختيار موضوع النشاط أو التحدي القادم لفريقك', icon: 'pen-tool', price: 110 },
           { name: 'مشروب بارد عشوائي', desc: 'مشروب بارد ومنعش يقدّم لك في الاستراحة', icon: 'cup-soda', price: 60 },
           { name: 'صندوق الحلا الجماعي', desc: 'صندوق حلويات صغير لتشاركه مع زملائك', icon: 'gift', price: 100 },
