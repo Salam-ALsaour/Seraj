@@ -161,6 +161,20 @@
     .admin-toggle button.active{color:var(--txt);}
     .admin-toggle button i, .admin-toggle button svg{width:16px;height:16px;}
 
+    /* stage toggle switch */
+    .stage-toggle{display:flex;background:var(--glass);border:1px solid var(--stroke);border-radius:30px;padding:5px;
+      margin:0 0 16px;position:relative;}
+    .stage-toggle-ind{position:absolute;top:5px;bottom:5px;width:calc(33.333% - 5px);border-radius:26px;
+      background:linear-gradient(135deg,rgba(249,115,22,.35),rgba(249,115,22,.15));border:1px solid rgba(249,115,22,.4);
+      box-shadow:0 0 20px -4px var(--orange-glow);transition:transform .32s cubic-bezier(.4,1.2,.4,1);right:5px;}
+    .stage-toggle-ind.mid{transform:translateX(-100%);}
+    .stage-toggle-ind.high{transform:translateX(-200%);}
+    .stage-toggle button{flex:1;background:none;border:none;color:var(--txt-dim);font-family:inherit;font-size:13px;
+      font-weight:600;padding:10px 0;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;
+      transition:color .3s;cursor:pointer;}
+    .stage-toggle button.active{color:var(--txt);}
+    .stage-toggle button i, .stage-toggle button svg{width:16px;height:16px;}
+
     /* leaderboard rows */
     .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:9px;}
     .lb-rank{width:26px;text-align:center;font-size:16px;font-weight:700;color:var(--txt-faint);flex-shrink:0;}
@@ -910,9 +924,23 @@
         <!-- Core Admin controls -->
         <template x-if="adminUnlocked">
           <div>
+            <!-- Stage Filter Toggle -->
+            <div class="stage-toggle">
+              <div class="stage-toggle-ind" :class="adminStageFilter === 'middle' ? 'mid' : (adminStageFilter === 'high' ? 'high' : '')"></div>
+              <button :class="adminStageFilter === 'all' ? 'active' : ''" @click="setAdminStageFilter('all')">
+                الكل
+              </button>
+              <button :class="adminStageFilter === 'middle' ? 'active' : ''" @click="setAdminStageFilter('middle')">
+                المتوسط
+              </button>
+              <button :class="adminStageFilter === 'high' ? 'active' : ''" @click="setAdminStageFilter('high')">
+                الثانوي
+              </button>
+            </div>
+
             <!-- Students Horizontal Carousel -->
             <div class="admin-bar">
-              <template x-for="st in students" :key="st.id">
+              <template x-for="st in students.filter(s => adminStageFilter === 'all' || s.stage === adminStageFilter)" :key="st.id">
                 <div class="admin-chip" :class="st.id === adminActiveStudentId ? 'active' : ''" @click="adminActiveStudentId === st.id ? (viewOnlyStudentId = st.id) : (adminActiveStudentId = st.id)">
                   <div class="admin-chip-av"
                        :style="{
@@ -1399,6 +1427,7 @@
         selectedBadge: null,
         selectedBadgeStudent: null,
         adminTab: 'pos',
+        adminStageFilter: 'all',
         
         get currentStudent() {
           return this.getStudentById(this.activeId) || this.students[0];
@@ -1646,6 +1675,14 @@
         },
 
         // Helpers
+        setAdminStageFilter(filterVal) {
+          this.adminStageFilter = filterVal;
+          const filtered = this.students.filter(s => filterVal === 'all' || s.stage === filterVal);
+          if (filtered.length && !filtered.find(s => s.id === this.adminActiveStudentId)) {
+            this.adminActiveStudentId = filtered[0].id;
+          }
+        },
+
         openBadgeDetailModal(badge, student) {
           this.selectedBadge = badge;
           this.selectedBadgeStudent = student;
