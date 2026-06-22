@@ -708,7 +708,7 @@
 
         <!-- Header Profile Widget (Top Left) -->
         <template x-if="isAdmin || currentStudent">
-          <div @click="isAdmin ? go('admin') : go('profile')" 
+          <div @click="isAdmin ? adminMenuOpen = true : go('profile')" 
                style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:18px; background:var(--glass); border:1px solid var(--stroke); transition:all 0.2s;"
                @mouseenter="$el.style.background = 'var(--glass2)'; $el.style.borderColor = 'rgba(255,255,255,0.15)'"
                @mouseleave="$el.style.background = 'var(--glass)'; $el.style.borderColor = 'var(--stroke)'">
@@ -1445,22 +1445,70 @@
               </template>
             </div>
 
-            <!-- Backup Management -->
-            <div class="data-row">
-              <button class="data-btn" @click="exportData()"><i data-lucide="download"></i>تصدير JSON</button>
-              <button class="data-btn" @click="$refs.importFileInput.click()"><i data-lucide="upload"></i>استيراد JSON</button>
-              <input type="file" x-ref="importFileInput" accept="application/json" style="display:none" @change="importData($event)">
-            </div>
-            
-            <button class="data-btn w-full mt-3 bg-red-950/20 border-red-900/40 text-red-400" @click="resetToDefault()" style="margin-top:8px; width:100%;">
-              <i data-lucide="rotate-ccw"></i>
-              إعادة تعيين البيانات الافتراضية
-            </button>
-            
-            <button class="admin-logout" @click="logout()"><i data-lucide="log-out"></i>تسجيل الخروج</button>
+            <input type="file" x-ref="importFileInput" accept="application/json" style="display:none" @change="importData($event)">
           </div>
         </template>
         
+      </div>
+
+      <!-- Admin Options Modal Overlay -->
+      <div x-show="adminMenuOpen" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100"
+           x-transition:leave-end="opacity-0"
+           style="position:absolute; inset:0; z-index:100; direction:rtl; display:none;">
+        
+        <!-- Backdrop Blur -->
+        <div style="position:absolute; inset:0; background:rgba(12,14,14,0.75); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+             @click="adminMenuOpen = false"></div>
+        
+        <div class="modal-card" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:calc(100% - 32px); max-width:360px; background:var(--glass2); border:1px solid var(--stroke2); border-radius:24px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.5); z-index:101; display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Icon & Title -->
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;">
+            <div style="width:48px; height:48px; border-radius:50%; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; display:grid; place-items:center;">
+              <div style="width:22px; height:22px;" x-html="getIconSvg('shield')"></div>
+            </div>
+            <div style="font-size:18px; font-weight:700; color:var(--txt);">لوحة تحكم المشرف</div>
+            <div style="font-size:12px; color:var(--txt-dim);" x-text="ADMIN_ACCOUNTS.find(a => a.id === activeId)?.name || 'مشرف'"></div>
+          </div>
+          
+          <!-- Buttons List -->
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px; width:100%;">
+            <!-- Export JSON -->
+            <button class="data-btn w-full" @click="exportData(); adminMenuOpen = false;" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:14px; font-size:13px; margin:0;">
+              <div style="width:16px; height:16px;" x-html="getIconSvg('download')"></div>
+              تصدير ملف JSON (نسخة احتياطية)
+            </button>
+            
+            <!-- Export CSV -->
+            <button class="data-btn w-full" @click="exportCSV(); adminMenuOpen = false;" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:14px; font-size:13px; margin:0;">
+              <div style="width:16px; height:16px;" x-html="getIconSvg('file-spreadsheet')"></div>
+              تصدير بيانات الطلاب CSV (إكسل)
+            </button>
+            
+            <!-- Logout -->
+            <button class="admin-logout w-full" @click="logout(); adminMenuOpen = false;" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:14px; font-size:13px; margin-top:8px;">
+              <div style="width:16px; height:16px;" x-html="getIconSvg('log-out')"></div>
+              تسجيل الخروج
+            </button>
+          </div>
+          
+          <!-- Close Button -->
+          <button @click="adminMenuOpen = false" 
+                  class="btn-redeem" style="width:100%; padding:10px; font-size:13px; border-radius:14px; margin-top:4px;">إغلاق</button>
+          
+        </div>
       </div>
 
     </div>
@@ -1981,6 +2029,7 @@
         
         // Avatar Editor Modal State
         avatarModalOpen: false,
+        adminMenuOpen: false,
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
         
@@ -3458,6 +3507,48 @@
           dlAnchorElem.click();
         },
 
+        async exportCSV() {
+          try {
+            let studentsToExport = this.students;
+            if (supabaseClient) {
+              const { data, error } = await supabaseClient.from('students').select('*');
+              if (!error && data) {
+                studentsToExport = data;
+              }
+            }
+
+            const headers = ['المعرف', 'الاسم', 'المرحلة', 'الفريق', 'محفظة الشعلات', 'الشعلات التراكمية'];
+            const rows = studentsToExport.map(s => [
+              s.id,
+              s.name,
+              this.getStageLabel(s.stage),
+              this.getTeamLabel(s.team),
+              s.wallet,
+              s.total
+            ]);
+            
+            const csvContent = "\uFEFF" + [
+              headers.join(','),
+              ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", url);
+            dlAnchorElem.setAttribute("download", `seraj_students_${new Date().toISOString().split('T')[0]}.csv`);
+            dlAnchorElem.style.visibility = 'hidden';
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            document.body.removeChild(dlAnchorElem);
+            
+            this.showToast('تم تصدير ملف CSV بنجاح', 'success', 'check');
+          } catch (e) {
+            console.error("CSV Export failed:", e);
+            this.showToast('فشل تصدير ملف CSV', 'neg');
+          }
+        },
+
         async importData(event) {
           const file = event.target.files[0];
           if (!file) return;
@@ -3613,6 +3704,7 @@
             'lock-keyhole': '<circle cx="12" cy="16" r="1"></circle><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M6 10V7a6 6 0 0 1 12 0v3"></path>',
             'lock': '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
             'download': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>',
+            'file-spreadsheet': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8M16 13H8M16 17H8"></path>',
             'upload': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path>',
             'rotate-ccw': '<path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0-.57-8.38l5.67-5.67"></path>',
             'volume-2': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>',
