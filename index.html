@@ -714,10 +714,10 @@
                @mouseleave="$el.style.background = 'var(--glass)'; $el.style.borderColor = 'var(--stroke)'">
             
             <!-- Avatar Badge (Student/Admin) -->
-            <div style="width:28px; height:28px; border-radius:50%; display:grid; place-items:center; border:1.5px solid;"
+            <div style="width:28px; height:28px; border-radius:50%; display:grid; place-items:center; border:1.5px solid; position:relative;"
                  :style="isAdmin ? {
                    'border-color': '#ef4444',
-                   'background': 'radial-gradient(circle, rgba(239,68,68,0.15) 10%, rgba(18,20,20,0.85) 90%)',
+                   'background': 'radial-gradient(circle, rgba(239,68,68,0.15) 10%, rgba(12,14,14,0.85) 90%)',
                    'color': '#fca5a5',
                    'box-shadow': '0 0 10px rgba(239,68,68,0.3)'
                  } : {
@@ -727,6 +727,13 @@
                    'box-shadow': '0 0 10px ' + avatarColorGlowMap[currentStudent.avatarColor || 'orange']
                  }">
               <div style="width:13px; height:13px;" x-html="isAdmin ? getIconSvg('shield') : getIconSvg(currentStudent.avatarIcon || 'user')"></div>
+              
+              <!-- Level Badge (only for students) -->
+              <template x-if="!isAdmin && currentStudent">
+                <div style="position:absolute; bottom:-3px; right:-3px; width:13px; height:13px; border-radius:50%; background:var(--bg2); border:0.8px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;">
+                  <div style="width:7px; height:7px;" x-html="getIconSvg(getStudentLevelInfo(currentStudent.total).current.icon)"></div>
+                </div>
+              </template>
             </div>
             
             <!-- Info Texts -->
@@ -760,6 +767,7 @@
               <template x-if="getPodiumStudents()[0] && getPodiumStudents()[0].id !== 'dummy'">
                 <div class="pod pod-2" @click="viewOnlyStudentId = getPodiumStudents()[0].id" style="cursor:pointer;">
                   <div class="pod-av" 
+                       style="position:relative;"
                        :style="{
                          'border-color': avatarColorMap[getPodiumStudents()[0].avatarColor || 'emerald'],
                          'background': 'linear-gradient(160deg,' + avatarColorGlowMap[getPodiumStudents()[0].avatarColor || 'emerald'] + ',rgba(5,150,105,.04))',
@@ -767,6 +775,11 @@
                          'box-shadow': '0 0 15px ' + avatarColorGlowMap[getPodiumStudents()[0].avatarColor || 'emerald']
                        }">
                     <div style="width:24px; height:24px;" x-html="getIconSvg(getPodiumStudents()[0].avatarIcon || 'user')"></div>
+                    <!-- Level Badge -->
+                    <div style="position:absolute; bottom:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                         :title="getStudentLevelInfo(getPodiumStudents()[0].total).current.label">
+                      <div style="width:10px; height:10px;" x-html="getIconSvg(getStudentLevelInfo(getPodiumStudents()[0].total).current.icon)"></div>
+                    </div>
                   </div>
                   <div class="pod-name" style="display:inline-flex; align-items:center; gap:4px; justify-content:center; width:100%;">
                     <span x-text="getPodiumStudents()[0].name"></span>
@@ -791,6 +804,7 @@
               <template x-if="getPodiumStudents()[1] && getPodiumStudents()[1].id !== 'dummy'">
                 <div class="pod pod-1" @click="viewOnlyStudentId = getPodiumStudents()[1].id" style="cursor:pointer;">
                   <div class="pod-av"
+                       style="position:relative;"
                        :style="{
                          'border-color': avatarColorMap[getPodiumStudents()[1].avatarColor || 'orange'],
                          'background': 'linear-gradient(160deg,' + avatarColorGlowMap[getPodiumStudents()[1].avatarColor || 'orange'] + ',rgba(249,115,22,.05))',
@@ -806,6 +820,11 @@
                       </svg>
                     </div>
                     <div style="width:28px; height:28px;" x-html="getIconSvg(getPodiumStudents()[1].avatarIcon || 'user')"></div>
+                    <!-- Level Badge -->
+                    <div style="position:absolute; bottom:-4px; right:-4px; width:20px; height:20px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                         :title="getStudentLevelInfo(getPodiumStudents()[1].total).current.label">
+                      <div style="width:12px; height:12px;" x-html="getIconSvg(getStudentLevelInfo(getPodiumStudents()[1].total).current.icon)"></div>
+                    </div>
                   </div>
                   <div class="pod-name" style="display:inline-flex; align-items:center; gap:4px; justify-content:center; width:100%;">
                     <span x-text="getPodiumStudents()[1].name"></span>
@@ -830,6 +849,7 @@
               <template x-if="getPodiumStudents()[2] && getPodiumStudents()[2].id !== 'dummy'">
                 <div class="pod pod-3" @click="viewOnlyStudentId = getPodiumStudents()[2].id" style="cursor:pointer;">
                   <div class="pod-av"
+                       style="position:relative;"
                        :style="{
                          'border-color': avatarColorMap[getPodiumStudents()[2].avatarColor || 'emerald'],
                          'background': 'linear-gradient(160deg,' + avatarColorGlowMap[getPodiumStudents()[2].avatarColor || 'emerald'] + ',rgba(5,150,105,.04))',
@@ -837,6 +857,11 @@
                          'box-shadow': '0 0 15px ' + avatarColorGlowMap[getPodiumStudents()[2].avatarColor || 'emerald']
                        }">
                     <div style="width:24px; height:24px;" x-html="getIconSvg(getPodiumStudents()[2].avatarIcon || 'user')"></div>
+                    <!-- Level Badge -->
+                    <div style="position:absolute; bottom:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                         :title="getStudentLevelInfo(getPodiumStudents()[2].total).current.label">
+                      <div style="width:10px; height:10px;" x-html="getIconSvg(getStudentLevelInfo(getPodiumStudents()[2].total).current.icon)"></div>
+                    </div>
                   </div>
                   <div class="pod-name" style="display:inline-flex; align-items:center; gap:4px; justify-content:center; width:100%;">
                     <span x-text="getPodiumStudents()[2].name"></span>
@@ -873,6 +898,7 @@
                            : ''">
                 <div class="lb-rank" x-text="index + 4"></div>
                 <div class="lb-av" 
+                     style="position:relative;"
                      :style="{
                        'border-color': avatarColorMap[st.avatarColor || 'orange'] + '40',
                        'background': 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)',
@@ -880,6 +906,11 @@
                        'box-shadow': '0 0 10px ' + avatarColorGlowMap[st.avatarColor || 'orange']
                      }">
                   <div style="width:20px; height:20px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
+                  <!-- Level Badge -->
+                  <div style="position:absolute; bottom:-4px; right:-4px; width:14px; height:14px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                       :title="getStudentLevelInfo(st.total).current.label">
+                    <div style="width:8px; height:8px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+                  </div>
                 </div>
                 <div class="lb-info">
                   <div class="lb-name" style="display:flex; align-items:center; gap:6px;">
@@ -934,6 +965,11 @@
                 <!-- Edit Indicator badge -->
                 <div style="position:absolute; bottom:-3px; right:-3px; width:26px; height:26px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); display:grid; place-items:center; z-index:10;">
                   <i data-lucide="edit-2" style="width:12px; height:12px; color:var(--orange);"></i>
+                </div>
+                <!-- Level Badge (floating on bottom-left) -->
+                <div style="position:absolute; bottom:-3px; left:-3px; width:26px; height:26px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:10;"
+                     :title="getStudentLevelInfo(currentStudent.total).current.label">
+                  <div style="width:14px; height:14px;" x-html="getIconSvg(getStudentLevelInfo(currentStudent.total).current.icon)"></div>
                 </div>
               </div>
               <div class="prof-name" x-text="currentStudent.name" style="margin-top: 6px;"></div>
@@ -1175,71 +1211,120 @@
       <!-- 5. 🎲 WEEKLY CHALLENGE VIEW -->
       <!-- ============================================== -->
       <div x-show="currentScreen === 'challenge'" class="page">
-        <div class="glass chal-card">
+        <!-- Game Card -->
+        <div class="glass chal-card" style="padding: 20px; text-align: center; position: relative;">
           <div class="chal-eyebrow"><i data-lucide="zap"></i>تحدي اللقاء الحالي</div>
-          <div class="chal-title" x-text="weeklyChallenge.title"></div>
-          <div class="chal-sub" x-text="weeklyChallenge.desc"></div>
           
-          <div class="timer">
-            <div class="timer-unit">
-              <div class="timer-box" id="tMin" x-text="formatChallengeMinutes(weeklyChallenge.timeLeft)">10</div>
-              <div class="timer-lbl">دقيقة</div>
+          <!-- When Not Playing -->
+          <template x-if="!gamePlaying">
+            <div style="width: 100%;">
+              <div style="font-size: 20px; font-weight: 700; color: var(--txt); margin: 15px 0 8px;">تحدي صيد الشعلة</div>
+              <p style="font-size: 12px; color: var(--txt-dim); margin-bottom: 20px; line-height: 1.6;">
+                لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.
+                إذا حققت رقماً قياسياً جديداً، سيتم حفظه تلقائياً في قائمة الصدارة الفردية!
+              </p>
+              
+              <!-- Personal High Score Display (only for students) -->
+              <template x-if="!isAdmin && currentStudent">
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.2); padding: 8px 16px; border-radius: 12px; margin-bottom: 20px;">
+                  <div style="width: 16px; height: 16px; color: var(--orange);" x-html="getIconSvg('trophy')"></div>
+                  <span style="font-size: 13px; color: var(--txt-dim);">أعلى نتيجة لك:</span>
+                  <span style="font-size: 15px; font-weight: 700; color: #ffb27a;" x-text="(currentStudent.gameScore || 0) + ' نقطة'"></span>
+                </div>
+              </template>
+              
+              <button @click="startGame()" 
+                      class="btn-redeem" 
+                      style="width: 100%; max-width: 200px; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px; display: block; margin: 0 auto;">
+                بدء اللعب
+              </button>
             </div>
-            <div class="timer-colon">:</div>
-            <div class="timer-unit">
-              <div class="timer-box" id="tSec" x-text="formatChallengeSeconds(weeklyChallenge.timeLeft)">00</div>
-              <div class="timer-lbl">ثانية</div>
+          </template>
+
+          <!-- When Playing -->
+          <template x-if="gamePlaying">
+            <div style="width: 100%;">
+              <!-- Stats Bar -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 10px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 12px; color: var(--txt-dim);">النقاط الحالية:</span>
+                  <span style="font-size: 18px; font-weight: 700; color: #ffb27a;" x-text="gameScoreCurrent"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 12px; color: var(--txt-dim);">الوقت المتبقي:</span>
+                  <span style="font-size: 18px; font-weight: 700; color: #ef4444;" x-text="gameTimeLeft + ' ث'"></span>
+                </div>
+              </div>
+              
+              <!-- Game Board -->
+              <div style="width: 100%; height: 220px; background: rgba(0,0,0,0.5); border: 1px solid var(--stroke2); border-radius: 16px; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                <!-- Glowing Flame Target -->
+                <button @click="clickFlame()" 
+                        type="button"
+                        style="position: absolute; width: 44px; height: 44px; padding: 0; background: none; border: none; cursor: pointer; transition: all 0.05s; display: grid; place-items: center; border-radius: 50%; outline: none;"
+                        :style="{
+                          top: flamePos.top,
+                          left: flamePos.left,
+                          transform: 'translate(-50%, -50%)',
+                          color: '#ffb27a',
+                          'filter': 'drop-shadow(0 0 8px #f97316)'
+                        }">
+                  <div style="width: 32px; height: 32px;" x-html="getIconSvg('flame')"></div>
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div class="chal-prize">
-            <i data-lucide="gift"></i>
-            <span x-text="'+' + weeklyChallenge.points + ' شعلة'"></span>
-            <small>للفريق الفائز</small>
-          </div>
-          
-          <div class="chal-ctrl">
-            <button class="chal-btn" :class="weeklyChallenge.isRunning ? 'stop' : 'start'" @click="toggleChallengeTimer()">
-              <i :data-lucide="weeklyChallenge.isRunning ? 'pause' : 'play'"></i>
-              <span x-text="weeklyChallenge.isRunning ? 'إيقاف مؤقت' : 'بدء التحدي'"></span>
-            </button>
-            <button class="chal-btn reset" @click="resetChallengeTimer()"><i data-lucide="rotate-ccw"></i></button>
-          </div>
-          
-          <div class="admin-only-tag"><i data-lucide="shield"></i>يتحكم المشرف بالمؤقت من هذه الشاشة</div>
+          </template>
         </div>
 
-        <!-- Team Leaderboard Standings (moved here) -->
-        <div class="sect-title" style="margin-top:20px;"><i data-lucide="shield"></i>ترتيب الفرق في المسابقات</div>
+        <!-- Individual Game Leaderboard Standings -->
+        <div class="sect-title" style="margin-top:20px;">
+          <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:6px; color:var(--orange);" x-html="getIconSvg('trophy')"></div>
+          ترتيب صدارة اللعبة الفردية
+        </div>
         <div class="glass" style="padding:8px;">
-          <template x-for="(team, index) in getTeamStats()" :key="team.name">
+          <template x-for="(st, index) in [...students].sort((a,b) => (b.gameScore || 0) - (a.gameScore || 0))" :key="st.id">
             <div class="lb-row glass" 
-                 style="border-radius:16px;margin-bottom:8px;"
-                 :style="!isAdmin && ('فريق ' + team.name === 'فريق ' + getTeamLabel(currentStudent.team))
-                         ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;'
+                 style="border-radius:16px;margin-bottom:8px;cursor:pointer;"
+                 @click="viewOnlyStudentId = st.id"
+                 :style="st.id === activeId 
+                         ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;' 
                          : ''">
               <div class="lb-rank" x-text="index + 1"></div>
-              <div class="lb-av">
-                <div style="width:20px; height:20px;" :style="{color: index === 0 ? '#ffb27a' : '#34d399'}" x-html="getIconSvg('shield')"></div>
+              <div class="lb-av" 
+                   style="position:relative;"
+                   :style="{
+                     'border-color': avatarColorMap[st.avatarColor || 'orange'] + '40',
+                     'background': 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)',
+                     'color': avatarColorLightMap[st.avatarColor || 'orange'],
+                     'box-shadow': '0 0 10px ' + avatarColorGlowMap[st.avatarColor || 'orange']
+                   }">
+                <div style="width:20px; height:20px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
+                <!-- Level Badge -->
+                <div style="position:absolute; bottom:-4px; right:-4px; width:14px; height:14px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                     :title="getStudentLevelInfo(st.total).current.label">
+                  <div style="width:8px; height:8px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+                </div>
               </div>
               <div class="lb-info">
                 <div class="lb-name" style="display:flex; align-items:center; gap:6px;">
-                  <span x-text="'فريق ' + team.name"></span>
-                  <template x-if="!isAdmin && ('فريق ' + team.name === 'فريق ' + getTeamLabel(currentStudent.team))">
-                    <span style="font-size:9px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 6px; border-radius:6px;">فريقك</span>
+                  <span x-text="st.name"></span>
+                  <template x-if="st.id === activeId">
+                    <span style="font-size:9px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 6px; border-radius:6px;">أنت</span>
                   </template>
                 </div>
                 <div class="lb-sub">
-                  <span class="lb-tag" x-text="team.memberCount + ' أعضاء'"></span>
-                  <span>متوسط الشعلات</span>
+                  <span class="lb-tag" x-text="getStageLabel(st.stage)"></span>
+                  <span class="lb-tag" style="display:inline-flex; align-items:center; gap:4px;">
+                    <div style="width:10px; height:10px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+                    <span x-text="getStudentLevelInfo(st.total).current.label"></span>
+                  </span>
                 </div>
               </div>
               <div class="lb-pts">
                 <div class="lb-pts-val">
-                  <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:3px;" :style="{color: team.trend >= 0 ? '#10b981' : '#ef4444'}" x-html="getIconSvg(team.trend >= 0 ? 'trending-up' : 'trending-down')"></div>
-                  <span x-text="team.avgPoints"></span>
+                  <span x-text="st.gameScore || 0"></span>
                 </div>
-                <div class="lb-pts-lbl">معدل</div>
+                <div class="lb-pts-lbl">نقاط</div>
               </div>
             </div>
           </template>
@@ -1273,12 +1358,18 @@
               <template x-for="st in students.filter(s => adminStageFilter === 'all' || s.stage === adminStageFilter)" :key="st.id">
                 <div class="admin-chip" :class="st.id === adminActiveStudentId ? 'active' : ''" @click="adminActiveStudentId === st.id ? (viewOnlyStudentId = st.id) : (adminActiveStudentId = st.id)">
                   <div class="admin-chip-av"
+                       style="position:relative;"
                        :style="{
                          'border-color': st.id === adminActiveStudentId ? avatarColorMap[st.avatarColor || 'orange'] : 'var(--stroke)',
                          'color': avatarColorLightMap[st.avatarColor || 'orange'],
                          'background': st.id === adminActiveStudentId ? 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)' : 'linear-gradient(150deg,var(--glass2),transparent)'
                        }">
                     <div style="width:20px; height:20px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
+                    <!-- Level Badge -->
+                    <div style="position:absolute; bottom:-4px; right:-4px; width:12px; height:12px; border-radius:50%; background:var(--bg2); border:0.8px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                         :title="getStudentLevelInfo(st.total).current.label">
+                      <div style="width:7px; height:7px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+                    </div>
                   </div>
                   <div class="admin-chip-name" x-text="st.name.split(' ')[0]"></div>
                   <div class="admin-chip-pts" x-text="st.total + ' شعلة'"></div>
@@ -1653,7 +1744,7 @@
       <div style="display:flex; gap:10px;">
         <button @click="avatarModalOpen = false" 
                 class="data-btn" style="flex:1; padding:10px; font-size:12px; margin-top:0;">إلغاء</button>
-        <button @click="saveAvatar(activeId)" 
+        <button @click="saveAvatarSettings(activeId)" 
                 class="btn-redeem" style="flex:1; padding:10px; font-size:12px; border-radius:16px;">حفظ</button>
       </div>
 
@@ -1695,14 +1786,21 @@
 
         <!-- Student Hero -->
         <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:22px;">
-          <div style="width:80px; height:80px; border-radius:50%; display:grid; place-items:center; border:2px solid; margin-bottom:12px;"
-               :style="{
-                 'border-color': avatarColorMap[s.avatarColor || 'orange'],
-                 'background': 'linear-gradient(160deg,' + avatarColorGlowMap[s.avatarColor || 'orange'] + ',rgba(12,14,14,0.6))',
-                 'color': avatarColorLightMap[s.avatarColor || 'orange'],
-                 'box-shadow': '0 0 25px ' + avatarColorGlowMap[s.avatarColor || 'orange']
-               }">
-            <div style="width:34px; height:34px;" x-html="getIconSvg(s.avatarIcon || 'user')"></div>
+          <div style="position:relative; width:80px; height:80px; margin-bottom:12px;">
+            <div style="width:100%; height:100%; border-radius:50%; display:grid; place-items:center; border:2px solid;"
+                 :style="{
+                   'border-color': avatarColorMap[s.avatarColor || 'orange'],
+                   'background': 'linear-gradient(160deg,' + avatarColorGlowMap[s.avatarColor || 'orange'] + ',rgba(12,14,14,0.6))',
+                   'color': avatarColorLightMap[s.avatarColor || 'orange'],
+                   'box-shadow': '0 0 25px ' + avatarColorGlowMap[s.avatarColor || 'orange']
+                 }">
+              <div style="width:34px; height:34px;" x-html="getIconSvg(s.avatarIcon || 'user')"></div>
+            </div>
+            <!-- Floating Level Badge -->
+            <div style="position:absolute; bottom:-4px; right:-4px; width:22px; height:22px; border-radius:50%; background:var(--bg2); border:1px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                 :title="getStudentLevelInfo(s.total).current.label">
+              <div style="width:12px; height:12px;" x-html="getIconSvg(getStudentLevelInfo(s.total).current.icon)"></div>
+            </div>
           </div>
           <div style="font-size:18px; font-weight:700; color:var(--txt);" x-text="s.name"></div>
           
@@ -1848,6 +1946,16 @@
               </div>
             </div>
           </div>
+        </template>
+
+        <!-- Admin Delete Account Button -->
+        <template x-if="isAdmin">
+          <button @click="if(confirm('هل أنت متأكد من حذف حساب الطالب ' + s.name + ' نهائياً وبشكل كامل؟ لا يمكن التراجع عن هذا الإجراء.')) { deleteStudentAccount(s.id); }" 
+                  class="btn-redeem" 
+                  style="width:100%; padding:10px; font-size:13px; border-radius:14px; background:rgba(239,68,68,0.15) !important; border:1px solid #ef4444 !important; color:#fca5a5 !important; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <div style="width:14px; height:14px;" x-html="getIconSvg('trash-2')"></div>
+            حذف الحساب نهائياً
+          </button>
         </template>
 
         <!-- Action Button -->
@@ -2033,12 +2141,20 @@
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
 
+        // Clicker Game State
+        gamePlaying: false,
+        gameScoreCurrent: 0,
+        gameTimeLeft: 20,
+        gameIntervalId: null,
+        flamePos: { top: '50%', left: '50%' },
+
         mapStudentFromDB(dbStudent) {
           if (!dbStudent) return null;
           return {
             ...dbStudent,
             avatarIcon: dbStudent.avatar_icon || 'user',
-            avatarColor: dbStudent.avatar_color || 'orange'
+            avatarColor: dbStudent.avatar_color || 'orange',
+            gameScore: dbStudent.trend || 0
           };
         },
 
@@ -2047,8 +2163,10 @@
           const dbStudent = { ...student };
           dbStudent.avatar_icon = student.avatarIcon || 'user';
           dbStudent.avatar_color = student.avatarColor || 'orange';
+          dbStudent.trend = student.gameScore || 0;
           delete dbStudent.avatarIcon;
           delete dbStudent.avatarColor;
+          delete dbStudent.gameScore;
           return dbStudent;
         },
         
@@ -2115,6 +2233,19 @@
           { id: 'clock', label: 'ساعة تنظيم' }
         ],
 
+        selectableColors: [
+          { id: 'orange', label: 'البرتقالي المضيء' },
+          { id: 'emerald', label: 'الأخضر الزمردي' },
+          { id: 'blue', label: 'الأزرق السماوي' },
+          { id: 'purple', label: 'البنفسجي الملكي' },
+          { id: 'red', label: 'الأحمر الناري' },
+          { id: 'pink', label: 'الوردي اللطيف' },
+          { id: 'yellow', label: 'الأصفر الذهبي' },
+          { id: 'cyan', label: 'السماوي البحري' },
+          { id: 'peach', label: 'الخوخي الدافئ' },
+          { id: 'lime', label: 'الليموني الفاقع' }
+        ],
+
         avatarColorMap: {
           orange: '#f97316',
           emerald: '#10b981',
@@ -2177,13 +2308,13 @@
         achievements: [
           { id: 'committed', name: 'الملتزم', icon: 'calendar-check', reward: 50, desc: 'الحضور المبكر ٤ أسابيع متتالية دون انقطاع.' },
           { id: 'digital', name: 'المبدع الرقمي', icon: 'sparkles', reward: 60, desc: 'تسليم المهمة العملية بتميز مرتين متتاليتين.' },
-          { id: 'unity', name: 'القلب الواحد', icon: 'heart-handshake', reward: 40, desc: 'أسبوع كامل دون أي مخالفة من أي عضو في الفريق.' }
+          { id: 'unity', name: 'القلب الواحد', icon: 'heart-handshake', reward: 40, desc: 'أسبوع كامل دون أي مخالفة أو خصم شعلات.' }
         ],
         
         rewards: [
           { name: 'إعفاء من التأخير', desc: 'يلغي خصم تأخير واحد', icon: 'clock', price: 80 },
           { name: 'طلب شاي', desc: 'ضيافة على حساب المقر', icon: 'coffee', price: 50 },
-          { name: 'اختيار موضوع التحدي', desc: 'حق اختيار موضوع النشاط أو التحدي القادم لفريقك', icon: 'pen-tool', price: 110 },
+          { name: 'اختيار موضوع التحدي', desc: 'حق اختيار موضوع النشاط أو التحدي القادم لنفسك', icon: 'pen-tool', price: 110 },
           { name: 'مشروب بارد عشوائي', desc: 'مشروب بارد ومنعش يقدّم لك في الاستراحة', icon: 'cup-soda', price: 60 },
           { name: 'صندوق الحلا الجماعي', desc: 'صندوق حلويات صغير لتشاركه مع زملائك', icon: 'gift', price: 100 },
           { name: 'الاسم المتوهج', desc: 'لقب مميز يتوهج بلون فريد في لوحة الصدارة', icon: 'sparkles', price: 140 },
@@ -2196,7 +2327,7 @@
           { reason: 'تفاعل ومشاركة', delta: 10, icon: 'message-circle' },
           { reason: 'إنجاز مهمة', delta: 40, icon: 'check-check' },
           { reason: 'تميز إبداعي', delta: 15, icon: 'wand-2' },
-          { reason: 'تميز الفريق', delta: 20, icon: 'users' }
+          { reason: 'تميز وسلوك رائع', delta: 20, icon: 'user-check' }
         ],
 
         macrosNeg: [
@@ -2530,7 +2661,9 @@
                   payload.new = this.mapStudentFromDB(payload.new);
                 }
                 if (payload.eventType === 'INSERT') {
-                  this.students.push(payload.new);
+                  if (!this.students.some(s => s.id === payload.new.id)) {
+                    this.students.push(payload.new);
+                  }
                 } else if (payload.eventType === 'DELETE') {
                   this.students = this.students.filter(s => s.id !== payload.old.id);
                 } else if (payload.eventType === 'UPDATE') {
@@ -2548,7 +2681,9 @@
               .channel('activity_log_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, payload => {
                 if (payload.eventType === 'INSERT') {
-                  this.activityLogs.push(payload.new);
+                  if (!this.activityLogs.some(l => l.id === payload.new.id)) {
+                    this.activityLogs.push(payload.new);
+                  }
                 } else if (payload.eventType === 'DELETE') {
                   this.activityLogs = this.activityLogs.filter(l => l.id !== payload.old.id);
                 } else if (payload.eventType === 'UPDATE') {
@@ -2563,7 +2698,9 @@
               .channel('inventory_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
                 if (payload.eventType === 'INSERT') {
-                  this.inventoryList.push(payload.new);
+                  if (!this.inventoryList.some(i => i.id === payload.new.id)) {
+                    this.inventoryList.push(payload.new);
+                  }
                 } else if (payload.eventType === 'DELETE') {
                   this.inventoryList = this.inventoryList.filter(i => i.id !== payload.old.id);
                 } else if (payload.eventType === 'UPDATE') {
@@ -2599,7 +2736,9 @@
               .channel('pending_accounts_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_accounts' }, payload => {
                 if (payload.eventType === 'INSERT') {
-                  this.pendingAccounts.push(payload.new);
+                  if (!this.pendingAccounts.some(p => p.id === payload.new.id)) {
+                    this.pendingAccounts.push(payload.new);
+                  }
                 } else if (payload.eventType === 'DELETE') {
                   this.pendingAccounts = this.pendingAccounts.filter(p => p.id !== payload.old.id);
                 } else if (payload.eventType === 'UPDATE') {
@@ -2814,6 +2953,36 @@
           await supabaseClient.from('pending_accounts').delete().eq('id', id);
           this.pendingAccounts = this.pendingAccounts.filter(p => p.id !== id);
           this.showToast('تمت موافقة وتنشيط حساب الطالب بنجاح', 'success', 'user-check');
+        },
+
+        async deleteStudentAccount(studentId) {
+          if (!supabaseClient) {
+            this.students = this.students.filter(s => s.id !== studentId);
+            this.saveState();
+            this.viewOnlyStudentId = null;
+            this.showToast('تم حذف الحساب بنجاح (محلياً)', 'success', 'trash-2');
+            return;
+          }
+
+          try {
+            await supabaseClient.from('inventory').delete().eq('student_id', studentId);
+            await supabaseClient.from('activity_log').delete().eq('student_id', studentId);
+            
+            const { error } = await supabaseClient.from('students').delete().eq('id', studentId);
+            if (error) {
+              console.error("Error deleting student:", error);
+              this.showToast('فشل حذف الحساب', 'neg');
+              return;
+            }
+
+            this.students = this.students.filter(s => s.id !== studentId);
+            this.saveState();
+            this.viewOnlyStudentId = null;
+            this.showToast('تم حذف الحساب بنجاح كاملاً', 'success', 'trash-2');
+          } catch (e) {
+            console.error("Exception during delete:", e);
+            this.showToast('حدث خطأ غير متوقع', 'neg');
+          }
         },
 
         async rejectAccount(id) {
@@ -3519,6 +3688,102 @@
           }
         },
 
+        startGame() {
+          if (this.isAdmin) {
+            this.showToast('المشرفون لا يمكنهم اللعب', 'info', 'shield');
+            return;
+          }
+          this.gamePlaying = true;
+          this.gameScoreCurrent = 0;
+          this.gameTimeLeft = 20;
+          this.moveFlame();
+          
+          if (this.gameIntervalId) clearInterval(this.gameIntervalId);
+          this.gameIntervalId = setInterval(() => {
+            this.gameTimeLeft--;
+            if (this.gameTimeLeft <= 0) {
+              this.endGame();
+            }
+          }, 1000);
+        },
+
+        moveFlame() {
+          const topVal = Math.floor(Math.random() * 70) + 15;
+          const leftVal = Math.floor(Math.random() * 70) + 15;
+          this.flamePos = {
+            top: `${topVal}%`,
+            left: `${leftVal}%`
+          };
+        },
+
+        clickFlame() {
+          if (!this.gamePlaying) return;
+          this.gameScoreCurrent++;
+          this.playGameClickSound();
+          this.moveFlame();
+        },
+
+        async endGame() {
+          this.gamePlaying = false;
+          if (this.gameIntervalId) {
+            clearInterval(this.gameIntervalId);
+            this.gameIntervalId = null;
+          }
+          this.playGameEndSound();
+          this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
+          
+          const st = this.getStudentById(this.activeId);
+          if (st && this.gameScoreCurrent > (st.gameScore || 0)) {
+            st.gameScore = this.gameScoreCurrent;
+            st.trend = this.gameScoreCurrent;
+            this.saveState();
+            
+            if (supabaseClient) {
+              const { error } = await supabaseClient.from('students').update({
+                trend: this.gameScoreCurrent
+              }).eq('id', st.id);
+              if (error) {
+                console.error("Error saving high score:", error);
+              } else {
+                this.showToast('رقم قياسي جديد! تم حفظ درجتك 🏆', 'success', 'trophy');
+              }
+            } else {
+              this.showToast('رقم قياسي جديد! تم حفظ درجتك محلياً 🏆', 'success', 'trophy');
+            }
+          }
+        },
+
+        playGameClickSound() {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600 + Math.random() * 200, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+          } catch(e) {}
+        },
+
+        playGameEndSound() {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.45);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+          } catch(e) {}
+        },
+
         showToast(msg, type = 'pos', icon = 'check') {
           if (this.toastTimeout) clearTimeout(this.toastTimeout);
           this.toast.message = msg;
@@ -3560,12 +3825,11 @@
               }
             }
 
-            const headers = ['المعرف', 'الاسم', 'المرحلة', 'الفريق', 'محفظة الشعلات', 'الشعلات التراكمية'];
+            const headers = ['المعرف', 'الاسم', 'المرحلة', 'محفظة الشعلات', 'الشعلات التراكمية'];
             const rows = studentsToExport.map(s => [
               s.id,
               s.name,
               this.getStageLabel(s.stage),
-              this.getTeamLabel(s.team),
               s.wallet,
               s.total
             ]);
@@ -3748,6 +4012,7 @@
             'sprout': '<path d="M7 20h10M12 20V12M12 12c2.5-3.5 6-3.5 6-3.5s-.5 4-4 5.5c3.5-2.5 3.5-6 3.5-6s-4 .5-5.5 4c2.5-3.5-1-6-1-6s-3.5 3.5-1.5 6z" fill="currentColor" opacity="0.2"></path><path d="M12 12a5 5 0 0 0-5-5H5M12 12a5 5 0 0 1 5-5h2M12 20V10"></path>',
             'clock': '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>',
             'delete': '<path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM18 9l-6 6M12 9l6 6"></path>',
+            'trash-2': '<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"></path>',
             'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>',
             'plus-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line>',
             'minus-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line>',
