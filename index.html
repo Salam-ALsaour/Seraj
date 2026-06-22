@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
   <title>سراج</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1888,15 +1889,22 @@
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('Service Worker registered successfully!', reg))
-          .catch(err => console.log('Service Worker registration failed.', err));
+          .catch(err => console.error('Service Worker registration failed:', err));
       });
     }
 
-    // Initialize Supabase Client
+    // Initialize Supabase Client Safely
     const SUPABASE_URL = "https://ttkvsoxzfhqcaqzopvaq.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_tMlScCfurHafq1BReDg0hg_xKKecVhE";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabase = null;
+    try {
+      if (window.supabase) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.error("Supabase global init failed:", e);
+    }
 
     function serajApp() {
       // Mock data in the exact same shape as the second model's code
@@ -2095,7 +2103,6 @@
           { name: 'مشروب بارد عشوائي', desc: 'مشروب بارد ومنعش يقدّم لك في الاستراحة', icon: 'cup-soda', price: 60 },
           { name: 'صندوق الحلا الجماعي', desc: 'صندوق حلويات صغير لتشاركه مع زملائك', icon: 'gift', price: 100 },
           { name: 'الاسم المتوهج', desc: 'لقب مميز يتوهج بلون فريد في لوحة الصدارة', icon: 'sparkles', price: 140 },
-          { name: 'إعلان صدارة خاص', desc: 'نشر رسالة أو اقتباس من اختيارك بالصفحة الرئيسية', icon: 'megaphone', price: 130 },
           { name: 'إعفاء من تسليم الهاتف', desc: 'السماح بالاحتفاظ بهاتفك المحمول أثناء الدرس', icon: 'smartphone', price: 220 }
         ],
 
@@ -2133,78 +2140,117 @@
 
         // Init
         async init() {
-          if (!window.supabase) {
-            console.error("Supabase client not loaded.");
+          // Double check initialization
+          try {
+            if (!supabase && window.supabase) {
+              supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+          } catch (e) {
+            console.error("Supabase load error inside init():", e);
+          }
+
+          if (!supabase) {
+            console.warn("Supabase client is not available. Running in LocalStorage fallback mode.");
+            this.loadFallbackLocalStorage();
             return;
           }
 
           // 1. Fetch Students
-          let { data: dbStudents, error: fetchErr } = await supabase.from('students').select('*');
-          if (fetchErr) {
-            console.error("Error fetching students:", fetchErr);
-            this.students = DEFAULT_STUDENTS;
-          } else {
-            if (dbStudents.length === 0) {
-              // Seeding
-              const { error: seedErr } = await supabase.from('students').insert(DEFAULT_STUDENTS);
-              if (seedErr) {
-                console.error("Error seeding default students:", seedErr);
-              } else {
-                let { data: reFetched } = await supabase.from('students').select('*');
-                this.students = reFetched || [];
-              }
+          try {
+            let { data: dbStudents, error: fetchErr } = await supabase.from('students').select('*');
+            if (fetchErr) {
+              console.error("Error fetching students:", fetchErr);
+              this.students = DEFAULT_STUDENTS;
             } else {
-              this.students = dbStudents;
+              if (!dbStudents || dbStudents.length === 0) {
+                // Seeding
+                const { error: seedErr } = await supabase.from('students').insert(DEFAULT_STUDENTS);
+                if (seedErr) {
+                  console.error("Error seeding default students:", seedErr);
+                  this.students = DEFAULT_STUDENTS;
+                } else {
+                  let { data: reFetched } = await supabase.from('students').select('*');
+                  this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
+                }
+              } else {
+                this.students = dbStudents;
+              }
             }
+          } catch (err) {
+            console.error("Exception during students fetch/seed:", err);
+            this.students = DEFAULT_STUDENTS;
           }
 
           // 2. Fetch Logs
-          let { data: dbLogs } = await supabase.from('activity_log').select('*');
-          this.activityLogs = dbLogs || [];
+          try {
+            let { data: dbLogs, error: logErr } = await supabase.from('activity_log').select('*');
+            if (logErr) console.error("Error fetching activity_log:", logErr);
+            this.activityLogs = dbLogs || [];
+          } catch (err) {
+            console.error("Exception fetching activity_log:", err);
+            this.activityLogs = [];
+          }
 
           // 3. Fetch Inventory
-          let { data: dbInv } = await supabase.from('inventory').select('*');
-          this.inventoryList = dbInv || [];
+          try {
+            let { data: dbInv, error: invErr } = await supabase.from('inventory').select('*');
+            if (invErr) console.error("Error fetching inventory:", invErr);
+            this.inventoryList = dbInv || [];
+          } catch (err) {
+            console.error("Exception fetching inventory:", err);
+            this.inventoryList = [];
+          }
 
           // 4. Fetch Challenge Timer
-          let { data: chData } = await supabase.from('weekly_challenge').select('*').eq('id', 'main').single();
-          if (!chData) {
-            const defaultCh = {
-              id: 'main',
-              title: 'معركة الكلمات السريعة',
-              desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
-              points: 30,
-              duration: 600,
-              time_left: 600,
-              is_running: false
-            };
-            await supabase.from('weekly_challenge').insert(defaultCh);
-            this.weeklyChallenge.title = defaultCh.title;
-            this.weeklyChallenge.desc = defaultCh.desc;
-            this.weeklyChallenge.points = defaultCh.points;
-            this.weeklyChallenge.duration = defaultCh.duration;
-            this.weeklyChallenge.time_left = defaultCh.time_left;
-            this.weeklyChallenge.is_running = defaultCh.is_running;
-            this.weeklyChallenge.timeLeft = defaultCh.time_left;
-          } else {
-            this.weeklyChallenge.title = chData.title;
-            this.weeklyChallenge.desc = chData.desc;
-            this.weeklyChallenge.points = chData.points;
-            this.weeklyChallenge.duration = chData.duration;
-            this.weeklyChallenge.time_left = chData.time_left;
-            this.weeklyChallenge.is_running = chData.is_running;
-            this.weeklyChallenge.ends_at = chData.ends_at;
-
-            if (this.weeklyChallenge.is_running) {
-              this.startLocalTimer();
+          try {
+            let { data: chData, error: chErr } = await supabase.from('weekly_challenge').select('*').eq('id', 'main').single();
+            if (chErr || !chData) {
+              const defaultCh = {
+                id: 'main',
+                title: 'معركة الكلمات السريعة',
+                desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
+                points: 30,
+                duration: 600,
+                time_left: 600,
+                is_running: false
+              };
+              await supabase.from('weekly_challenge').insert(defaultCh);
+              this.weeklyChallenge.title = defaultCh.title;
+              this.weeklyChallenge.desc = defaultCh.desc;
+              this.weeklyChallenge.points = defaultCh.points;
+              this.weeklyChallenge.duration = defaultCh.duration;
+              this.weeklyChallenge.time_left = defaultCh.time_left;
+              this.weeklyChallenge.is_running = defaultCh.is_running;
+              this.weeklyChallenge.timeLeft = defaultCh.time_left;
             } else {
-              this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+              this.weeklyChallenge.title = chData.title;
+              this.weeklyChallenge.desc = chData.desc;
+              this.weeklyChallenge.points = chData.points;
+              this.weeklyChallenge.duration = chData.duration;
+              this.weeklyChallenge.time_left = chData.time_left;
+              this.weeklyChallenge.is_running = chData.is_running;
+              this.weeklyChallenge.ends_at = chData.ends_at;
+
+              if (this.weeklyChallenge.is_running) {
+                this.startLocalTimer();
+              } else {
+                this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+              }
             }
+          } catch (err) {
+            console.error("Exception fetching weekly_challenge:", err);
+            this.weeklyChallenge.timeLeft = 600;
           }
 
           // 5. Fetch Pending Accounts
-          let { data: dbPending } = await supabase.from('pending_accounts').select('*');
-          this.pendingAccounts = dbPending || [];
+          try {
+            let { data: dbPending, error: pendingErr } = await supabase.from('pending_accounts').select('*');
+            if (pendingErr) console.error("Error fetching pending_accounts:", pendingErr);
+            this.pendingAccounts = dbPending || [];
+          } catch (err) {
+            console.error("Exception fetching pending_accounts:", err);
+            this.pendingAccounts = [];
+          }
 
           // Local persistent sessions
           const active = localStorage.getItem('seraj_pwa_activeId');
@@ -2236,95 +2282,159 @@
           this.$nextTick(() => lucide.createIcons());
         },
 
+        loadFallbackLocalStorage() {
+          const st = localStorage.getItem('seraj_pwa_students');
+          if (st) {
+            try {
+              this.students = JSON.parse(st);
+            } catch(e) {
+              this.students = DEFAULT_STUDENTS;
+            }
+          } else {
+            this.students = DEFAULT_STUDENTS;
+          }
+          this.students.forEach(s => {
+            if (!s.inventory) s.inventory = [];
+          });
+
+          const active = localStorage.getItem('seraj_pwa_activeId');
+          if (active) this.activeId = active;
+
+          const logged = localStorage.getItem('seraj_pwa_isLoggedIn');
+          this.isLoggedIn = logged === 'true';
+
+          const inv = localStorage.getItem('seraj_pwa_inventory');
+          if (inv) {
+            try {
+              this.inventoryList = JSON.parse(inv);
+            } catch(e) {
+              this.inventoryList = [];
+            }
+          }
+          const logs = localStorage.getItem('seraj_pwa_logs');
+          if (logs) {
+            try {
+              this.activityLogs = JSON.parse(logs);
+            } catch(e) {
+              this.activityLogs = [];
+            }
+          }
+
+          const ch = localStorage.getItem('seraj_pwa_challenge');
+          if (ch) {
+            try {
+              const parsed = JSON.parse(ch);
+              this.weeklyChallenge.timeLeft = parsed.timeLeft || this.weeklyChallenge.duration;
+            } catch(e) {}
+          }
+
+          // Watches for local mode
+          this.$watch('currentScreen', () => this.$nextTick(() => lucide.createIcons()));
+          this.$watch('lbMode', () => this.$nextTick(() => lucide.createIcons()));
+          this.$watch('adminUnlocked', () => this.$nextTick(() => lucide.createIcons()));
+          this.$watch('isLoggedIn', () => this.$nextTick(() => lucide.createIcons()));
+          this.$nextTick(() => lucide.createIcons());
+        },
+
         setupRealtime() {
-          // Students changes
-          supabase
-            .channel('students_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, payload => {
-              if (payload.eventType === 'INSERT') {
-                this.students.push(payload.new);
-              } else if (payload.eventType === 'DELETE') {
-                this.students = this.students.filter(s => s.id !== payload.old.id);
-              } else if (payload.eventType === 'UPDATE') {
-                const idx = this.students.findIndex(s => s.id === payload.new.id);
-                if (idx !== -1) {
-                  this.students[idx] = payload.new;
+          try {
+            // Students changes
+            supabase
+              .channel('students_changes')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                  this.students.push(payload.new);
+                } else if (payload.eventType === 'DELETE') {
+                  this.students = this.students.filter(s => s.id !== payload.old.id);
+                } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.students.findIndex(s => s.id === payload.new.id);
+                  if (idx !== -1) {
+                    this.students[idx] = payload.new;
+                  }
                 }
-              }
-              this.render();
-            })
-            .subscribe();
+                this.render();
+              })
+              .subscribe();
 
-          // Activity logs changes
-          supabase
-            .channel('activity_log_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, payload => {
-              if (payload.eventType === 'INSERT') {
-                this.activityLogs.push(payload.new);
-              } else if (payload.eventType === 'DELETE') {
-                this.activityLogs = this.activityLogs.filter(l => l.id !== payload.old.id);
-              } else if (payload.eventType === 'UPDATE') {
-                const idx = this.activityLogs.findIndex(l => l.id === payload.new.id);
-                if (idx !== -1) this.activityLogs[idx] = payload.new;
-              }
-            })
-            .subscribe();
+            // Activity logs changes
+            supabase
+              .channel('activity_log_changes')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                  this.activityLogs.push(payload.new);
+                } else if (payload.eventType === 'DELETE') {
+                  this.activityLogs = this.activityLogs.filter(l => l.id !== payload.old.id);
+                } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.activityLogs.findIndex(l => l.id === payload.new.id);
+                  if (idx !== -1) this.activityLogs[idx] = payload.new;
+                }
+              })
+              .subscribe();
 
-          // Inventory changes
-          supabase
-            .channel('inventory_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
-              if (payload.eventType === 'INSERT') {
-                this.inventoryList.push(payload.new);
-              } else if (payload.eventType === 'DELETE') {
-                this.inventoryList = this.inventoryList.filter(i => i.id !== payload.old.id);
-              } else if (payload.eventType === 'UPDATE') {
-                const idx = this.inventoryList.findIndex(i => i.id === payload.new.id);
-                if (idx !== -1) this.inventoryList[idx] = payload.new;
-              }
-            })
-            .subscribe();
+            // Inventory changes
+            supabase
+              .channel('inventory_changes')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                  this.inventoryList.push(payload.new);
+                } else if (payload.eventType === 'DELETE') {
+                  this.inventoryList = this.inventoryList.filter(i => i.id !== payload.old.id);
+                } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.inventoryList.findIndex(i => i.id === payload.new.id);
+                  if (idx !== -1) this.inventoryList[idx] = payload.new;
+                }
+              })
+              .subscribe();
 
-          // Weekly challenge changes
-          supabase
-            .channel('weekly_challenge_changes')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'weekly_challenge' }, payload => {
-              this.weeklyChallenge.title = payload.new.title;
-              this.weeklyChallenge.desc = payload.new.desc;
-              this.weeklyChallenge.points = payload.new.points;
-              this.weeklyChallenge.duration = payload.new.duration;
-              this.weeklyChallenge.time_left = payload.new.time_left;
-              this.weeklyChallenge.is_running = payload.new.is_running;
-              this.weeklyChallenge.ends_at = payload.new.ends_at;
+            // Weekly challenge changes
+            supabase
+              .channel('weekly_challenge_changes')
+              .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'weekly_challenge' }, payload => {
+                this.weeklyChallenge.title = payload.new.title;
+                this.weeklyChallenge.desc = payload.new.desc;
+                this.weeklyChallenge.points = payload.new.points;
+                this.weeklyChallenge.duration = payload.new.duration;
+                this.weeklyChallenge.time_left = payload.new.time_left;
+                this.weeklyChallenge.is_running = payload.new.is_running;
+                this.weeklyChallenge.ends_at = payload.new.ends_at;
 
-              if (this.weeklyChallenge.is_running) {
-                this.startLocalTimer();
-              } else {
-                this.stopLocalTimer();
-                this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
-              }
-            })
-            .subscribe();
+                if (this.weeklyChallenge.is_running) {
+                  this.startLocalTimer();
+                } else {
+                  this.stopLocalTimer();
+                  this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+                }
+              })
+              .subscribe();
 
-          // Pending accounts changes
-          supabase
-            .channel('pending_accounts_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_accounts' }, payload => {
-              if (payload.eventType === 'INSERT') {
-                this.pendingAccounts.push(payload.new);
-              } else if (payload.eventType === 'DELETE') {
-                this.pendingAccounts = this.pendingAccounts.filter(p => p.id !== payload.old.id);
-              } else if (payload.eventType === 'UPDATE') {
-                const idx = this.pendingAccounts.findIndex(p => p.id === payload.new.id);
-                if (idx !== -1) this.pendingAccounts[idx] = payload.new;
-              }
-            })
-            .subscribe();
+            // Pending accounts changes
+            supabase
+              .channel('pending_accounts_changes')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_accounts' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                  this.pendingAccounts.push(payload.new);
+                } else if (payload.eventType === 'DELETE') {
+                  this.pendingAccounts = this.pendingAccounts.filter(p => p.id !== payload.old.id);
+                } else if (payload.eventType === 'UPDATE') {
+                  const idx = this.pendingAccounts.findIndex(p => p.id === payload.new.id);
+                  if (idx !== -1) this.pendingAccounts[idx] = payload.new;
+                }
+              })
+              .subscribe();
+          } catch (e) {
+            console.error("Error setting up realtime:", e);
+          }
         },
 
         saveState() {
           localStorage.setItem('seraj_pwa_activeId', this.activeId);
           localStorage.setItem('seraj_pwa_isLoggedIn', this.isLoggedIn ? 'true' : 'false');
+          localStorage.setItem('seraj_pwa_students', JSON.stringify(this.students));
+          localStorage.setItem('seraj_pwa_inventory', JSON.stringify(this.inventoryList));
+          localStorage.setItem('seraj_pwa_logs', JSON.stringify(this.activityLogs));
+          localStorage.setItem('seraj_pwa_challenge', JSON.stringify({
+            timeLeft: this.weeklyChallenge.timeLeft
+          }));
         },
 
         // Auth
@@ -2387,6 +2497,29 @@
             return;
           }
 
+          if (!supabase) {
+            this.students.push({
+              id: idNormalized,
+              name: this.signupName.trim(),
+              stage: this.signupStage,
+              team: this.signupTeam,
+              pin: this.signupPassword.trim(),
+              wallet: 0,
+              total: 0,
+              trend: 1,
+              avatarIcon: 'user',
+              avatarColor: 'orange',
+              headline: 'طالب جديد في سراج',
+              badges: []
+            });
+            this.saveState();
+            this.signupSuccessMsg = 'تم إنشاء وتنشيط حسابك محلياً بنجاح!';
+            this.signupName = '';
+            this.signupId = '';
+            this.signupPassword = '';
+            return;
+          }
+
           const { error } = await supabase.from('pending_accounts').insert({
             id: idNormalized,
             name: this.signupName.trim(),
@@ -2403,7 +2536,6 @@
 
           this.signupSuccessMsg = 'تم تقديم طلبك بنجاح وبانتظار موافقة الإدارة.';
           
-          // Clear
           this.signupName = '';
           this.signupId = '';
           this.signupPassword = '';
@@ -2412,6 +2544,13 @@
         async approveAccount(id) {
           const req = this.pendingAccounts.find(p => p.id === id);
           if (!req) return;
+
+          if (!supabase) {
+            const reqIdx = this.pendingAccounts.findIndex(p => p.id === id);
+            if (reqIdx !== -1) this.pendingAccounts.splice(reqIdx, 1);
+            this.saveState();
+            return;
+          }
 
           const { error: insErr } = await supabase.from('students').insert({
             id: req.id,
@@ -2439,6 +2578,12 @@
         },
 
         async rejectAccount(id) {
+          if (!supabase) {
+            const reqIdx = this.pendingAccounts.findIndex(p => p.id === id);
+            if (reqIdx !== -1) this.pendingAccounts.splice(reqIdx, 1);
+            this.saveState();
+            return;
+          }
           const { error } = await supabase.from('pending_accounts').delete().eq('id', id);
           if (error) {
             console.error("Error rejecting account:", error);
@@ -2582,6 +2727,15 @@
         async saveAvatarSettings(studentId) {
           const st = this.getStudentById(studentId);
           if (st) {
+            if (!supabase) {
+              st.avatarIcon = this.tempAvatarIcon;
+              st.avatarColor = this.tempAvatarColor;
+              this.avatarModalOpen = false;
+              this.saveState();
+              this.showToast('تم حفظ شارات المظهر والوهج بنجاح', 'success', 'palette');
+              return;
+            }
+
             const { error: sErr } = await supabase.from('students').update({
               avatarIcon: this.tempAvatarIcon,
               avatarColor: this.tempAvatarColor
@@ -2601,6 +2755,32 @@
           const st = this.getStudentById(studentId);
           if (!st || st.wallet < reward.price) {
             this.showToast('شعلات المحفظة غير كافية', 'neg');
+            return;
+          }
+
+          if (!supabase) {
+            st.wallet -= reward.price;
+            this.activityLogs.unshift({
+              id: 'log_' + Date.now(),
+              student_id: studentId,
+              reason: `شراء: ${reward.name}`,
+              delta: -reward.price,
+              pos: false,
+              created_at: new Date().toISOString()
+            });
+            const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            this.inventoryList.unshift({
+              id: invId,
+              student_id: studentId,
+              name: reward.name,
+              desc: reward.desc,
+              icon: reward.icon || 'gift',
+              price: reward.price,
+              status: 'available',
+              created_at: new Date().toISOString()
+            });
+            this.saveState();
+            this.showToast(`تم شراء ${reward.name} وإضافتها للحقيبة`, 'pos');
             return;
           }
 
@@ -2640,6 +2820,21 @@
           if (!st) return;
           const item = this.inventoryList.find(i => i.id === rewardId);
           if (item && item.status === 'available') {
+            if (!supabase) {
+              item.status = 'pending';
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: `طلب استخدام: ${item.name}`,
+                delta: 0,
+                pos: true,
+                created_at: new Date().toISOString()
+              });
+              this.saveState();
+              this.showToast(`تم إرسال طلب تفعيل ${item.name} للمشرف`, 'pos');
+              return;
+            }
+
             const { error: invErr } = await supabase.from('inventory').update({
               status: 'pending'
             }).eq('id', rewardId);
@@ -2665,6 +2860,21 @@
           if (!st) return;
           const item = this.inventoryList.find(i => i.id === rewardId);
           if (item) {
+            if (!supabase) {
+              item.status = 'used';
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: `تفعيل جائزة: ${item.name}`,
+                delta: 0,
+                pos: true,
+                created_at: new Date().toISOString()
+              });
+              this.saveState();
+              this.showToast(`تم قبول وتفعيل جائزة ${item.name}`, 'pos');
+              return;
+            }
+
             const { error: invErr } = await supabase.from('inventory').update({
               status: 'used'
             }).eq('id', rewardId);
@@ -2690,6 +2900,21 @@
           if (!st) return;
           const item = this.inventoryList.find(i => i.id === rewardId);
           if (item) {
+            if (!supabase) {
+              item.status = 'available';
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: `رفض تفعيل: ${item.name}`,
+                delta: 0,
+                pos: false,
+                created_at: new Date().toISOString()
+              });
+              this.saveState();
+              this.showToast(`تم رفض طلب تفعيل ${item.name}`, 'neg');
+              return;
+            }
+
             const { error: invErr } = await supabase.from('inventory').update({
               status: 'available'
             }).eq('id', rewardId);
@@ -2722,6 +2947,32 @@
           }
           if (sender.wallet < giftVal) {
             this.showToast('رصيد محفظتك غير كافٍ للإهداء', 'neg');
+            return;
+          }
+
+          if (!supabase) {
+            sender.wallet -= giftVal;
+            recipient.wallet += giftVal;
+            recipient.total += giftVal;
+            this.activityLogs.unshift({
+              id: 'log_s_' + Date.now(),
+              student_id: sender.id,
+              reason: `إهداء شعلات إلى ${recipient.name.split(' ')[0]}`,
+              delta: -giftVal,
+              pos: false,
+              created_at: new Date().toISOString()
+            });
+            this.activityLogs.unshift({
+              id: 'log_r_' + Date.now(),
+              student_id: recipient.id,
+              reason: `هدية شعلات من ${sender.name.split(' ')[0]}`,
+              delta: giftVal,
+              pos: true,
+              created_at: new Date().toISOString()
+            });
+            this.saveState();
+            this.showToast(`تم إرسال هدية بقيمة ${giftVal} شعلة إلى ${recipient.name.split(' ')[0]}!`, 'success', 'gift');
+            this.viewOnlyStudentId = null;
             return;
           }
 
@@ -2800,6 +3051,22 @@
         async awardPoints(studentId, delta, reason) {
           const s = this.getStudentById(studentId);
           if (s) {
+            if (!supabase) {
+              s.wallet += delta;
+              s.total += delta;
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: reason,
+                delta: delta,
+                pos: true,
+                created_at: new Date().toISOString()
+              });
+              this.saveState();
+              this.showToast(`تمت إضافة ${delta} شعلة لـ ${s.name.split(' ')[0]}`, 'success', 'plus-circle');
+              return;
+            }
+
             const { error: sErr } = await supabase.from('students').update({
               wallet: s.wallet + delta,
               total: s.total + delta
@@ -2824,6 +3091,22 @@
         async deductPoints(studentId, delta, reason) {
           const s = this.getStudentById(studentId);
           if (s) {
+            if (!supabase) {
+              s.wallet = Math.max(0, s.wallet + delta);
+              s.total = Math.max(0, s.total + delta);
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: reason,
+                delta: delta,
+                pos: false,
+                created_at: new Date().toISOString()
+              });
+              this.saveState();
+              this.showToast(`تم خصم ${Math.abs(delta)} شعلة من ${s.name.split(' ')[0]}`, 'neg', 'minus-circle');
+              return;
+            }
+
             const { error: sErr } = await supabase.from('students').update({
               wallet: Math.max(0, s.wallet + delta),
               total: Math.max(0, s.total + delta)
@@ -2859,6 +3142,13 @@
             added = true;
           }
 
+          if (!supabase) {
+            s.badges = newBadges;
+            this.saveState();
+            this.showToast(added ? 'تم منح الوسام بنجاح' : 'تم سحب الوسام', 'info');
+            return;
+          }
+
           const { error: sErr } = await supabase.from('students').update({
             badges: newBadges
           }).eq('id', studentId);
@@ -2872,6 +3162,22 @@
         },
 
         async toggleChallengeTimer() {
+          if (!supabase) {
+            if (this.weeklyChallenge.is_running) {
+              this.stopLocalTimer();
+              this.weeklyChallenge.is_running = false;
+            } else {
+              if (this.weeklyChallenge.timeLeft <= 0) {
+                this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+              }
+              this.weeklyChallenge.is_running = true;
+              this.weeklyChallenge.ends_at = new Date(Date.now() + this.weeklyChallenge.timeLeft * 1000).toISOString();
+              this.startLocalTimer();
+            }
+            this.saveState();
+            return;
+          }
+
           if (this.weeklyChallenge.is_running) {
             await supabase.from('weekly_challenge').update({
               is_running: false,
@@ -2894,6 +3200,16 @@
         },
 
         async resetChallengeTimer() {
+          if (!supabase) {
+            this.stopLocalTimer();
+            this.weeklyChallenge.is_running = false;
+            this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+            this.weeklyChallenge.ends_at = null;
+            this.saveState();
+            this.showToast('تمت إعادة ضبط المؤقت', 'info');
+            return;
+          }
+
           const { error } = await supabase.from('weekly_challenge').update({
             is_running: false,
             time_left: this.weeklyChallenge.duration,
@@ -2969,6 +3285,15 @@
         },
 
         async exportData() {
+          if (!supabase) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.students));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `seraj_backup_local_${new Date().toISOString().split('T')[0]}.json`);
+            dlAnchorElem.click();
+            return;
+          }
+
           let { data } = await supabase.from('students').select('*');
           const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
           const dlAnchorElem = document.createElement('a');
@@ -2985,6 +3310,14 @@
             try {
               const imported = JSON.parse(e.target.result);
               if (Array.isArray(imported)) {
+                if (!supabase) {
+                  this.students = imported;
+                  this.saveState();
+                  this.showToast('تم استيراد ومزامنة البيانات محلياً', 'success');
+                  this.render();
+                  return;
+                }
+
                 const { error } = await supabase.from('students').upsert(imported);
                 if (error) {
                   this.showToast('فشل استيراد البيانات السحابية', 'neg');
@@ -3000,7 +3333,21 @@
         },
 
         async resetToDefault() {
-          if (confirm('هل أنت متأكد من إعادة تعيين كامل بيانات السحاب للافتراضية؟')) {
+          if (confirm('هل أنت متأكد من إعادة تعيين كامل البيانات للافتراضية؟')) {
+            if (!supabase) {
+              this.students = DEFAULT_STUDENTS;
+              this.inventoryList = [];
+              this.activityLogs = [];
+              this.pendingAccounts = [];
+              this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+              this.weeklyChallenge.is_running = false;
+              this.weeklyChallenge.ends_at = null;
+              this.saveState();
+              this.showToast('تمت إعادة تعيين البيانات محلياً', 'success');
+              this.render();
+              return;
+            }
+
             const { error: delErr } = await supabase.from('students').delete().neq('id', '_dummy_');
             if (delErr) {
               console.error("Error clearing students:", delErr);

@@ -6,7 +6,8 @@ const ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js',
   'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap',
-  'https://unpkg.com/lucide@latest'
+  'https://unpkg.com/lucide@latest',
+  'https://unpkg.com/@supabase/supabase-js@2'
 ];
 
 self.addEventListener('install', (e) => {
