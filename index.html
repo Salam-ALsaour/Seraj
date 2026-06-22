@@ -21,6 +21,9 @@
   
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Supabase JS CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
     :root{
@@ -348,6 +351,16 @@
     .pin-key.empty{background:none;border:none;cursor:default;}
     .pin-key i{width:24px;height:24px;}
 
+    /* ===== LOGIN PAGE ===== */
+    .login-container{width:100%;max-width:360px;padding:24px;margin:auto;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;box-sizing:border-box;animation:fade .4s ease;}
+    .login-logo{width:70px;height:70px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(150deg,rgba(249,115,22,.22),rgba(5,150,105,.16));border:1px solid var(--stroke2);position:relative;margin-bottom:16px;}
+    .login-logo::after{content:"";position:absolute;inset:-8px;border-radius:24px;background:radial-gradient(circle,var(--orange-glow),transparent 70%);filter:blur(10px);opacity:.8;z-index:-1;}
+    .login-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;width:100%;margin-top:24px;}
+    .login-card{padding:18px 12px;border-radius:22px;border:1px solid var(--stroke);cursor:pointer;transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--glass);}
+    .login-card:hover{background:var(--glass2);border-color:rgba(255,255,255,0.15);transform:translateY(-3px);box-shadow:0 10px 25px -10px rgba(0,0,0,0.5);}
+    .login-card:active{transform:scale(0.96);}
+
+
     .admin-bar{display:flex;gap:11px;overflow-x:auto;padding:4px 2px 14px;margin-bottom:6px;}
     .admin-bar::-webkit-scrollbar{display:none;}
     
@@ -517,7 +530,163 @@
     <!-- Ambient background glow layers (moved inside app) -->
     <div id="atmos"></div>
     
-    <div id="scroll">
+    <!-- 1. 🔑 LOGIN SCREEN (When Not Logged In) -->
+    <template x-if="!isLoggedIn">
+      <div class="login-container" dir="rtl">
+        
+        <!-- LOGIN MODE -->
+        <template x-if="loginMode === 'login'">
+          <div style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            
+            <div class="login-logo">
+              <!-- Lantern SVG -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:34px; height:34px; color:#f97316;">
+                <circle cx="12" cy="3" r="1.5" />
+                <path d="M8 6h8l-1-2H9L8 6z" fill="currentColor" opacity="0.2" />
+                <path d="M8 6h8M9 4h6" />
+                <path d="M7 11c0-2.5 1.5-4 5-4s5 1.5 5 4c0 3-1.5 5-2 6H9c-.5-1-2-3-2-6z" fill="currentColor" opacity="0.1" />
+                <path d="M7 11c0-2.5 1.5-4 5-4s5 1.5 5 4c0 3-1.5 5-2 6H9c-.5-1-2-3-2-6z" />
+                <path d="M12 8.5c-.8 1.2-.8 2.2 0 3 .8-.8.8-1.8 0-3z" fill="#F97316" class="animate-pulse" />
+                <path d="M8 17h8v2H8v-2z" fill="currentColor" opacity="0.3" />
+                <path d="M8 17h8v2H8zM10 19v2h4v-2" />
+              </svg>
+            </div>
+            
+            <h1 style="font-size:26px; font-weight:700; color:var(--txt); margin-bottom:4px;">سراج</h1>
+            <p style="font-size:12px; color:var(--txt-dim); margin-bottom: 24px;">أدخل معرف الطالب وكلمة السر لبدء الرحلة والتنافس</p>
+            
+            <!-- Login Fields -->
+            <div class="glass" style="width: 100%; padding: 24px; border-radius: 24px; display: flex; flex-direction: column; gap: 16px;">
+              <div style="text-align: right;">
+                <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">معرف الطالب</label>
+                <input type="text" x-model="loginInputId" placeholder="مثال: s1" 
+                       style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;"
+                       @focus="$el.style.borderColor = 'rgba(249,115,22,0.4)'"
+                       @blur="$el.style.borderColor = 'var(--stroke)'" />
+              </div>
+              
+              <div style="text-align: right;">
+                <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">الرمز السري</label>
+                <input type="password" x-model="loginInputPassword" placeholder="••••" 
+                       style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;"
+                       @focus="$el.style.borderColor = 'rgba(249,115,22,0.4)'"
+                       @blur="$el.style.borderColor = 'var(--stroke)'" />
+              </div>
+
+              <template x-if="loginErrorMsg">
+                <div style="font-size: 11px; color: #f87171; text-align: center; font-weight: 600;" x-text="loginErrorMsg"></div>
+              </template>
+
+              <button @click="submitLogin()" 
+                      class="btn-redeem"
+                      style="width: 100%; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 12px; background: linear-gradient(135deg, var(--orange), #ffb27a); border: none; color: #fff; box-shadow: 0 0 15px var(--orange-glow); cursor: pointer; transition: all 0.2s;">
+                تسجيل الدخول
+              </button>
+            </div>
+
+            <!-- Signup trigger button -->
+            <button @click="loginMode = 'register'; loginErrorMsg = ''; signupSuccessMsg = '';" 
+                    style="margin-top: 20px; font-size: 12px; color: var(--orange); background: none; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+              إنشاء حساب جديد
+            </button>
+            
+          </div>
+        </template>
+
+        <!-- SIGNUP MODE -->
+        <template x-if="loginMode === 'register'">
+          <div style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            
+            <div class="login-logo">
+              <!-- User Plus SVG -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:34px; height:34px; color:#f97316;">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+            </div>
+            
+            <h1 style="font-size:26px; font-weight:700; color:var(--txt); margin-bottom:4px;">إنشاء حساب</h1>
+            <p style="font-size:12px; color:var(--txt-dim); margin-bottom: 20px;">املأ البيانات أدناه لتقديم طلب انضمام لسراج</p>
+            
+            <!-- Signup Fields -->
+            <div class="glass" style="width: 100%; padding: 24px; border-radius: 24px; display: flex; flex-direction: column; gap: 14px;">
+              
+              <!-- Success Message -->
+              <template x-if="signupSuccessMsg">
+                <div style="font-size: 12px; color: #34d399; text-align: center; font-weight: 600; padding: 8px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 12px;" x-text="signupSuccessMsg"></div>
+              </template>
+
+              <template x-if="!signupSuccessMsg">
+                <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
+                  <div style="text-align: right;">
+                    <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">الاسم الكامل</label>
+                    <input type="text" x-model="signupName" placeholder="مثال: يوسف العتيبي" 
+                           style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;" />
+                  </div>
+
+                  <div style="text-align: right;">
+                    <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">معرف الطالب (ID بالإنجليزية)</label>
+                    <input type="text" x-model="signupId" placeholder="مثال: youssef" 
+                           style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;" />
+                  </div>
+                  
+                  <div style="text-align: right;">
+                    <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">الرمز السري</label>
+                    <input type="password" x-model="signupPassword" placeholder="••••" 
+                           style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;" />
+                  </div>
+
+                  <div style="display: flex; gap: 12px; width: 100%;">
+                    <div style="flex: 1; text-align: right;">
+                      <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">المرحلة</label>
+                      <select x-model="signupStage" 
+                              style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none;">
+                        <option value="middle" style="background:#121414;">المتوسط</option>
+                        <option value="high" style="background:#121414;">الثانوي</option>
+                      </select>
+                    </div>
+
+                    <div style="flex: 1; text-align: right;">
+                      <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">الفريق</label>
+                      <select x-model="signupTeam" 
+                              style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none;">
+                        <option value="khwarizmi" style="background:#121414;">الخوارزمي</option>
+                        <option value="haytham" style="background:#121414;">ابن الهيثم</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <template x-if="loginErrorMsg">
+                    <div style="font-size: 11px; color: #f87171; text-align: center; font-weight: 600;" x-text="loginErrorMsg"></div>
+                  </template>
+
+                  <button @click="submitRegister()" 
+                          class="btn-redeem"
+                          style="width: 100%; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 12px; background: linear-gradient(135deg, var(--orange), #ffb27a); border: none; color: #fff; box-shadow: 0 0 15px var(--orange-glow); cursor: pointer; transition: all 0.2s;">
+                    إرسال طلب إنشاء الحساب
+                  </button>
+                </div>
+              </template>
+
+            </div>
+
+            <!-- Back to Login -->
+            <button @click="loginMode = 'login'; loginErrorMsg = ''; signupSuccessMsg = '';" 
+                    style="margin-top: 20px; font-size: 12px; color: var(--txt-dim); background: none; border: none; font-weight: 600; cursor: pointer;">
+              العودة لتسجيل الدخول
+            </button>
+            
+          </div>
+        </template>
+        
+      </div>
+    </template>
+
+    <template x-if="isLoggedIn">
+      <div style="display:contents;">
+        <div id="scroll">
       <!-- HEADER -->
       <div class="app-head">
         <div class="brand">
@@ -570,15 +739,7 @@
         </template>
       </div>
 
-      <!-- Quick Switcher (visible on Student-focused tabs) -->
-      <div x-show="['profile', 'store'].includes(currentScreen)" class="glass mb-4 p-3 flex items-center justify-between border-dashed border-white/10" style="border-radius:16px;">
-        <span class="text-xs text-[#8b9494]">تصفح كطالب:</span>
-        <select x-model="activeId" @change="saveState(); render();" class="text-xs bg-[#121414] border border-white/10 text-[#f4f6f6] py-1.5 px-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-orange-500/40">
-          <template x-for="st in students" :key="st.id">
-            <option :value="st.id" x-text="st.name" class="bg-[#121414] text-[#f4f6f6]"></option>
-          </template>
-        </select>
-      </div>
+
 
       <!-- VIEWS -->
       
@@ -895,6 +1056,17 @@
                   <div class="empty-note" style="text-align:center; padding:10px; color:var(--txt-faint); font-size:11px;">الحقيبة فارغة حالياً. قم بشراء امتيازات من المتجر لتظهر هنا.</div>
                 </template>
               </div>
+            </div>
+
+            <!-- Logout Button -->
+            <div style="margin-top: 24px; margin-bottom: 24px;">
+              <button @click="logout()" 
+                      class="btn-redeem"
+                      style="width: 100%; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; transition: all 0.2s;"
+                      @mouseenter="$el.style.background = 'rgba(239, 68, 68, 0.15)'; $el.style.borderColor = 'rgba(239, 68, 68, 0.3)';"
+                      @mouseleave="$el.style.background = 'rgba(239, 68, 68, 0.08)'; $el.style.borderColor = 'rgba(239, 68, 68, 0.2)';">
+                تسجيل الخروج
+              </button>
             </div>
 
           </div>
@@ -1222,6 +1394,38 @@
                   <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد جوائز جاهزة في حقيبة الطالب حالياً.</div>
                 </template>
               </div>
+            </div>
+
+            <!-- Pending Account Requests in Admin Panel -->
+            <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
+              <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('user-plus')"></div>
+              طلبات الحسابات المعلقة للإدارة
+            </div>
+            <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
+              <template x-for="req in pendingAccounts" :key="req.id">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(234,179,8,0.03); border:1px solid rgba(234,179,8,0.2);">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; color:var(--orange);" x-html="getIconSvg('user')"></div>
+                    <div>
+                      <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="req.name"></span>
+                      <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="'المعرف: ' + req.id + ' | الرمز: ' + req.password + ' | ' + getStageLabel(req.stage) + ' | ' + getTeamLabel(req.team)"></span>
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button @click="approveAccount(req.id)"
+                            style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0; border:none;">
+                      موافقة
+                    </button>
+                    <button @click="rejectAccount(req.id)"
+                            style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border:none;">
+                      رفض
+                    </button>
+                  </div>
+                </div>
+              </template>
+              <template x-if="pendingAccounts.length === 0">
+                <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد طلبات إنشاء حساب معلقة حالياً.</div>
+              </template>
             </div>
 
             <!-- Backup Management -->
@@ -1664,6 +1868,8 @@
         </button>
       </template>
     </nav>
+      </div>
+    </template>
 
   </div>
 
@@ -1686,56 +1892,39 @@
       });
     }
 
+    // Initialize Supabase Client
+    const SUPABASE_URL = "https://ttkvsoxzfhqcaqzopvaq.supabase.co";
+    const SUPABASE_ANON_KEY = "ضع_هنا_نص_الـ_Key_الكامل_الذي_نسخته_والذي_يبدأ_بـ_sb_publishable";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     function serajApp() {
       // Mock data in the exact same shape as the second model's code
       const DEFAULT_STUDENTS = [
         { id: 's1', name: 'يوسف العتيبي', stage: 'high', team: 'khwarizmi', wallet: 120, total: 340, trend: 1,
-          avatarIcon: 'flame', avatarColor: 'orange', headline: 'سفير سراج المتميز 👑',
-          badges: ['committed', 'digital'], log: [
-            { reason: 'إنجاز مهمة', delta: 40, t: 'قبل ساعة', pos: true },
-            { reason: 'حضور مبكر', delta: 15, t: 'اليوم 5:02م', pos: true },
-            { reason: 'تفاعل ومشاركة', delta: 10, t: 'أمس 6:15م', pos: true },
-            { reason: 'تأخير', delta: -10, t: 'الأحد 5:20م', pos: false },
-            { reason: 'تميز إبداعي', delta: 15, t: 'الأحد 6:00م', pos: true }
-          ]},
+          avatarIcon: 'flame', avatarColor: 'orange', headline: 'سفير سراج المتميز 👑', pin: '1111',
+          badges: ['committed', 'digital'] },
         { id: 's2', name: 'عبدالله القحطاني', stage: 'high', team: 'haytham', wallet: 90, total: 295, trend: 1,
-          avatarIcon: 'trophy', avatarColor: 'emerald', headline: 'طموح يعلو سماء العلا 🌟',
-          badges: ['committed'], log: [
-            { reason: 'تميز الفريق', delta: 20, t: 'قبل ٣ ساعات', pos: true },
-            { reason: 'حضور في الموعد', delta: 10, t: 'اليوم 5:08م', pos: true },
-            { reason: 'إنجاز مهمة', delta: 40, t: 'أمس 6:30م', pos: true }
-          ]},
+          avatarIcon: 'trophy', avatarColor: 'emerald', headline: 'طموح يعلو سماء العلا 🌟', pin: '2222',
+          badges: ['committed'] },
         { id: 's3', name: 'سلمان الدوسري', stage: 'middle', team: 'khwarizmi', wallet: 60, total: 250, trend: -1,
-          avatarIcon: 'shield', avatarColor: 'blue', headline: 'التميز هدفي الدائم 🚀',
-          badges: ['unity'], log: [
-            { reason: 'تفاعل ومشاركة', delta: 10, t: 'اليوم 5:30م', pos: true },
-            { reason: 'شغب وتشتيت', delta: -15, t: 'أمس 6:00م', pos: false },
-            { reason: 'حضور مبكر', delta: 15, t: 'أمس 5:01م', pos: true }
-          ]},
+          avatarIcon: 'shield', avatarColor: 'blue', headline: 'التميز هدفي الدائم 🚀', pin: '3333',
+          badges: ['unity'] },
         { id: 's4', name: 'فيصل الشهري', stage: 'middle', team: 'haytham', wallet: 40, total: 185, trend: 1,
-          avatarIcon: 'star', avatarColor: 'purple', headline: 'قادم بقوة للتنافس 🔥',
-          badges: [], log: [
-            { reason: 'حضور في الموعد', delta: 10, t: 'اليوم 5:09م', pos: true },
-            { reason: 'عدم تسليم المهمة', delta: -20, t: 'أمس 6:40م', pos: false }
-          ]},
+          avatarIcon: 'star', avatarColor: 'purple', headline: 'قادم بقوة للتنافس 🔥', pin: '4444',
+          badges: [] },
         { id: 's5', name: 'تركي المالكي', stage: 'high', team: 'khwarizmi', wallet: 25, total: 140, trend: -1,
-          avatarIcon: 'zap', avatarColor: 'red', headline: 'لا يأس مع الشعلات',
-          badges: [], log: [
-            { reason: 'تفاعل ومشاركة', delta: 10, t: 'اليوم 5:25م', pos: true },
-            { reason: 'عدم التعاون', delta: -10, t: 'أمس 6:10م', pos: false }
-          ]},
+          avatarIcon: 'zap', avatarColor: 'red', headline: 'لا يأس مع الشعلات', pin: '5555',
+          badges: [] },
         { id: 's6', name: 'ماجد الغامدي', stage: 'middle', team: 'haytham', wallet: 15, total: 95, trend: 1,
-          avatarIcon: 'coffee', avatarColor: 'orange', headline: 'عاشق القهوة والشغل ☕',
-          badges: [], log: [
-            { reason: 'حضور في الموعد', delta: 10, t: 'اليوم 5:10م', pos: true },
-            { reason: 'تأخير', delta: -10, t: 'أمس 5:30م', pos: false }
-          ]}
+          avatarIcon: 'coffee', avatarColor: 'orange', headline: 'عاشق القهوة والشغل ☕', pin: '6666',
+          badges: [] }
       ];
 
       return {
         // App State
-        students: JSON.parse(localStorage.getItem('seraj_pwa_students')) || DEFAULT_STUDENTS,
-        activeId: localStorage.getItem('seraj_pwa_activeId') || 's1',
+        students: [],
+        activeId: 's1',
         currentScreen: 'leaderboard',
         lbMode: 'individual',
         viewOnlyStudentId: null,
@@ -1744,11 +1933,36 @@
         adminTab: 'pos',
         adminStageFilter: 'all',
         
+        // Login State
+        isLoggedIn: false,
+        loginMode: 'login',
+        loginInputId: '',
+        loginInputPassword: '',
+        loginErrorMsg: '',
+        signupName: '',
+        signupId: '',
+        signupPassword: '',
+        signupStage: 'high',
+        signupTeam: 'khwarizmi',
+        signupSuccessMsg: '',
+        
+        pendingAccounts: [],
+        inventoryList: [],
+        activityLogs: [],
+        
         get currentStudent() {
-          return this.getStudentById(this.activeId) || this.students[0];
+          const student = this.getStudentById(this.activeId);
+          if (student) {
+            student.inventory = this.inventoryList.filter(item => item.student_id === student.id);
+          }
+          return student || this.students[0] || null;
         },
         get activeStudent() {
-          return this.getStudentById(this.adminActiveStudentId) || this.students[0];
+          const student = this.getStudentById(this.adminActiveStudentId);
+          if (student) {
+            student.inventory = this.inventoryList.filter(item => item.student_id === student.id);
+          }
+          return student || this.students[0] || null;
         },
         
         // Avatar Editor Modal State
@@ -1786,95 +2000,65 @@
           { id: 'headphones', label: 'سماعة ألعاب' },
           { id: 'gamepad-2', label: 'قبضة تحكم' },
           { id: 'laptop', label: 'حاسوب محمول' },
-          { id: 'smartphone', label: 'هاتف ذكي' },
-          { id: 'rocket', label: 'صاروخ الإنجاز' },
-          { id: 'target', label: 'أصابة الهدف' },
-          { id: 'heart', label: 'قلب المودة' },
           { id: 'heart-handshake', label: 'مصافحة تعاونية' },
-          { id: 'graduation-cap', label: 'قبعة النجاح' },
-          { id: 'book-open', label: 'كتاب مفتوح' },
+          { id: 'rocket', label: 'صاروخ' },
           { id: 'brain', label: 'عقل مفكر' },
-          { id: 'atom', label: 'ذرة العلوم' },
-          { id: 'globe', label: 'شبكة تواصل' },
-          { id: 'compass', label: 'بوصلة توجيه' },
-          { id: 'sprout', label: 'نبتة نامية' },
-          { id: 'leaf', label: 'ورقة خضراء' },
-          { id: 'moon', label: 'هلال الليل' },
-          { id: 'sun', label: 'شمس النهار' },
+          { id: 'atom', label: 'ذرة علمية' },
           { id: 'anchor', label: 'مرساة الثبات' },
-          { id: 'key', label: 'مفتاح الحلول' },
-          { id: 'bell', label: 'جرس الانتباه' },
-          { id: 'camera', label: 'عدسة التصوير' },
-          { id: 'swords', label: 'سيوف المبارزة' },
-          { id: 'flag', label: 'راية النصر' }
+          { id: 'compass', label: 'بوصلة الهداية' },
+          { id: 'globe', label: 'كرة أرضية' },
+          { id: 'heart', label: 'قلب طيب' },
+          { id: 'gift', label: 'هدية مفاجئة' },
+          { id: 'key', label: 'مفتاح حلول' },
+          { id: 'map', label: 'خارطة الكنز' },
+          { id: 'moon', label: 'هلال مضيء' },
+          { id: 'sun', label: 'شمس مشرقة' },
+          { id: 'umbrella', label: 'مظلة حماية' },
+          { id: 'wrench', label: 'مفك صيانة' },
+          { id: 'briefcase', label: 'حقيبة مهام' },
+          { id: 'book-open', label: 'كتاب مفتوح' },
+          { id: 'camera', label: 'كاميرا الذكرى' },
+          { id: 'feather', label: 'ريشة الإبداع' },
+          { id: 'sprout', label: 'برعم الأمل' },
+          { id: 'clock', label: 'ساعة تنظيم' }
         ],
-        selectableColors: [
-          { id: 'orange', label: 'برتقالي مضيء' },
-          { id: 'emerald', label: 'أخضر زمردي' },
-          { id: 'blue', label: 'أزرق سماوي' },
-          { id: 'purple', label: 'بنفسجي ملكي' },
-          { id: 'red', label: 'أحمر ناري' },
-          { id: 'pink', label: 'وردي لطيف' },
-          { id: 'yellow', label: 'أصفر ذهبي' },
-          { id: 'cyan', label: 'سماوي بحري' },
-          { id: 'rose', label: 'خوخي دافئ' },
-          { id: 'lime', label: 'ليموني فاقع' }
-        ],
-        
-        getIconSvg(iconName) {
-          const pascalName = iconName
-            .split('-')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join('');
-          const iconData = lucide.icons[pascalName] || lucide.icons['User'];
-          if (!iconData) {
-            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><circle cx="12" cy="12" r="10"/></svg>`;
-          }
-          const childrenSvg = iconData.map(node => {
-            const tagName = node[0];
-            const attrs = node[1];
-            const attrStr = Object.keys(attrs)
-              .map(key => `${key}="${attrs[key]}"`)
-              .join(' ');
-            return `<${tagName} ${attrStr}></${tagName}>`;
-          }).join('');
-          return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;">${childrenSvg}</svg>`;
-        },
-        
+
         avatarColorMap: {
-          orange: '#F97316',
-          emerald: '#059669',
+          orange: '#f97316',
+          emerald: '#10b981',
           blue: '#3b82f6',
-          purple: '#a855f7',
-          red: '#EF4444',
+          purple: '#8b5cf6',
+          red: '#ef4444',
           pink: '#ec4899',
           yellow: '#eab308',
           cyan: '#06b6d4',
-          rose: '#f43f5e',
+          peach: '#f97316',
           lime: '#84cc16'
         },
+
         avatarColorGlowMap: {
-          orange: 'rgba(249,115,22,.45)',
-          emerald: 'rgba(5,150,105,.45)',
-          blue: 'rgba(59,130,246,.4)',
-          purple: 'rgba(168,85,247,.4)',
-          red: 'rgba(239,68,68,.4)',
-          pink: 'rgba(236,72,153,.4)',
-          yellow: 'rgba(234,179,8,.4)',
-          cyan: 'rgba(6,182,212,.4)',
-          rose: 'rgba(244,63,94,.4)',
-          lime: 'rgba(132,204,22,.4)'
+          orange: 'rgba(249,115,22,0.15)',
+          emerald: 'rgba(16,185,129,0.15)',
+          blue: 'rgba(59,130,246,0.15)',
+          purple: 'rgba(139,92,246,0.15)',
+          red: 'rgba(239,68,68,0.15)',
+          pink: 'rgba(236,72,153,0.15)',
+          yellow: 'rgba(234,179,8,0.15)',
+          cyan: 'rgba(6,182,212,0.15)',
+          peach: 'rgba(249,115,22,0.15)',
+          lime: 'rgba(132,204,22,0.15)'
         },
+
         avatarColorLightMap: {
           orange: '#ffb27a',
           emerald: '#a7f3d0',
-          blue: '#93c5fd',
-          purple: '#c084fc',
+          blue: '#bfdbfe',
+          purple: '#ddd6fe',
           red: '#fca5a5',
           pink: '#fbcfe8',
           yellow: '#fef08a',
-          cyan: '#a5f3fc',
-          rose: '#fecdd3',
+          cyan: '#cffafe',
+          peach: '#ffd8a8',
           lime: '#d9f99d'
         },
         
@@ -1885,7 +2069,8 @@
           points: 30,
           duration: 600, // 10 minutes
           timeLeft: 600,
-          isRunning: false
+          is_running: false,
+          ends_at: null
         },
         timerIntervalId: null,
 
@@ -1947,10 +2132,91 @@
         toastTimeout: null,
 
         // Init
-        init() {
-          this.loadState();
-          
-          // Re-render Lucide icons on view change
+        async init() {
+          if (!window.supabase) {
+            console.error("Supabase client not loaded.");
+            return;
+          }
+
+          // 1. Fetch Students
+          let { data: dbStudents, error: fetchErr } = await supabase.from('students').select('*');
+          if (fetchErr) {
+            console.error("Error fetching students:", fetchErr);
+            this.students = DEFAULT_STUDENTS;
+          } else {
+            if (dbStudents.length === 0) {
+              // Seeding
+              const { error: seedErr } = await supabase.from('students').insert(DEFAULT_STUDENTS);
+              if (seedErr) {
+                console.error("Error seeding default students:", seedErr);
+              } else {
+                let { data: reFetched } = await supabase.from('students').select('*');
+                this.students = reFetched || [];
+              }
+            } else {
+              this.students = dbStudents;
+            }
+          }
+
+          // 2. Fetch Logs
+          let { data: dbLogs } = await supabase.from('activity_log').select('*');
+          this.activityLogs = dbLogs || [];
+
+          // 3. Fetch Inventory
+          let { data: dbInv } = await supabase.from('inventory').select('*');
+          this.inventoryList = dbInv || [];
+
+          // 4. Fetch Challenge Timer
+          let { data: chData } = await supabase.from('weekly_challenge').select('*').eq('id', 'main').single();
+          if (!chData) {
+            const defaultCh = {
+              id: 'main',
+              title: 'معركة الكلمات السريعة',
+              desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
+              points: 30,
+              duration: 600,
+              time_left: 600,
+              is_running: false
+            };
+            await supabase.from('weekly_challenge').insert(defaultCh);
+            this.weeklyChallenge.title = defaultCh.title;
+            this.weeklyChallenge.desc = defaultCh.desc;
+            this.weeklyChallenge.points = defaultCh.points;
+            this.weeklyChallenge.duration = defaultCh.duration;
+            this.weeklyChallenge.time_left = defaultCh.time_left;
+            this.weeklyChallenge.is_running = defaultCh.is_running;
+            this.weeklyChallenge.timeLeft = defaultCh.time_left;
+          } else {
+            this.weeklyChallenge.title = chData.title;
+            this.weeklyChallenge.desc = chData.desc;
+            this.weeklyChallenge.points = chData.points;
+            this.weeklyChallenge.duration = chData.duration;
+            this.weeklyChallenge.time_left = chData.time_left;
+            this.weeklyChallenge.is_running = chData.is_running;
+            this.weeklyChallenge.ends_at = chData.ends_at;
+
+            if (this.weeklyChallenge.is_running) {
+              this.startLocalTimer();
+            } else {
+              this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+            }
+          }
+
+          // 5. Fetch Pending Accounts
+          let { data: dbPending } = await supabase.from('pending_accounts').select('*');
+          this.pendingAccounts = dbPending || [];
+
+          // Local persistent sessions
+          const active = localStorage.getItem('seraj_pwa_activeId');
+          if (active) this.activeId = active;
+
+          const logged = localStorage.getItem('seraj_pwa_isLoggedIn');
+          this.isLoggedIn = logged === 'true';
+
+          // 6. Setup realtime subscriptions
+          this.setupRealtime();
+
+          // Watches for Lucide icons rendering
           this.$watch('currentScreen', () => {
             this.$nextTick(() => lucide.createIcons());
           });
@@ -1963,42 +2229,230 @@
             this.$nextTick(() => lucide.createIcons());
           });
 
+          this.$watch('isLoggedIn', () => {
+            this.$nextTick(() => lucide.createIcons());
+          });
+
           this.$nextTick(() => lucide.createIcons());
         },
 
-        // Persistence
-        loadState() {
-          const st = localStorage.getItem('seraj_pwa_students');
-          if (st) {
-            this.students = JSON.parse(st);
-          } else {
-            this.students = DEFAULT_STUDENTS;
-          }
+        setupRealtime() {
+          // Students changes
+          supabase
+            .channel('students_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, payload => {
+              if (payload.eventType === 'INSERT') {
+                this.students.push(payload.new);
+              } else if (payload.eventType === 'DELETE') {
+                this.students = this.students.filter(s => s.id !== payload.old.id);
+              } else if (payload.eventType === 'UPDATE') {
+                const idx = this.students.findIndex(s => s.id === payload.new.id);
+                if (idx !== -1) {
+                  this.students[idx] = payload.new;
+                }
+              }
+              this.render();
+            })
+            .subscribe();
 
-          // Ensure inventory is initialized for all students
-          this.students.forEach(s => {
-            if (!s.inventory) s.inventory = [];
-          });
-          
-          const active = localStorage.getItem('seraj_pwa_activeId');
-          if (active) this.activeId = active;
+          // Activity logs changes
+          supabase
+            .channel('activity_log_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, payload => {
+              if (payload.eventType === 'INSERT') {
+                this.activityLogs.push(payload.new);
+              } else if (payload.eventType === 'DELETE') {
+                this.activityLogs = this.activityLogs.filter(l => l.id !== payload.old.id);
+              } else if (payload.eventType === 'UPDATE') {
+                const idx = this.activityLogs.findIndex(l => l.id === payload.new.id);
+                if (idx !== -1) this.activityLogs[idx] = payload.new;
+              }
+            })
+            .subscribe();
 
-          const ch = localStorage.getItem('seraj_pwa_challenge');
-          if (ch) {
-            const parsed = JSON.parse(ch);
-            this.weeklyChallenge.timeLeft = parsed.timeLeft || this.weeklyChallenge.duration;
-          }
+          // Inventory changes
+          supabase
+            .channel('inventory_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+              if (payload.eventType === 'INSERT') {
+                this.inventoryList.push(payload.new);
+              } else if (payload.eventType === 'DELETE') {
+                this.inventoryList = this.inventoryList.filter(i => i.id !== payload.old.id);
+              } else if (payload.eventType === 'UPDATE') {
+                const idx = this.inventoryList.findIndex(i => i.id === payload.new.id);
+                if (idx !== -1) this.inventoryList[idx] = payload.new;
+              }
+            })
+            .subscribe();
+
+          // Weekly challenge changes
+          supabase
+            .channel('weekly_challenge_changes')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'weekly_challenge' }, payload => {
+              this.weeklyChallenge.title = payload.new.title;
+              this.weeklyChallenge.desc = payload.new.desc;
+              this.weeklyChallenge.points = payload.new.points;
+              this.weeklyChallenge.duration = payload.new.duration;
+              this.weeklyChallenge.time_left = payload.new.time_left;
+              this.weeklyChallenge.is_running = payload.new.is_running;
+              this.weeklyChallenge.ends_at = payload.new.ends_at;
+
+              if (this.weeklyChallenge.is_running) {
+                this.startLocalTimer();
+              } else {
+                this.stopLocalTimer();
+                this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+              }
+            })
+            .subscribe();
+
+          // Pending accounts changes
+          supabase
+            .channel('pending_accounts_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_accounts' }, payload => {
+              if (payload.eventType === 'INSERT') {
+                this.pendingAccounts.push(payload.new);
+              } else if (payload.eventType === 'DELETE') {
+                this.pendingAccounts = this.pendingAccounts.filter(p => p.id !== payload.old.id);
+              } else if (payload.eventType === 'UPDATE') {
+                const idx = this.pendingAccounts.findIndex(p => p.id === payload.new.id);
+                if (idx !== -1) this.pendingAccounts[idx] = payload.new;
+              }
+            })
+            .subscribe();
         },
 
         saveState() {
-          localStorage.setItem('seraj_pwa_students', JSON.stringify(this.students));
           localStorage.setItem('seraj_pwa_activeId', this.activeId);
-          localStorage.setItem('seraj_pwa_challenge', JSON.stringify({
-            timeLeft: this.weeklyChallenge.timeLeft
-          }));
+          localStorage.setItem('seraj_pwa_isLoggedIn', this.isLoggedIn ? 'true' : 'false');
         },
 
-        // Helpers
+        // Auth
+        async submitLogin() {
+          this.loginErrorMsg = '';
+          if (!this.loginInputId.trim() || !this.loginInputPassword.trim()) {
+            this.loginErrorMsg = 'يرجى إدخال معرف الطالب والرمز السري.';
+            return;
+          }
+
+          const idNormalized = this.loginInputId.trim().toLowerCase();
+          const student = this.students.find(s => s.id.toLowerCase() === idNormalized);
+
+          if (!student) {
+            const pending = this.pendingAccounts.find(p => p.id.toLowerCase() === idNormalized);
+            if (pending) {
+              this.loginErrorMsg = 'حسابك بانتظار موافقة المشرف.';
+            } else {
+              this.loginErrorMsg = 'معرف الطالب غير صحيح.';
+            }
+            return;
+          }
+
+          const correctPin = student.pin || '1111';
+          if (this.loginInputPassword === correctPin) {
+            this.activeId = student.id;
+            this.isLoggedIn = true;
+            this.loginInputId = '';
+            this.loginInputPassword = '';
+            this.saveState();
+            this.$nextTick(() => lucide.createIcons());
+          } else {
+            this.loginErrorMsg = 'الرمز السري غير صحيح.';
+          }
+        },
+
+        async submitRegister() {
+          this.loginErrorMsg = '';
+          this.signupSuccessMsg = '';
+          
+          if (!this.signupName.trim() || !this.signupId.trim() || !this.signupPassword.trim()) {
+            this.loginErrorMsg = 'يرجى تعبئة جميع الحقول المطلوبة.';
+            return;
+          }
+
+          const idNormalized = this.signupId.trim().toLowerCase();
+
+          if (!/^[a-zA-Z0-9_-]+$/.test(idNormalized)) {
+            this.loginErrorMsg = 'يجب أن يحتوي المعرف على أحرف وأرقام إنجليزية فقط.';
+            return;
+          }
+
+          if (this.students.some(s => s.id.toLowerCase() === idNormalized)) {
+            this.loginErrorMsg = 'المعرف مستخدم بالفعل.';
+            return;
+          }
+
+          if (this.pendingAccounts.some(p => p.id.toLowerCase() === idNormalized)) {
+            this.loginErrorMsg = 'يوجد طلب تسجيل معلق بهذا المعرف بالفعل.';
+            return;
+          }
+
+          const { error } = await supabase.from('pending_accounts').insert({
+            id: idNormalized,
+            name: this.signupName.trim(),
+            password: this.signupPassword.trim(),
+            stage: this.signupStage,
+            team: this.signupTeam
+          });
+
+          if (error) {
+            console.error("Error creating registration request:", error);
+            this.loginErrorMsg = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة لاحقاً.';
+            return;
+          }
+
+          this.signupSuccessMsg = 'تم تقديم طلبك بنجاح وبانتظار موافقة الإدارة.';
+          
+          // Clear
+          this.signupName = '';
+          this.signupId = '';
+          this.signupPassword = '';
+        },
+
+        async approveAccount(id) {
+          const req = this.pendingAccounts.find(p => p.id === id);
+          if (!req) return;
+
+          const { error: insErr } = await supabase.from('students').insert({
+            id: req.id,
+            name: req.name,
+            stage: req.stage,
+            team: req.team,
+            pin: req.password,
+            wallet: 0,
+            total: 0,
+            trend: 1,
+            avatarIcon: 'user',
+            avatarColor: 'orange',
+            headline: 'طالب جديد في سراج',
+            badges: []
+          });
+
+          if (insErr) {
+            console.error("Error approving account:", insErr);
+            this.showToast('فشل تفعيل الحساب', 'neg');
+            return;
+          }
+
+          await supabase.from('pending_accounts').delete().eq('id', id);
+          this.showToast('تمت موافقة وتنشيط حساب الطالب بنجاح', 'success', 'user-check');
+        },
+
+        async rejectAccount(id) {
+          const { error } = await supabase.from('pending_accounts').delete().eq('id', id);
+          if (error) {
+            console.error("Error rejecting account:", error);
+            return;
+          }
+          this.showToast('تم رفض وإلغاء طلب إنشاء الحساب', 'neg', 'user-x');
+        },
+
+        logout() {
+          this.isLoggedIn = false;
+          this.currentScreen = 'leaderboard';
+          this.saveState();
+        },
+
         setAdminStageFilter(filterVal) {
           this.adminStageFilter = filterVal;
           const filtered = this.students.filter(s => filterVal === 'all' || s.stage === filterVal);
@@ -2013,7 +2467,11 @@
         },
 
         getStudentById(id) {
-          return this.students.find(s => s.id === id);
+          const student = this.students.find(s => s.id === id);
+          if (student) {
+            student.inventory = this.inventoryList.filter(item => item.student_id === student.id);
+          }
+          return student;
         },
 
         getStudentLevelInfo(total) {
@@ -2024,50 +2482,23 @@
             { level: 4, min: 500, max: 800, label: 'فارس سراج', icon: 'shield' },
             { level: 5, min: 800, max: 999999, label: 'سفير سراج', icon: 'crown' }
           ];
-          let cur = config[0];
+          let current = config[0];
+          let next = config[1];
           for (let i = 0; i < config.length; i++) {
             if (total >= config[i].min) {
-              cur = config[i];
+              current = config[i];
+              next = config[i + 1] || null;
             }
           }
-          const next = config.find(c => c.level === cur.level + 1) || null;
           let percent = 100;
           let needed = 0;
           if (next) {
-            const range = next.min - cur.min;
-            const currentProgress = total - cur.min;
-            percent = Math.min(100, Math.max(0, Math.round((currentProgress / range) * 100)));
+            const range = next.min - current.min;
+            const progress = total - current.min;
+            percent = Math.min(100, Math.max(0, Math.round((progress / range) * 100)));
             needed = next.min - total;
           }
-          return { current: cur, next, percent, needed };
-        },
-
-        getSortedStudents() {
-          return [...this.students].sort((a, b) => b.total - a.total);
-        },
-
-        getPodiumStudents() {
-          const list = this.getSortedStudents();
-          const top3 = list.slice(0, 3);
-          while (top3.length < 3) {
-            top3.push({ id: 'dummy', name: '-', total: 0, stage: '-', team: '-', badges: [] });
-          }
-          return [top3[1], top3[0], top3[2]]; // 2nd, 1st, 3rd order for podium layout
-        },
-
-        getStudentRank(studentId) {
-          const sorted = this.getSortedStudents();
-          return sorted.findIndex(s => s.id === studentId) + 1;
-        },
-
-        getStudentActivities(studentId) {
-          const st = this.getStudentById(studentId);
-          return st ? st.log.slice(0, 5) : [];
-        },
-
-        hasBadge(studentId, badgeId) {
-          const st = this.getStudentById(studentId);
-          return st ? st.badges.includes(badgeId) : false;
+          return { current, next, percent, needed };
         },
 
         getStageLabel(s) {
@@ -2084,32 +2515,254 @@
           if (item.label === 'الصدارة') return 'لوحة الصدارة';
           return {
             profile: 'الملف الشخصي',
-            store: 'متجر الامتيازات',
-            badges: 'الأوسمة والتحديات',
-            challenge: 'المسابقة الأسبوعية',
+            store: 'المتجر المضيء',
+            challenge: 'المسابقة والتحدي',
             admin: 'غرفة الإدارة'
           }[this.currentScreen] || item.label;
         },
 
-        initials(name) {
-          if (!name || name === '-') return '-';
-          return name.trim().split(' ')[0].charAt(0);
+        getSortedStudents() {
+          return [...this.students].sort((a, b) => b.total - a.total);
         },
 
-        // Toast Trigger
-        showToast(message, type = 'pos') {
-          this.toast.message = message;
-          this.toast.type = type;
-          this.toast.icon = type === 'pos' ? 'check' : type === 'neg' ? 'minus' : 'info';
-          this.toast.show = true;
-          this.$nextTick(() => lucide.createIcons());
-          clearTimeout(this.toastTimeout);
-          this.toastTimeout = setTimeout(() => {
-            this.toast.show = false;
-          }, 2200);
+        getPodiumStudents() {
+          const list = this.getSortedStudents();
+          const top3 = list.slice(0, 3);
+          while (top3.length < 3) {
+            top3.push({ id: 'dummy', name: '-', total: 0, stage: '-', team: '-', badges: [] });
+          }
+          return [top3[1], top3[0], top3[2]]; // 2nd, 1st, 3rd layout
         },
 
-        // Team stats calc
+        getStudentRank(studentId) {
+          const sorted = this.getSortedStudents();
+          return sorted.findIndex(s => s.id === studentId) + 1;
+        },
+
+        hasBadge(studentId, badgeId) {
+          const st = this.getStudentById(studentId);
+          return st ? (st.badges || []).includes(badgeId) : false;
+        },
+
+        getStudentActivities(studentId) {
+          return this.activityLogs
+            .filter(log => log.student_id === studentId)
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 5)
+            .map(log => ({
+              id: log.id,
+              reason: log.reason,
+              delta: log.delta,
+              t: this.formatTimeAgo(log.created_at),
+              pos: log.pos
+            }));
+        },
+
+        formatTimeAgo(dateStr) {
+          if (!dateStr) return 'الآن';
+          const diffMs = Date.now() - new Date(dateStr).getTime();
+          const diffMins = Math.floor(diffMs / 60000);
+          if (diffMins < 1) return 'الآن';
+          if (diffMins < 60) return `قبل ${diffMins} دقيقة`;
+          const diffHours = Math.floor(diffMins / 60);
+          if (diffHours < 24) return `قبل ${diffHours} ساعة`;
+          const diffDays = Math.floor(diffHours / 24);
+          return `قبل ${diffDays} يوم`;
+        },
+
+        openAvatarModal(studentId) {
+          const st = this.getStudentById(studentId);
+          if (st) {
+            this.tempAvatarIcon = st.avatarIcon || 'user';
+            this.tempAvatarColor = st.avatarColor || 'orange';
+            this.avatarModalOpen = true;
+          }
+        },
+
+        async saveAvatarSettings(studentId) {
+          const st = this.getStudentById(studentId);
+          if (st) {
+            const { error: sErr } = await supabase.from('students').update({
+              avatarIcon: this.tempAvatarIcon,
+              avatarColor: this.tempAvatarColor
+            }).eq('id', studentId);
+
+            if (sErr) {
+              console.error("Error saving avatar settings:", sErr);
+              return;
+            }
+
+            this.avatarModalOpen = false;
+            this.showToast('تم حفظ شارات المظهر والوهج بنجاح', 'success', 'palette');
+          }
+        },
+
+        async purchaseReward(studentId, reward) {
+          const st = this.getStudentById(studentId);
+          if (!st || st.wallet < reward.price) {
+            this.showToast('شعلات المحفظة غير كافية', 'neg');
+            return;
+          }
+
+          const newWallet = st.wallet - reward.price;
+          const { error: sErr } = await supabase.from('students').update({
+            wallet: newWallet
+          }).eq('id', studentId);
+
+          if (sErr) {
+            console.error("Error updating student wallet:", sErr);
+            return;
+          }
+
+          await supabase.from('activity_log').insert({
+            student_id: studentId,
+            reason: `شراء: ${reward.name}`,
+            delta: -reward.price,
+            pos: false
+          });
+
+          const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          await supabase.from('inventory').insert({
+            id: invId,
+            student_id: studentId,
+            name: reward.name,
+            desc: reward.desc,
+            icon: reward.icon || 'gift',
+            price: reward.price,
+            status: 'available'
+          });
+
+          this.showToast(`تم شراء ${reward.name} وإضافتها للحقيبة`, 'pos');
+        },
+
+        async useInventoryReward(studentId, rewardId) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+          const item = this.inventoryList.find(i => i.id === rewardId);
+          if (item && item.status === 'available') {
+            const { error: invErr } = await supabase.from('inventory').update({
+              status: 'pending'
+            }).eq('id', rewardId);
+
+            if (invErr) {
+              console.error("Error updating inventory:", invErr);
+              return;
+            }
+
+            await supabase.from('activity_log').insert({
+              student_id: studentId,
+              reason: `طلب استخدام: ${item.name}`,
+              delta: 0,
+              pos: true
+            });
+
+            this.showToast(`تم إرسال طلب تفعيل ${item.name} للمشرف`, 'pos');
+          }
+        },
+
+        async adminApproveReward(studentId, rewardId) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+          const item = this.inventoryList.find(i => i.id === rewardId);
+          if (item) {
+            const { error: invErr } = await supabase.from('inventory').update({
+              status: 'used'
+            }).eq('id', rewardId);
+
+            if (invErr) {
+              console.error("Error approving reward:", invErr);
+              return;
+            }
+
+            await supabase.from('activity_log').insert({
+              student_id: studentId,
+              reason: `تفعيل جائزة: ${item.name}`,
+              delta: 0,
+              pos: true
+            });
+
+            this.showToast(`تم قبول وتفعيل جائزة ${item.name}`, 'pos');
+          }
+        },
+
+        async adminRejectReward(studentId, rewardId) {
+          const st = this.getStudentById(studentId);
+          if (!st) return;
+          const item = this.inventoryList.find(i => i.id === rewardId);
+          if (item) {
+            const { error: invErr } = await supabase.from('inventory').update({
+              status: 'available'
+            }).eq('id', rewardId);
+
+            if (invErr) {
+              console.error("Error rejecting reward:", invErr);
+              return;
+            }
+
+            await supabase.from('activity_log').insert({
+              student_id: studentId,
+              reason: `رفض تفعيل: ${item.name}`,
+              delta: 0,
+              pos: false
+            });
+
+            this.showToast(`تم رفض طلب تفعيل ${item.name}`, 'neg');
+          }
+        },
+
+        async sendFlamesGift(recipientId, amount) {
+          const sender = this.getStudentById(this.activeId);
+          const recipient = this.getStudentById(recipientId);
+          if (!sender || !recipient) return;
+          
+          const giftVal = parseInt(amount);
+          if (isNaN(giftVal) || giftVal <= 0) {
+            this.showToast('يرجى تحديد عدد شعلات صحيح', 'neg');
+            return;
+          }
+          if (sender.wallet < giftVal) {
+            this.showToast('رصيد محفظتك غير كافٍ للإهداء', 'neg');
+            return;
+          }
+
+          const { error: senderErr } = await supabase.from('students').update({
+            wallet: sender.wallet - giftVal
+          }).eq('id', sender.id);
+
+          if (senderErr) {
+            console.error("Error updating sender:", senderErr);
+            return;
+          }
+
+          const { error: recErr } = await supabase.from('students').update({
+            wallet: recipient.wallet + giftVal,
+            total: recipient.total + giftVal
+          }).eq('id', recipient.id);
+
+          if (recErr) {
+            console.error("Error updating recipient:", recErr);
+            return;
+          }
+
+          await supabase.from('activity_log').insert([
+            {
+              student_id: sender.id,
+              reason: `إهداء شعلات إلى ${recipient.name.split(' ')[0]}`,
+              delta: -giftVal,
+              pos: false
+            },
+            {
+              student_id: recipient.id,
+              reason: `هدية شعلات من ${sender.name.split(' ')[0]}`,
+              delta: giftVal,
+              pos: true
+            }
+          ]);
+
+          this.showToast(`تم إرسال هدية بقيمة ${giftVal} شعلة إلى ${recipient.name.split(' ')[0]}!`, 'success', 'gift');
+          this.viewOnlyStudentId = null;
+        },
+
         getTeamStats() {
           const teams = {};
           this.students.forEach(st => {
@@ -2144,167 +2797,146 @@
           this.lbMode = m;
         },
 
-        // Store Redeem
-        purchaseReward(studentId, reward) {
-          const st = this.getStudentById(studentId);
-          if (!st || st.wallet < reward.price) {
-            this.showToast('شعلات المحفظة غير كافية', 'neg');
-            return;
-          }
+        async awardPoints(studentId, delta, reason) {
+          const s = this.getStudentById(studentId);
+          if (s) {
+            const { error: sErr } = await supabase.from('students').update({
+              wallet: s.wallet + delta,
+              total: s.total + delta
+            }).eq('id', studentId);
 
-          st.wallet -= reward.price;
-          st.log.unshift({
-            reason: `شراء: ${reward.name}`,
-            delta: -reward.price,
-            t: 'الآن',
-            pos: false
-          });
+            if (sErr) {
+              console.error("Error awarding points:", sErr);
+              return;
+            }
 
-          if (!st.inventory) st.inventory = [];
-          st.inventory.unshift({
-            id: 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-            name: reward.name,
-            desc: reward.desc,
-            icon: reward.icon || 'gift',
-            price: reward.price,
-            purchasedAt: 'الآن',
-            status: 'available'
-          });
-
-          this.saveState();
-          this.showToast(`تم شراء ${reward.name} وإضافتها للحقيبة`, 'pos');
-        },
-
-        useInventoryReward(studentId, rewardId) {
-          const st = this.getStudentById(studentId);
-          if (!st || !st.inventory) return;
-          const item = st.inventory.find(i => i.id === rewardId);
-          if (item && item.status === 'available') {
-            item.status = 'pending';
-            st.log.unshift({
-              reason: `طلب استخدام: ${item.name}`,
-              delta: 0,
-              t: 'الآن',
+            await supabase.from('activity_log').insert({
+              student_id: studentId,
+              reason: reason,
+              delta: delta,
               pos: true
             });
-            this.saveState();
-            this.showToast(`تم إرسال طلب تفعيل ${item.name} للمشرف`, 'pos');
+
+            this.showToast(`تمت إضافة ${delta} شعلة لـ ${s.name.split(' ')[0]}`, 'success', 'plus-circle');
           }
         },
 
-        adminApproveReward(studentId, rewardId) {
-          const st = this.getStudentById(studentId);
-          if (!st || !st.inventory) return;
-          const item = st.inventory.find(i => i.id === rewardId);
-          if (item) {
-            item.status = 'used';
-            st.inventory = st.inventory.filter(i => i.id !== rewardId);
-            st.log.unshift({
-              reason: `تفعيل جائزة: ${item.name}`,
-              delta: 0,
-              t: 'الآن',
-              pos: true
-            });
-            this.saveState();
-            this.showToast(`تم قبول وتفعيل جائزة ${item.name}`, 'pos');
-          }
-        },
+        async deductPoints(studentId, delta, reason) {
+          const s = this.getStudentById(studentId);
+          if (s) {
+            const { error: sErr } = await supabase.from('students').update({
+              wallet: Math.max(0, s.wallet + delta),
+              total: Math.max(0, s.total + delta)
+            }).eq('id', studentId);
 
-        adminRejectReward(studentId, rewardId) {
-          const st = this.getStudentById(studentId);
-          if (!st || !st.inventory) return;
-          const item = st.inventory.find(i => i.id === rewardId);
-          if (item) {
-            item.status = 'available';
-            st.log.unshift({
-              reason: `رفض تفعيل: ${item.name}`,
-              delta: 0,
-              t: 'الآن',
+            if (sErr) {
+              console.error("Error deducting points:", sErr);
+              return;
+            }
+
+            await supabase.from('activity_log').insert({
+              student_id: studentId,
+              reason: reason,
+              delta: delta,
               pos: false
             });
-            this.saveState();
-            this.showToast(`تم رفض طلب تفعيل ${item.name}`, 'neg');
+
+            this.showToast(`تم خصم ${Math.abs(delta)} شعلة من ${s.name.split(' ')[0]}`, 'neg', 'minus-circle');
           }
         },
 
-        giftFlames(recipientId, amountStr) {
-          const amount = parseInt(amountStr);
-          if (isNaN(amount) || amount <= 0) {
-            this.showToast('الرجاء إدخال عدد شعلات صحيح', 'neg');
-            return;
+        async toggleStudentBadge(studentId, badgeId) {
+          const s = this.getStudentById(studentId);
+          if (!s) return;
+
+          let newBadges;
+          let added = false;
+          if (s.badges.includes(badgeId)) {
+            newBadges = s.badges.filter(b => b !== badgeId);
+            added = false;
+          } else {
+            newBadges = [...s.badges, badgeId];
+            added = true;
           }
-          const sender = this.currentStudent;
-          const recipient = this.getStudentById(recipientId);
-          if (!sender || !recipient) return;
-          if (sender.id === recipient.id) {
-            this.showToast('لا يمكنك إهداء شعلات لنفسك', 'neg');
-            return;
-          }
-          if (sender.wallet < amount) {
-            this.showToast('شعلات محفظتك غير كافية لإرسال الهدية', 'neg');
+
+          const { error: sErr } = await supabase.from('students').update({
+            badges: newBadges
+          }).eq('id', studentId);
+
+          if (sErr) {
+            console.error("Error updating badges:", sErr);
             return;
           }
 
-          sender.wallet -= amount;
-          sender.log.unshift({
-            reason: `إهداء شعلات إلى: ${recipient.name.split(' ')[0]}`,
-            delta: -amount,
-            t: 'الآن',
-            pos: false
-          });
-
-          recipient.wallet += amount;
-          recipient.total += amount;
-          recipient.log.unshift({
-            reason: `هدية شعلات من: ${sender.name.split(' ')[0]}`,
-            delta: amount,
-            t: 'الآن',
-            pos: true
-          });
-
-          this.saveState();
-          this.showToast(`تم إهداء ${amount} شعلة إلى ${recipient.name}`, 'pos');
-          this.viewOnlyStudentId = null;
+          this.showToast(added ? 'تم منح الوسام بنجاح' : 'تم سحب الوسام', 'info');
         },
 
-        // Weekly Challenge Countdown Timer
+        async toggleChallengeTimer() {
+          if (this.weeklyChallenge.is_running) {
+            await supabase.from('weekly_challenge').update({
+              is_running: false,
+              time_left: this.weeklyChallenge.timeLeft,
+              updated_at: new Date().toISOString()
+            }).eq('id', 'main');
+          } else {
+            let currentSec = this.weeklyChallenge.timeLeft;
+            if (currentSec <= 0) {
+              currentSec = this.weeklyChallenge.duration;
+            }
+            const endsAt = new Date(Date.now() + currentSec * 1000).toISOString();
+            await supabase.from('weekly_challenge').update({
+              is_running: true,
+              ends_at: endsAt,
+              time_left: currentSec,
+              updated_at: new Date().toISOString()
+            }).eq('id', 'main');
+          }
+        },
+
+        async resetChallengeTimer() {
+          const { error } = await supabase.from('weekly_challenge').update({
+            is_running: false,
+            time_left: this.weeklyChallenge.duration,
+            ends_at: null,
+            updated_at: new Date().toISOString()
+          }).eq('id', 'main');
+
+          if (error) {
+            console.error("Error resetting timer:", error);
+          } else {
+            this.showToast('تمت إعادة ضبط المؤقت', 'info');
+          }
+        },
+
+        startLocalTimer() {
+          if (this.timerIntervalId) clearInterval(this.timerIntervalId);
+          this.timerIntervalId = setInterval(() => {
+            if (this.weeklyChallenge.is_running && this.weeklyChallenge.ends_at) {
+              const diff = Math.max(0, Math.floor((new Date(this.weeklyChallenge.ends_at).getTime() - Date.now()) / 1000));
+              this.weeklyChallenge.timeLeft = diff;
+              if (diff <= 0) {
+                this.weeklyChallenge.is_running = false;
+                clearInterval(this.timerIntervalId);
+                this.playBeepSound();
+                this.showToast('انتهى وقت التحدي الأسبوعي!', 'info');
+              }
+            }
+          }, 1000);
+        },
+
+        stopLocalTimer() {
+          if (this.timerIntervalId) {
+            clearInterval(this.timerIntervalId);
+            this.timerIntervalId = null;
+          }
+        },
+
         formatChallengeMinutes(timeLeft) {
           return String(Math.floor(timeLeft / 60)).padStart(2, '0');
         },
 
         formatChallengeSeconds(timeLeft) {
           return String(timeLeft % 60).padStart(2, '0');
-        },
-
-        toggleChallengeTimer() {
-          if (this.weeklyChallenge.isRunning) {
-            clearInterval(this.timerIntervalId);
-            this.weeklyChallenge.isRunning = false;
-          } else {
-            if (this.weeklyChallenge.timeLeft <= 0) {
-              this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
-            }
-            this.weeklyChallenge.isRunning = true;
-            this.timerIntervalId = setInterval(() => {
-              if (this.weeklyChallenge.timeLeft > 0) {
-                this.weeklyChallenge.timeLeft--;
-                this.saveState();
-              } else {
-                clearInterval(this.timerIntervalId);
-                this.weeklyChallenge.isRunning = false;
-                this.playBeepSound();
-                this.showToast('انتهى وقت التحدي الأسبوعي!', 'info');
-              }
-            }, 1000);
-          }
-        },
-
-        resetChallengeTimer() {
-          clearInterval(this.timerIntervalId);
-          this.weeklyChallenge.isRunning = false;
-          this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
-          this.saveState();
-          this.showToast('تمت إعادة ضبط المؤقت', 'info');
         },
 
         playBeepSound() {
@@ -2315,214 +2947,189 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + 0.3);
-
-            setTimeout(() => {
-              let osc2 = audioCtx.createOscillator();
-              let gain2 = audioCtx.createGain();
-              osc2.connect(gain2);
-              gain2.connect(audioCtx.destination);
-              osc2.type = 'sine';
-              osc2.frequency.setValueAtTime(800, audioCtx.currentTime);
-              gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
-              gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-              osc2.start(audioCtx.currentTime);
-              osc2.stop(audioCtx.currentTime + 0.4);
-            }, 250);
-          } catch (e) {
-            console.log("Audio API issue", e);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.35);
+          } catch(e) {
+            console.warn(e);
           }
         },
 
-        // Security PIN Pad Admin
+        showToast(msg, type = 'pos', icon = 'check') {
+          if (this.toastTimeout) clearTimeout(this.toastTimeout);
+          this.toast.message = msg;
+          this.toast.type = type;
+          this.toast.icon = icon;
+          this.toast.show = true;
+          this.$nextTick(() => lucide.createIcons());
+          this.toastTimeout = setTimeout(() => {
+            this.toast.show = false;
+          }, 3200);
+        },
+
+        async exportData() {
+          let { data } = await supabase.from('students').select('*');
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+          const dlAnchorElem = document.createElement('a');
+          dlAnchorElem.setAttribute("href", dataStr);
+          dlAnchorElem.setAttribute("download", `seraj_backup_${new Date().toISOString().split('T')[0]}.json`);
+          dlAnchorElem.click();
+        },
+
+        async importData(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const imported = JSON.parse(e.target.result);
+              if (Array.isArray(imported)) {
+                const { error } = await supabase.from('students').upsert(imported);
+                if (error) {
+                  this.showToast('فشل استيراد البيانات السحابية', 'neg');
+                } else {
+                  this.showToast('تم استيراد ومزامنة البيانات بنجاح', 'success');
+                }
+              }
+            } catch (err) {
+              this.showToast('الملف غير صالح', 'neg');
+            }
+          };
+          reader.readAsText(file);
+        },
+
+        async resetToDefault() {
+          if (confirm('هل أنت متأكد من إعادة تعيين كامل بيانات السحاب للافتراضية؟')) {
+            const { error: delErr } = await supabase.from('students').delete().neq('id', '_dummy_');
+            if (delErr) {
+              console.error("Error clearing students:", delErr);
+            }
+            await supabase.from('students').insert(DEFAULT_STUDENTS);
+            await supabase.from('pending_accounts').delete().neq('id', '_dummy_');
+            this.showToast('تمت إعادة تعيين البيانات السحابية للافتراضية', 'success');
+          }
+        },
+
         enterPinDigit(digit) {
           if (this.adminPin.length < 4) {
             this.adminPin += digit;
             if (this.adminPin.length === 4) {
-              setTimeout(() => {
-                this.verifyPin();
-              }, 150);
+              this.verifyPin();
             }
           }
         },
 
         deletePinLast() {
-          if (this.adminPin.length > 0) {
-            this.adminPin = this.adminPin.slice(0, -1);
-          }
+          this.adminPin = this.adminPin.slice(0, -1);
+          this.pinError = false;
         },
 
         verifyPin() {
-          if (this.adminPin === '1234') {
+          if (this.adminPin === '0000') {
             this.adminUnlocked = true;
             this.adminPin = '';
-            this.showToast('تم فتح غرفة الإدارة', 'pos');
+            this.showToast('تم إلغاء قفل غرفة الإدارة', 'success', 'lock-open');
           } else {
-            this.pinShake = true;
             this.pinError = true;
-            this.adminPin = '';
-            this.showToast('الرمز غير صحيح', 'neg');
+            this.pinShake = true;
             setTimeout(() => {
               this.pinShake = false;
-              this.pinError = false;
+              this.adminPin = '';
             }, 500);
           }
-        },
-
-        openAvatarModal(studentId) {
-          const st = this.getStudentById(studentId);
-          if (!st) return;
-          this.tempAvatarIcon = st.avatarIcon || 'user';
-          this.tempAvatarColor = st.avatarColor || 'orange';
-          this.avatarModalOpen = true;
-          this.$nextTick(() => lucide.createIcons());
-        },
-
-        saveAvatar(studentId) {
-          const st = this.getStudentById(studentId);
-          if (!st) return;
-          st.avatarIcon = this.tempAvatarIcon;
-          st.avatarColor = this.tempAvatarColor;
-          this.saveState();
-          this.avatarModalOpen = false;
-          this.showToast('تم تحديث الشارة الرمزية واللون بنجاح', 'pos');
-          this.$nextTick(() => lucide.createIcons());
         },
 
         lockAdmin() {
           this.adminUnlocked = false;
           this.adminPin = '';
-          this.showToast('تم قفل غرفة الإدارة', 'info');
+          this.showToast('تم قفل غرفة الإدارة', 'info', 'lock');
         },
 
-        // Admin actions
-        awardPoints(studentId, amount, reason) {
-          const st = this.getStudentById(studentId);
-          if (!st) return;
-
-          st.total += amount;
-          st.wallet += amount;
-          st.trend = 1;
-          st.log.unshift({
-            reason: reason,
-            delta: amount,
-            t: 'الآن',
-            pos: true
-          });
-          st.log = st.log.slice(0, 12);
-
-          this.saveState();
-          this.showToast(`${reason} +${amount} · ${st.name.split(' ')[0]}`, 'pos');
-        },
-
-        deductPoints(studentId, amount, reason) {
-          const st = this.getStudentById(studentId);
-          if (!st) return;
-
-          st.total = Math.max(0, st.total + amount); // amount is already negative in macro details
-          st.wallet = Math.max(0, st.wallet + amount);
-          st.trend = -1;
-          st.log.unshift({
-            reason: reason,
-            delta: amount,
-            t: 'الآن',
-            pos: false
-          });
-          st.log = st.log.slice(0, 12);
-
-          this.saveState();
-          this.showToast(`${reason} ${amount} · ${st.name.split(' ')[0]}`, 'neg');
-        },
-
-        // Badge Award/Revoke
-        toggleStudentBadge(studentId, badgeId) {
-          const st = this.getStudentById(studentId);
-          const ach = this.achievements.find(a => a.id === badgeId);
-          if (!st || !ach) return;
-
-          const idx = st.badges.indexOf(badgeId);
-          if (idx > -1) {
-            // Revoke Badge
-            st.badges.splice(idx, 1);
-            st.total = Math.max(0, st.total - ach.reward);
-            st.wallet = Math.max(0, st.wallet - ach.reward);
-            st.log.unshift({
-              reason: `سحب وسام: ${ach.name}`,
-              delta: -ach.reward,
-              t: 'الآن',
-              pos: false
-            });
-            this.showToast(`تم سحب وسام ${ach.name}`, 'neg');
-          } else {
-            // Award Badge
-            st.badges.push(badgeId);
-            st.total += ach.reward;
-            st.wallet += ach.reward;
-            st.log.unshift({
-              reason: `منح وسام: ${ach.name}`,
-              delta: ach.reward,
-              t: 'الآن',
-              pos: true
-            });
-            this.showToast(`تم منح وسام ${ach.name}`, 'pos');
-          }
-
-          this.saveState();
-        },
-
-        // Export/Import JSON Backup
-        exportData() {
-          const dataBlob = new Blob([JSON.stringify({
-            students: this.students,
-            activeId: this.activeId
-          }, null, 2)], { type: 'application/json' });
-          const dlUrl = URL.createObjectURL(dataBlob);
-          const anchor = document.createElement('a');
-          anchor.href = dlUrl;
-          anchor.download = `seraj_backup_${new Date().toISOString().slice(0,10)}.json`;
-          anchor.click();
-          URL.revokeObjectURL(dlUrl);
-          this.showToast('تم تصدير البيانات بنجاح', 'pos');
-        },
-
-        importData(event) {
-          const file = event.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const imported = JSON.parse(e.target.result);
-              if (imported.students && Array.isArray(imported.students)) {
-                this.students = imported.students;
-                if (imported.activeId) this.activeId = imported.activeId;
-                this.saveState();
-                this.showToast('تم استيراد البيانات بنجاح', 'pos');
-                this.$nextTick(() => lucide.createIcons());
-              } else {
-                this.showToast('الملف غير صالح', 'neg');
-              }
-            } catch (err) {
-              this.showToast('تعذر قراءة ملف JSON', 'neg');
-            }
+        getIconSvg(iconName) {
+          const dict = {
+            'calendar-check': '<line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M19.8 14.8c-.8-.6-2-.6-2.8 0l-4.5 4.5-2-2c-.8-.8-2-.8-2.8 0s-.8 2 0 2.8l3.4 3.4c.4.4.9.6 1.4.6s1-.2 1.4-.6l5.9-5.9c.8-.8.8-2 0-2.8z"></path><rect x="3" y="4" width="18" height="18" rx="2"></rect>',
+            'sparkles': '<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.3-6.3l-.7.7M6.7 17.3l-.7.7m12.6 0l-.7-.7M6.7 6.7l-.7-.7N"></path><path d="M10 8.5L12 6l2 2.5L16.5 7l-1 2.5 2.5 1-2.5 2 1 2.5-2.5-1-2 2.5-2-2.5-2.5 1 1-2.5-2.5-1 2.5-2z" fill="currentColor"></path>',
+            'heart-handshake': '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 5 12h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 1 2-2h2Z" fill="currentColor" opacity="0.2"></path>',
+            'user': '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+            'flame': '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>',
+            'zap': '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>',
+            'crown': '<path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path><rect x="5" y="18" width="14" height="2" rx="1"></rect>',
+            'star': '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>',
+            'shield': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
+            'trophy': '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a7 7 0 0 0-7 7c0 2.5 2 4.5 4.5 4.5h5c2.5 0 4.5-2 4.5-4.5a7 7 0 0 0-7-7z"></path>',
+            'coffee': '<path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"></path>',
+            'ghost': '<path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 3 3 3-3 3 3 3-3 3 3V10a8 8 0 0 0-8-8z"></path>',
+            'smile': '<circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"></path>',
+            'frown': '<circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2M9 9h.01M15 9h.01"></path>',
+            'laugh': '<circle cx="12" cy="12" r="10"></circle><path d="M18 13a6 6 0 0 1-12 0h12zM9 9h.01M15 9h.01"></path>',
+            'skull': '<path d="M9 12h.01M15 12h.01M12 2a8 8 0 0 0-8 8v4a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4v-4a8 8 0 0 0-8-8zM8 20v2h8v-2"></path>',
+            'cookie': '<path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zM8 15h.01M16 15h.01M12 11h.01M7 10h.01M15 9h.01"></path>',
+            'pizza': '<path d="M15 11l-3-3M12 12l2-4M2 12C2 6.5 6.5 2 12 2c3 0 5.5 1.5 7 3.5L2 12zM8 6h.01M6 9h.01M11 6h.01"></path>',
+            'bomb': '<circle cx="11" cy="13" r="8"></circle><path d="M16.5 7.5L19 5M19 5l2 1M19 5l-1-2M15 2h-4"></path>',
+            'glasses': '<circle cx="6" cy="15" r="3"></circle><circle cx="18" cy="15" r="3"></circle><path d="M14 15h-4M2.5 13L4 9M21.5 13L20 9M4 9h12"></path>',
+            'banana': '<path d="M2 20c6-1 11-5 14-11l3 1-2 4c-3 5-8 8-15 6zM22 2v4l-3-1z"></path>',
+            'cat': '<path d="M12 5c-1 0-3 1.5-3 3.5V14c0 3 3 5 3 5s3-2 3-5V8.5c0-2-2-3.5-3-3.5zM3 8l3 3M21 8l-3 3M6 18a6 6 0 0 0 12 0"></path>',
+            'dog': '<path d="M12 14c-2.5 0-4.5-2-4.5-4.5V8c0-1 1-2 2-2h5c1 0 2 1 2 2v1.5c0 2.5-2 4.5-4.5 4.5zM6 12l-2 4M18 12l2 4"></path>',
+            'snail': '<path d="M2 18h14a4 4 0 0 0 4-4v-1a5 5 0 0 0-10 0v1H6a4 4 0 0 0-4 4zM18 8c1-1 3-1 4 0M14 13l-2-3"></path>',
+            'piggy-bank': '<path d="M19 12c0 2.5-2 4.5-4.5 4.5h-5C7 16.5 5 14.5 5 12V9c0-2.5 2-4.5 4.5-4.5h5c2.5 0 4.5 2 4.5 4.5v3zM12 2v2M8 22v-3M16 22v-3"></path>',
+            'dices': '<rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect><circle cx="7" cy="7" r="1" fill="currentColor"></circle><circle cx="17" cy="17" r="1" fill="currentColor"></circle>',
+            'alien': '<path d="M12 2a8 8 0 0 0-8 8c0 4 3 7 8 7s8-3 8-7a8 8 0 0 0-8-8zM9 10h.01M15 10h.01M12 14s-1.5-1-3-1M12 14s1.5-1 3-1"></path>',
+            'palette': '<path d="M12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2C6.48 2 2 6.48 2 12C2 14 3.5 15.5 5.5 15.5H6.5C7 15.5 7.5 16 7.5 16.5V17.5C7.5 20 9.7 22 12 22zM6.5 11.5A1.5 1.5 0 1 1 8 10a1.5 1.5 0 0 1-1.5 1.5zm5-3A1.5 1.5 0 1 1 13 7a1.5 1.5 0 0 1-1.5 1.5zm5 3A1.5 1.5 0 1 1 18 10a1.5 1.5 0 0 1-1.5 1.5z"></path>',
+            'music': '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>',
+            'headphones': '<path d="M3 18v-6a9 9 0 0 1 18 0v6M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3"></path>',
+            'gamepad-2': '<line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><rect x="2" y="6" width="20" height="12" rx="3"></rect><circle cx="15" cy="12" r="1"></circle><circle cx="18" cy="12" r="1"></circle>',
+            'laptop': '<rect x="2" y="4" width="20" height="12" rx="2"></rect><line x1="2" y1="20" x2="22" y2="20"></line><line x1="5" y1="16" x2="19" y2="16"></line>',
+            'rocket': '<path d="M4.5 16.5c-1.5 1.5-2.5 3.5-2.5 5.5C4 22 6 21 7.5 19.5L18 9l-3-3L4.5 16.5zM12 5l7-3-3 7L12 5z"></path>',
+            'brain': '<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15A2.5 2.5 0 0 1 9.5 22h-1A6.5 6.5 0 0 1 2 15.5v-7A6.5 6.5 0 0 1 8.5 2h1zM14.5 2a2.5 2.5 0 0 0-2.5 2.5v15a2.5 2.5 0 0 0 2.5 2.5h1a6.5 6.5 0 0 0 6.5-6.5v-7a6.5 6.5 0 0 0-6.5-6.5h-1z"></path>',
+            'atom': '<circle cx="12" cy="12" r="3"></circle><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(30 12 12)"></ellipse><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(150 12 12)"></ellipse>',
+            'anchor': '<path d="M12 5V22M5 12H2a10 10 0 0 0 20 0h-3M12 5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>',
+            'compass': '<circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>',
+            'globe': '<circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>',
+            'heart': '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>',
+            'gift': '<path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zm0 0h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>',
+            'key': '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3M15.5 7.5L18 5"></path>',
+            'map': '<polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line>',
+            'moon': '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>',
+            'sun': '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>',
+            'umbrella': '<path d="M23 12a11.02 11.02 0 0 0-22 0zm-11 0v9a2 2 0 0 0 4 0"></path>',
+            'wrench': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>',
+            'briefcase': '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>',
+            'book-open': '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>',
+            'camera': '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>',
+            'feather': '<path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5zM16 8L2 22M17.5 15H9"></path>',
+            'sprout': '<path d="M7 20h10M12 20V12M12 12c2.5-3.5 6-3.5 6-3.5s-.5 4-4 5.5c3.5-2.5 3.5-6 3.5-6s-4 .5-5.5 4c2.5-3.5-1-6-1-6s-3.5 3.5-1.5 6z" fill="currentColor" opacity="0.2"></path><path d="M12 12a5 5 0 0 0-5-5H5M12 12a5 5 0 0 1 5-5h2M12 20V10"></path>',
+            'clock': '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>',
+            'delete': '<path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM18 9l-6 6M12 9l6 6"></path>',
+            'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>',
+            'plus-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line>',
+            'minus-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line>',
+            'award': '<circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>',
+            'lock-keyhole': '<circle cx="12" cy="16" r="1"></circle><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M6 10V7a6 6 0 0 1 12 0v3"></path>',
+            'lock': '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>',
+            'download': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>',
+            'upload': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path>',
+            'rotate-ccw': '<path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0-.57-8.38l5.67-5.67"></path>',
+            'volume-2': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>',
+            'file-warning': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+            'user-x': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="17" y1="8" x2="22" y2="13"></line><line x1="22" y1="8" x2="17" y2="13"></line>',
+            'user-plus': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line>',
+            'user-check': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline>',
+            'check': '<polyline points="20 6 9 17 4 12"></polyline>',
+            'pen-tool': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" opacity="0.1"></path><path d="M12 11l3 3M17 8.5a2.12 2.12 0 1 1 3 3L8 23l-4 1 1-4Z"></path>',
+            'cup-soda': '<path d="M6 8h12M12 2v6M21 8l-2 13H5L3 8M17 5H7"></path>',
+            'smartphone': '<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line>',
+            'megaphone': '<path d="M2 18V6c0-1 1-2 2-2h1.5L9 8h8a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9l-3.5 4H4c-1 0-2-1-2-2zM22 6s1 2.5 1 6-1 6-1 6" fill="currentColor" opacity="0.1"></path><path d="M2 18V6a2 2 0 0 1 2-2h1.5L9 8h8a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9l-3.5 4H4a2 2 0 0 1-2-2zm20-12s1.5 2 1.5 6-1.5 6-1.5 6"></path>',
+            'sunrise': '<path d="M18 22H6M12 2v8M5.22 10.22l1.42 1.42M17.36 10.22l-1.42 1.42M22 22a10 10 0 0 0-20 0"></path>',
+            'log-in': '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"></path>',
+            'message-circle': '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>',
+            'check-check': '<path d="M18 6L7 17l-5-5M22 10l-7.5 7.5L10 13"></path>',
+            'wand-2': '<path d="m21.5 2-1.5 1.5M22 6.5L20.5 5M16 1.5L17.5 3M19 12l-7 7-3-3 7-7 3 3z"></path>',
+            'users': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>',
+            'timer-off': '<path d="M16.2 16.2L20 20M12 6V2M16.5 2H19M2 12a10 10 0 0 0 18 6M6.2 6.2a10 10 0 0 1 14.1 0"></path>',
+            ' volume-2': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>'
           };
-          reader.readAsText(file);
-          event.target.value = '';
-        },
-
-        // Factory Reset Data
-        resetToDefault() {
-          if (confirm('هل تريد بالتأكيد إعادة تعيين كافة البيانات إلى الحالة الافتراضية؟')) {
-            this.students = DEFAULT_STUDENTS;
-            this.activeId = 's1';
-            this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
-            this.saveState();
-            this.showToast('تمت إعادة ضبط البيانات', 'info');
-          }
+          return dict[iconName] || dict['user'];
         }
       };
     }
