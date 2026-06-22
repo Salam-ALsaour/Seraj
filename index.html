@@ -528,6 +528,12 @@
   <!-- PWA Container -->
   <div id="app" x-data="serajApp()" x-init="init()">
     
+    <!-- Loading Spinner Overlay -->
+    <div x-show="isLoading" class="absolute inset-0 bg-[#121414] z-50 flex flex-col items-center justify-center gap-4">
+      <div class="w-12 h-12 rounded-full border-4 border-zinc-800 border-t-orange-500 animate-spin"></div>
+      <p class="text-xs text-zinc-400 font-bold">جاري مزامنة البيانات السحابية...</p>
+    </div>
+    
     <!-- Ambient background glow layers (moved inside app) -->
     <div id="atmos"></div>
     
@@ -1931,7 +1937,8 @@
 
       return {
         // App State
-        students: [],
+        students: DEFAULT_STUDENTS,
+        isLoading: true,
         activeId: 's1',
         currentScreen: 'leaderboard',
         lbMode: 'individual',
@@ -2140,13 +2147,15 @@
 
         // Init
         async init() {
+          this.isLoading = true;
+          
           // Double check initialization
           try {
             if (!supabase && window.supabase) {
               supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
           } catch (e) {
-            console.error("Supabase load error inside init():", e);
+            console.error("Supabase Error during init (client connection):", e);
           }
 
           if (!supabase) {
@@ -2155,134 +2164,152 @@
             return;
           }
 
-          // 1. Fetch Students
           try {
-            let { data: dbStudents, error: fetchErr } = await supabase.from('students').select('*');
-            if (fetchErr) {
-              console.error("Error fetching students:", fetchErr);
-              this.students = DEFAULT_STUDENTS;
-            } else {
-              if (!dbStudents || dbStudents.length === 0) {
-                // Seeding
-                const { error: seedErr } = await supabase.from('students').insert(DEFAULT_STUDENTS);
-                if (seedErr) {
-                  console.error("Error seeding default students:", seedErr);
-                  this.students = DEFAULT_STUDENTS;
+            // 1. Fetch Students
+            try {
+              let { data: dbStudents, error: fetchErr } = await supabase.from('students').select('*');
+              if (fetchErr) {
+                console.error("Supabase Error during init (fetching students):", fetchErr);
+                this.students = DEFAULT_STUDENTS;
+              } else {
+                if (!dbStudents || dbStudents.length === 0) {
+                  // Seeding
+                  const { error: seedErr } = await supabase.from('students').insert(DEFAULT_STUDENTS);
+                  if (seedErr) {
+                    console.error("Supabase Error during init (seeding students):", seedErr);
+                    this.students = DEFAULT_STUDENTS;
+                  } else {
+                    let { data: reFetched } = await supabase.from('students').select('*');
+                    this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
+                  }
                 } else {
-                  let { data: reFetched } = await supabase.from('students').select('*');
-                  this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
+                  this.students = dbStudents;
                 }
-              } else {
-                this.students = dbStudents;
               }
+            } catch (err) {
+              console.error("Supabase Error during init (students block exception):", err);
+              this.students = DEFAULT_STUDENTS;
             }
-          } catch (err) {
-            console.error("Exception during students fetch/seed:", err);
-            this.students = DEFAULT_STUDENTS;
-          }
 
-          // 2. Fetch Logs
-          try {
-            let { data: dbLogs, error: logErr } = await supabase.from('activity_log').select('*');
-            if (logErr) console.error("Error fetching activity_log:", logErr);
-            this.activityLogs = dbLogs || [];
-          } catch (err) {
-            console.error("Exception fetching activity_log:", err);
-            this.activityLogs = [];
-          }
-
-          // 3. Fetch Inventory
-          try {
-            let { data: dbInv, error: invErr } = await supabase.from('inventory').select('*');
-            if (invErr) console.error("Error fetching inventory:", invErr);
-            this.inventoryList = dbInv || [];
-          } catch (err) {
-            console.error("Exception fetching inventory:", err);
-            this.inventoryList = [];
-          }
-
-          // 4. Fetch Challenge Timer
-          try {
-            let { data: chData, error: chErr } = await supabase.from('weekly_challenge').select('*').eq('id', 'main').single();
-            if (chErr || !chData) {
-              const defaultCh = {
-                id: 'main',
-                title: 'معركة الكلمات السريعة',
-                desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
-                points: 30,
-                duration: 600,
-                time_left: 600,
-                is_running: false
-              };
-              await supabase.from('weekly_challenge').insert(defaultCh);
-              this.weeklyChallenge.title = defaultCh.title;
-              this.weeklyChallenge.desc = defaultCh.desc;
-              this.weeklyChallenge.points = defaultCh.points;
-              this.weeklyChallenge.duration = defaultCh.duration;
-              this.weeklyChallenge.time_left = defaultCh.time_left;
-              this.weeklyChallenge.is_running = defaultCh.is_running;
-              this.weeklyChallenge.timeLeft = defaultCh.time_left;
-            } else {
-              this.weeklyChallenge.title = chData.title;
-              this.weeklyChallenge.desc = chData.desc;
-              this.weeklyChallenge.points = chData.points;
-              this.weeklyChallenge.duration = chData.duration;
-              this.weeklyChallenge.time_left = chData.time_left;
-              this.weeklyChallenge.is_running = chData.is_running;
-              this.weeklyChallenge.ends_at = chData.ends_at;
-
-              if (this.weeklyChallenge.is_running) {
-                this.startLocalTimer();
-              } else {
-                this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+            // 2. Fetch Logs
+            try {
+              let { data: dbLogs, error: logErr } = await supabase.from('activity_log').select('*');
+              if (logErr) {
+                console.error("Supabase Error during init (fetching logs):", logErr);
               }
+              this.activityLogs = dbLogs || [];
+            } catch (err) {
+              console.error("Supabase Error during init (logs block exception):", err);
+              this.activityLogs = [];
             }
-          } catch (err) {
-            console.error("Exception fetching weekly_challenge:", err);
-            this.weeklyChallenge.timeLeft = 600;
+
+            // 3. Fetch Inventory
+            try {
+              let { data: dbInv, error: invErr } = await supabase.from('inventory').select('*');
+              if (invErr) {
+                console.error("Supabase Error during init (fetching inventory):", invErr);
+              }
+              this.inventoryList = dbInv || [];
+            } catch (err) {
+              console.error("Supabase Error during init (inventory block exception):", err);
+              this.inventoryList = [];
+            }
+
+            // 4. Fetch Challenge Timer
+            try {
+              let { data: chData, error: chErr } = await supabase.from('weekly_challenge').select('*').eq('id', 'main').single();
+              if (chErr || !chData) {
+                console.error("Supabase Error during init (fetching challenge, seeding if missing):", chErr);
+                const defaultCh = {
+                  id: 'main',
+                  title: 'معركة الكلمات السريعة',
+                  desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
+                  points: 30,
+                  duration: 600,
+                  time_left: 600,
+                  is_running: false
+                };
+                const { error: chInsertErr } = await supabase.from('weekly_challenge').insert(defaultCh);
+                if (chInsertErr) {
+                  console.error("Supabase Error during init (seeding challenge):", chInsertErr);
+                }
+                this.weeklyChallenge.title = defaultCh.title;
+                this.weeklyChallenge.desc = defaultCh.desc;
+                this.weeklyChallenge.points = defaultCh.points;
+                this.weeklyChallenge.duration = defaultCh.duration;
+                this.weeklyChallenge.time_left = defaultCh.time_left;
+                this.weeklyChallenge.is_running = defaultCh.is_running;
+                this.weeklyChallenge.timeLeft = defaultCh.time_left;
+              } else {
+                this.weeklyChallenge.title = chData.title;
+                this.weeklyChallenge.desc = chData.desc;
+                this.weeklyChallenge.points = chData.points;
+                this.weeklyChallenge.duration = chData.duration;
+                this.weeklyChallenge.time_left = chData.time_left;
+                this.weeklyChallenge.is_running = chData.is_running;
+                this.weeklyChallenge.ends_at = chData.ends_at;
+
+                if (this.weeklyChallenge.is_running) {
+                  this.startLocalTimer();
+                } else {
+                  this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+                }
+              }
+            } catch (err) {
+              console.error("Supabase Error during init (challenge block exception):", err);
+              this.weeklyChallenge.timeLeft = 600;
+            }
+
+            // 5. Fetch Pending Accounts
+            try {
+              let { data: dbPending, error: pendingErr } = await supabase.from('pending_accounts').select('*');
+              if (pendingErr) {
+                console.error("Supabase Error during init (fetching pending accounts):", pendingErr);
+              }
+              this.pendingAccounts = dbPending || [];
+            } catch (err) {
+              console.error("Supabase Error during init (pending accounts block exception):", err);
+              this.pendingAccounts = [];
+            }
+
+            // Local persistent sessions
+            const active = localStorage.getItem('seraj_pwa_activeId');
+            if (active) this.activeId = active;
+
+            const logged = localStorage.getItem('seraj_pwa_isLoggedIn');
+            this.isLoggedIn = logged === 'true';
+
+            // 6. Setup realtime subscriptions
+            this.setupRealtime();
+
+          } catch (globalErr) {
+            console.error("Supabase Error during init (global exception):", globalErr);
+          } finally {
+            this.isLoading = false;
+            
+            // Watches for Lucide icons rendering
+            this.$watch('currentScreen', () => {
+              this.$nextTick(() => lucide.createIcons());
+            });
+
+            this.$watch('lbMode', () => {
+              this.$nextTick(() => lucide.createIcons());
+            });
+
+            this.$watch('adminUnlocked', () => {
+              this.$nextTick(() => lucide.createIcons());
+            });
+
+            this.$watch('isLoggedIn', () => {
+              this.$nextTick(() => lucide.createIcons());
+            });
+
+            this.$nextTick(() => lucide.createIcons());
           }
-
-          // 5. Fetch Pending Accounts
-          try {
-            let { data: dbPending, error: pendingErr } = await supabase.from('pending_accounts').select('*');
-            if (pendingErr) console.error("Error fetching pending_accounts:", pendingErr);
-            this.pendingAccounts = dbPending || [];
-          } catch (err) {
-            console.error("Exception fetching pending_accounts:", err);
-            this.pendingAccounts = [];
-          }
-
-          // Local persistent sessions
-          const active = localStorage.getItem('seraj_pwa_activeId');
-          if (active) this.activeId = active;
-
-          const logged = localStorage.getItem('seraj_pwa_isLoggedIn');
-          this.isLoggedIn = logged === 'true';
-
-          // 6. Setup realtime subscriptions
-          this.setupRealtime();
-
-          // Watches for Lucide icons rendering
-          this.$watch('currentScreen', () => {
-            this.$nextTick(() => lucide.createIcons());
-          });
-
-          this.$watch('lbMode', () => {
-            this.$nextTick(() => lucide.createIcons());
-          });
-
-          this.$watch('adminUnlocked', () => {
-            this.$nextTick(() => lucide.createIcons());
-          });
-
-          this.$watch('isLoggedIn', () => {
-            this.$nextTick(() => lucide.createIcons());
-          });
-
-          this.$nextTick(() => lucide.createIcons());
         },
 
         loadFallbackLocalStorage() {
+          this.isLoading = false;
           const st = localStorage.getItem('seraj_pwa_students');
           if (st) {
             try {
