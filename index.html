@@ -2032,6 +2032,35 @@
         adminMenuOpen: false,
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
+
+        mapStudentFromDB(dbStudent) {
+          if (!dbStudent) return null;
+          return {
+            ...dbStudent,
+            avatarIcon: dbStudent.avatar_icon || 'user',
+            avatarColor: dbStudent.avatar_color || 'orange'
+          };
+        },
+
+        mapStudentToDB(student) {
+          if (!student) return null;
+          const dbStudent = { ...student };
+          dbStudent.avatar_icon = student.avatarIcon || 'user';
+          dbStudent.avatar_color = student.avatarColor || 'orange';
+          delete dbStudent.avatarIcon;
+          delete dbStudent.avatarColor;
+          return dbStudent;
+        },
+        
+        render() {
+          this.$nextTick(() => {
+            try {
+              if (window.lucide) lucide.createIcons();
+            } catch (e) {
+              console.warn("lucide icons render error:", e);
+            }
+          });
+        },
         
         selectableIcons: [
           { id: 'user', label: 'مستخدم' },
@@ -2223,19 +2252,22 @@
                 if (!dbStudents || dbStudents.length === 0) {
                   // Seeding (only if default students array has items)
                   if (DEFAULT_STUDENTS.length > 0) {
-                    const { error: seedErr } = await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
+                    const dbDefault = DEFAULT_STUDENTS.map(s => this.mapStudentToDB(s));
+                    const { error: seedErr } = await supabaseClient.from('students').insert(dbDefault);
                     if (seedErr) {
                       console.error("Supabase Error during init (seeding students):", seedErr);
                       this.students = DEFAULT_STUDENTS;
                     } else {
                       let { data: reFetched } = await supabaseClient.from('students').select('*');
-                      this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
+                      this.students = reFetched && reFetched.length > 0 
+                        ? reFetched.map(s => this.mapStudentFromDB(s)) 
+                        : DEFAULT_STUDENTS;
                     }
                   } else {
                     this.students = [];
                   }
                 } else {
-                  this.students = dbStudents;
+                  this.students = dbStudents.map(s => this.mapStudentFromDB(s));
                 }
               }
             } catch (err) {
@@ -2494,6 +2526,9 @@
             supabaseClient
               .channel('students_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, payload => {
+                if (payload.new) {
+                  payload.new = this.mapStudentFromDB(payload.new);
+                }
                 if (payload.eventType === 'INSERT') {
                   this.students.push(payload.new);
                 } else if (payload.eventType === 'DELETE') {
@@ -2730,7 +2765,7 @@
                 id: pendingReq.id,
                 name: pendingReq.name,
                 stage: pendingReq.stage,
-                team: pendingReq.team,
+                team: pendingReq.team || 'none',
                 pin: pendingReq.password,
                 wallet: 0,
                 total: 0,
@@ -2747,22 +2782,22 @@
             return;
           }
 
-          const newStudent = {
+          const dbStudent = {
             id: req.id,
             name: req.name,
             stage: req.stage,
-            team: req.team,
+            team: req.team || 'none',
             pin: req.password,
             wallet: 0,
             total: 0,
             trend: 1,
-            avatarIcon: 'user',
-            avatarColor: 'orange',
+            avatar_icon: 'user',
+            avatar_color: 'orange',
             headline: 'طالب جديد في سراج',
             badges: []
           };
 
-          const { error: insErr } = await supabaseClient.from('students').insert(newStudent);
+          const { error: insErr } = await supabaseClient.from('students').insert(dbStudent);
 
           if (insErr) {
             console.error("Error approving account:", insErr);
@@ -2771,8 +2806,9 @@
           }
 
           // Push locally immediately if not already added by realtime event
+          const localStudent = this.mapStudentFromDB(dbStudent);
           if (!this.students.some(s => s.id === req.id)) {
-            this.students.push(newStudent);
+            this.students.push(localStudent);
           }
 
           await supabaseClient.from('pending_accounts').delete().eq('id', id);
@@ -2942,14 +2978,20 @@
             }
 
             const { error: sErr } = await supabaseClient.from('students').update({
-              avatarIcon: this.tempAvatarIcon,
-              avatarColor: this.tempAvatarColor
+              avatar_icon: this.tempAvatarIcon,
+              avatar_color: this.tempAvatarColor
             }).eq('id', studentId);
 
             if (sErr) {
               console.error("Error saving avatar settings:", sErr);
+              this.showToast('فشل حفظ إعدادات المظهر', 'neg');
               return;
             }
+
+            // Update locally too
+            st.avatarIcon = this.tempAvatarIcon;
+            st.avatarColor = this.tempAvatarColor;
+            this.saveState();
 
             this.avatarModalOpen = false;
             this.showToast('تم حفظ شارات المظهر والوهج بنجاح', 'success', 'palette');
@@ -3500,7 +3542,8 @@
           }
 
           let { data } = await supabaseClient.from('students').select('*');
-          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+          const mappedData = data ? data.map(s => this.mapStudentFromDB(s)) : [];
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mappedData));
           const dlAnchorElem = document.createElement('a');
           dlAnchorElem.setAttribute("href", dataStr);
           dlAnchorElem.setAttribute("download", `seraj_backup_${new Date().toISOString().split('T')[0]}.json`);
@@ -3565,11 +3608,19 @@
                   return;
                 }
 
-                const { error } = await supabaseClient.from('students').upsert(imported);
+                const dbImported = imported.map(s => this.mapStudentToDB(s));
+                const { error } = await supabaseClient.from('students').upsert(dbImported);
                 if (error) {
+                  console.error("Error importing data to Supabase:", error);
                   this.showToast('فشل استيراد البيانات السحابية', 'neg');
                 } else {
+                  let { data: reFetched } = await supabaseClient.from('students').select('*');
+                  this.students = reFetched && reFetched.length > 0 
+                    ? reFetched.map(s => this.mapStudentFromDB(s)) 
+                    : imported;
+                  this.saveState();
                   this.showToast('تم استيراد ومزامنة البيانات بنجاح', 'success');
+                  this.render();
                 }
               }
             } catch (err) {
