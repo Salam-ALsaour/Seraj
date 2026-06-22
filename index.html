@@ -1425,7 +1425,7 @@
                     <div style="width:16px; height:16px; color:var(--orange);" x-html="getIconSvg('user')"></div>
                     <div>
                       <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="req.name"></span>
-                      <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="'المعرف: ' + req.id + ' | الرمز: ' + req.password + ' | ' + getStageLabel(req.stage) + ' | ' + getTeamLabel(req.team)"></span>
+                      <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="'المعرف: ' + req.id + ' | الرمز: ' + req.password + ' | ' + getStageLabel(req.stage)"></span>
                     </div>
                   </div>
                   <div style="display:flex; gap:6px;">
@@ -1931,26 +1931,7 @@
 
     function serajApp() {
       // Mock data in the exact same shape as the second model's code
-      const DEFAULT_STUDENTS = [
-        { id: 's1', name: 'يوسف العتيبي', stage: 'high', team: 'khwarizmi', wallet: 120, total: 340, trend: 1,
-          avatarIcon: 'flame', avatarColor: 'orange', headline: 'سفير سراج المتميز 👑', pin: '1111',
-          badges: ['committed', 'digital'] },
-        { id: 's2', name: 'عبدالله القحطاني', stage: 'high', team: 'haytham', wallet: 90, total: 295, trend: 1,
-          avatarIcon: 'trophy', avatarColor: 'emerald', headline: 'طموح يعلو سماء العلا 🌟', pin: '2222',
-          badges: ['committed'] },
-        { id: 's3', name: 'سلمان الدوسري', stage: 'middle', team: 'khwarizmi', wallet: 60, total: 250, trend: -1,
-          avatarIcon: 'shield', avatarColor: 'blue', headline: 'التميز هدفي الدائم 🚀', pin: '3333',
-          badges: ['unity'] },
-        { id: 's4', name: 'فيصل الشهري', stage: 'middle', team: 'haytham', wallet: 40, total: 185, trend: 1,
-          avatarIcon: 'star', avatarColor: 'purple', headline: 'قادم بقوة للتنافس 🔥', pin: '4444',
-          badges: [] },
-        { id: 's5', name: 'تركي المالكي', stage: 'high', team: 'khwarizmi', wallet: 25, total: 140, trend: -1,
-          avatarIcon: 'zap', avatarColor: 'red', headline: 'لا يأس مع الشعلات', pin: '5555',
-          badges: [] },
-        { id: 's6', name: 'ماجد الغامدي', stage: 'middle', team: 'haytham', wallet: 15, total: 95, trend: 1,
-          avatarIcon: 'coffee', avatarColor: 'orange', headline: 'عاشق القهوة والشغل ☕', pin: '6666',
-          badges: [] }
-      ];
+      const DEFAULT_STUDENTS = [];
 
       return {
         // App State
@@ -1988,14 +1969,14 @@
           if (student) {
             student.inventory = this.inventoryList.filter(item => item.student_id === student.id);
           }
-          return student || this.students[0] || null;
+          return student || this.students[0] || { id: '', name: '', stage: 'high', team: 'khwarizmi', wallet: 0, total: 0, avatarIcon: 'user', avatarColor: 'orange' };
         },
         get activeStudent() {
           const student = this.getStudentById(this.adminActiveStudentId);
           if (student) {
             student.inventory = this.inventoryList.filter(item => item.student_id === student.id);
           }
-          return student || this.students[0] || null;
+          return student || this.students[0] || { id: '', name: '', stage: 'high', team: 'khwarizmi', wallet: 0, total: 0, avatarIcon: 'user', avatarColor: 'orange' };
         },
         
         // Avatar Editor Modal State
@@ -2191,14 +2172,18 @@
                 this.students = DEFAULT_STUDENTS;
               } else {
                 if (!dbStudents || dbStudents.length === 0) {
-                  // Seeding
-                  const { error: seedErr } = await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
-                  if (seedErr) {
-                    console.error("Supabase Error during init (seeding students):", seedErr);
-                    this.students = DEFAULT_STUDENTS;
+                  // Seeding (only if default students array has items)
+                  if (DEFAULT_STUDENTS.length > 0) {
+                    const { error: seedErr } = await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
+                    if (seedErr) {
+                      console.error("Supabase Error during init (seeding students):", seedErr);
+                      this.students = DEFAULT_STUDENTS;
+                    } else {
+                      let { data: reFetched } = await supabaseClient.from('students').select('*');
+                      this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
+                    }
                   } else {
-                    let { data: reFetched } = await supabaseClient.from('students').select('*');
-                    this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
+                    this.students = [];
                   }
                 } else {
                   this.students = dbStudents;
@@ -2326,9 +2311,66 @@
               this.$nextTick(() => lucide.createIcons());
             });
 
-            this.$watch('isLoggedIn', () => {
-              this.$nextTick(() => lucide.createIcons());
-            });
+            // Touch swiping navigation for mobile
+            let touchStartX = 0;
+            let touchStartY = 0;
+            
+            window.addEventListener('touchstart', (e) => {
+              const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
+              const targetTag = e.target.tagName.toLowerCase();
+              if (
+                ignoreTags.includes(targetTag) || 
+                e.target.closest('.badge-strip') || 
+                e.target.closest('.admin-bar') || 
+                e.target.closest('.modal-card') || 
+                e.target.closest('.stage-toggle')
+              ) {
+                return;
+              }
+              touchStartX = e.changedTouches[0].screenX;
+              touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+            
+            window.addEventListener('touchend', (e) => {
+              const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
+              const targetTag = e.target.tagName.toLowerCase();
+              if (
+                ignoreTags.includes(targetTag) || 
+                e.target.closest('.badge-strip') || 
+                e.target.closest('.admin-bar') || 
+                e.target.closest('.modal-card') || 
+                e.target.closest('.stage-toggle')
+              ) {
+                return;
+              }
+              const touchEndX = e.changedTouches[0].screenX;
+              const touchEndY = e.changedTouches[0].screenY;
+              
+              const diffX = touchEndX - touchStartX;
+              const diffY = touchEndY - touchStartY;
+              
+              if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
+                // Only swipe if the user is logged in
+                if (!this.isLoggedIn) return;
+                
+                const ids = this.navItems
+                  .filter(n => n.id !== 'admin' || this.isAdmin)
+                  .map(n => n.id);
+                  
+                const curIdx = ids.indexOf(this.currentScreen);
+                if (curIdx !== -1) {
+                  let newIdx = curIdx;
+                  if (diffX < 0) {
+                    // Swipe left -> next page
+                    newIdx = (curIdx + 1) % ids.length;
+                  } else {
+                    // Swipe right -> previous page
+                    newIdx = (curIdx - 1 + ids.length) % ids.length;
+                  }
+                  this.go(ids[newIdx]);
+                }
+              }
+            }, { passive: true });
 
             this.$nextTick(() => lucide.createIcons());
           }
@@ -2588,7 +2630,7 @@
               id: idNormalized,
               name: this.signupName.trim(),
               stage: this.signupStage,
-              team: this.signupTeam,
+              team: 'none',
               pin: this.signupPassword.trim(),
               wallet: 0,
               total: 0,
@@ -2611,7 +2653,7 @@
             name: this.signupName.trim(),
             password: this.signupPassword.trim(),
             stage: this.signupStage,
-            team: this.signupTeam
+            team: 'none'
           });
 
           if (error) {
@@ -2633,12 +2675,30 @@
 
           if (!supabaseClient) {
             const reqIdx = this.pendingAccounts.findIndex(p => p.id === id);
-            if (reqIdx !== -1) this.pendingAccounts.splice(reqIdx, 1);
+            if (reqIdx !== -1) {
+              const pendingReq = this.pendingAccounts[reqIdx];
+              this.students.push({
+                id: pendingReq.id,
+                name: pendingReq.name,
+                stage: pendingReq.stage,
+                team: pendingReq.team,
+                pin: pendingReq.password,
+                wallet: 0,
+                total: 0,
+                trend: 1,
+                avatarIcon: 'user',
+                avatarColor: 'orange',
+                headline: 'طالب جديد في سراج',
+                badges: []
+              });
+              this.pendingAccounts.splice(reqIdx, 1);
+            }
             this.saveState();
+            this.showToast('تمت موافقة وتنشيط حساب الطالب بنجاح (محلياً)', 'success', 'user-check');
             return;
           }
 
-          const { error: insErr } = await supabaseClient.from('students').insert({
+          const newStudent = {
             id: req.id,
             name: req.name,
             stage: req.stage,
@@ -2651,7 +2711,9 @@
             avatarColor: 'orange',
             headline: 'طالب جديد في سراج',
             badges: []
-          });
+          };
+
+          const { error: insErr } = await supabaseClient.from('students').insert(newStudent);
 
           if (insErr) {
             console.error("Error approving account:", insErr);
@@ -2659,7 +2721,13 @@
             return;
           }
 
+          // Push locally immediately if not already added by realtime event
+          if (!this.students.some(s => s.id === req.id)) {
+            this.students.push(newStudent);
+          }
+
           await supabaseClient.from('pending_accounts').delete().eq('id', id);
+          this.pendingAccounts = this.pendingAccounts.filter(p => p.id !== id);
           this.showToast('تمت موافقة وتنشيط حساب الطالب بنجاح', 'success', 'user-check');
         },
 
@@ -3440,7 +3508,9 @@
             if (delErr) {
               console.error("Error clearing students:", delErr);
             }
-            await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
+            if (DEFAULT_STUDENTS.length > 0) {
+              await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
+            }
             await supabaseClient.from('pending_accounts').delete().neq('id', '_dummy_');
             this.showToast('تمت إعادة تعيين البيانات السحابية للافتراضية', 'success');
           }
