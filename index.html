@@ -707,29 +707,35 @@
         </div>
 
         <!-- Header Profile Widget (Top Left) -->
-        <template x-if="currentStudent">
-          <div @click="go('profile')" 
+        <template x-if="isAdmin || currentStudent">
+          <div @click="isAdmin ? go('admin') : go('profile')" 
                style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:18px; background:var(--glass); border:1px solid var(--stroke); transition:all 0.2s;"
                @mouseenter="$el.style.background = 'var(--glass2)'; $el.style.borderColor = 'rgba(255,255,255,0.15)'"
                @mouseleave="$el.style.background = 'var(--glass)'; $el.style.borderColor = 'var(--stroke)'">
             
-            <!-- Student Avatar Badge -->
+            <!-- Avatar Badge (Student/Admin) -->
             <div style="width:28px; height:28px; border-radius:50%; display:grid; place-items:center; border:1.5px solid;"
-                 :style="{
+                 :style="isAdmin ? {
+                   'border-color': '#ef4444',
+                   'background': 'radial-gradient(circle, rgba(239,68,68,0.15) 10%, rgba(18,20,20,0.85) 90%)',
+                   'color': '#fca5a5',
+                   'box-shadow': '0 0 10px rgba(239,68,68,0.3)'
+                 } : {
                    'border-color': avatarColorMap[currentStudent.avatarColor || 'orange'],
                    'background': 'linear-gradient(160deg,' + avatarColorGlowMap[currentStudent.avatarColor || 'orange'] + ',rgba(12,14,14,0.6))',
                    'color': avatarColorLightMap[currentStudent.avatarColor || 'orange'],
                    'box-shadow': '0 0 10px ' + avatarColorGlowMap[currentStudent.avatarColor || 'orange']
                  }">
-              <div style="width:13px; height:13px;" x-html="getIconSvg(currentStudent.avatarIcon || 'user')"></div>
+              <div style="width:13px; height:13px;" x-html="isAdmin ? getIconSvg('shield') : getIconSvg(currentStudent.avatarIcon || 'user')"></div>
             </div>
             
-            <!-- Student Info Texts -->
+            <!-- Info Texts -->
             <div style="display:flex; flex-direction:column; align-items:flex-start; text-align:right;">
-              <span style="font-size:11px; font-weight:700; color:var(--txt); line-height:1.2;" x-text="currentStudent.name"></span>
-              <span style="font-size:9px; color:#ffb27a; font-weight:600; line-height:1.2; display:flex; align-items:center; gap:2px; margin-top:1px;">
-                <div style="width:9px; height:9px;" x-html="getIconSvg('flame')"></div>
-                <span x-text="currentStudent.total + ' شعلة'"></span>
+              <span style="font-size:11px; font-weight:700; color:var(--txt); line-height:1.2;" x-text="isAdmin ? (ADMIN_ACCOUNTS.find(a => a.id === activeId)?.name || 'مشرف') : currentStudent.name"></span>
+              <span style="font-size:9px; font-weight:600; line-height:1.2; display:flex; align-items:center; gap:2px; margin-top:1px;"
+                    :style="isAdmin ? { color: '#ef4444' } : { color: '#ffb27a' }">
+                <div style="width:9px; height:9px;" x-html="isAdmin ? getIconSvg('settings') : getIconSvg('flame')"></div>
+                <span x-text="isAdmin ? 'غرفة الإدارة' : currentStudent.total + ' شعلة'"></span>
               </span>
             </div>
 
@@ -1075,7 +1081,8 @@
       <!-- 3. 🎁 REWARDS STORE VIEW -->
       <!-- ============================================== -->
       <div x-show="currentScreen === 'store'" class="page">
-        <template x-if="currentStudent">
+        <!-- Student Store View -->
+        <template x-if="currentStudent && !isAdmin">
           <div>
             <div class="glass stat wallet" style="display:flex;flex-direction:row;align-items:center;gap:14px;text-align:right;padding:16px 18px;margin-bottom:18px;">
               <div class="stat-ic" style="margin:0;"><i data-lucide="wallet"></i></div>
@@ -1112,6 +1119,48 @@
                             :disabled="currentStudent.wallet < r.price" 
                             @click="purchaseReward(currentStudent.id, r)"
                             x-text="currentStudent.wallet >= r.price ? 'استبدال' : 'غير كافٍ'"></button>
+                  </div>
+
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <!-- Admin Store View (Preview mode) -->
+        <template x-if="isAdmin">
+          <div>
+            <div class="glass stat" style="display:flex;flex-direction:row;align-items:center;gap:14px;text-align:right;padding:16px 18px;margin-bottom:18px;border-color:rgba(239,68,68,0.2);">
+              <div class="stat-ic" style="margin:0;color:#fca5a5;background:rgba(239,68,68,0.1);"><i data-lucide="shield"></i></div>
+              <div style="flex:1;">
+                <div class="stat-lbl" style="margin:0 0 2px;">حساب مشرف</div>
+                <div style="font-size:16px;font-weight:700;color:#fca5a5;" x-text="'مرحباً ' + (ADMIN_ACCOUNTS.find(a => a.id === activeId)?.name || 'مشرف') + ' (معاينة المتجر)'"></div>
+              </div>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <template x-for="(r, index) in rewards" :key="index">
+                <div class="glass" 
+                     style="display:flex; flex-direction:row; align-items:center; gap:14px; padding:12px 16px; border-radius:18px; border:1px solid var(--stroke2); opacity:0.85;">
+                  
+                  <!-- Icon -->
+                  <div class="reward-ic" style="margin-bottom:0; flex-shrink:0;">
+                    <div style="width:24px; height:24px; color:#ffb27a;" x-html="getIconSvg(r.icon)"></div>
+                  </div>
+                  
+                  <!-- Info (Middle) -->
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:right;">
+                    <span style="font-size:13px; font-weight:700; color:var(--txt);" x-text="r.name"></span>
+                    <span style="font-size:10px; color:var(--txt-faint); line-height:1.25;" x-text="r.desc"></span>
+                  </div>
+                  
+                  <!-- Actions (Left) -->
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
+                    <div style="font-size:14px; font-weight:700; color:#ffb27a; text-shadow:0 0 10px var(--orange-glow); display:flex; align-items:center; gap:4px;">
+                      <div style="width:12px; height:12px;" x-html="getIconSvg('flame')"></div>
+                      <span x-text="r.price"></span>
+                    </div>
+                    <span style="font-size:11px; color:var(--txt-faint); background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:8px; border:1px solid var(--stroke);">معاينة فقط</span>
                   </div>
 
                 </div>
@@ -1166,7 +1215,7 @@
           <template x-for="(team, index) in getTeamStats()" :key="team.name">
             <div class="lb-row glass" 
                  style="border-radius:16px;margin-bottom:8px;"
-                 :style="'فريق ' + team.name === 'فريق ' + getTeamLabel(currentStudent.team)
+                 :style="!isAdmin && ('فريق ' + team.name === 'فريق ' + getTeamLabel(currentStudent.team))
                          ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;'
                          : ''">
               <div class="lb-rank" x-text="index + 1"></div>
@@ -1176,7 +1225,7 @@
               <div class="lb-info">
                 <div class="lb-name" style="display:flex; align-items:center; gap:6px;">
                   <span x-text="'فريق ' + team.name"></span>
-                  <template x-if="'فريق ' + team.name === 'فريق ' + getTeamLabel(currentStudent.team)">
+                  <template x-if="!isAdmin && ('فريق ' + team.name === 'فريق ' + getTeamLabel(currentStudent.team))">
                     <span style="font-size:9px; font-weight:700; background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#ffb27a; padding:1px 6px; border-radius:6px;">فريقك</span>
                   </template>
                 </div>
@@ -1202,38 +1251,8 @@
       <!-- ============================================== -->
       <div x-show="currentScreen === 'admin'" class="page">
         
-        <!-- Passcode Pad overlay -->
-        <template x-if="!adminUnlocked">
-          <div class="pin-wrap">
-            <div class="pin-lock"><i data-lucide="lock-keyhole"></i></div>
-            <div class="pin-title">غرفة الإدارة</div>
-            <div class="pin-sub">أدخل الرمز السري للمتابعة</div>
-            
-            <div class="pin-dots" :class="pinShake ? 'animate-shake' : ''">
-              <template x-for="i in [1, 2, 3, 4]">
-                <div class="pin-dot" :class="adminPin.length >= i ? (pinError ? 'err' : 'filled') : ''"></div>
-              </template>
-            </div>
-            
-            <div class="pin-pad">
-              <button class="pin-key" @click="enterPinDigit('1')">1</button>
-              <button class="pin-key" @click="enterPinDigit('2')">2</button>
-              <button class="pin-key" @click="enterPinDigit('3')">3</button>
-              <button class="pin-key" @click="enterPinDigit('4')">4</button>
-              <button class="pin-key" @click="enterPinDigit('5')">5</button>
-              <button class="pin-key" @click="enterPinDigit('6')">6</button>
-              <button class="pin-key" @click="enterPinDigit('7')">7</button>
-              <button class="pin-key" @click="enterPinDigit('8')">8</button>
-              <button class="pin-key" @click="enterPinDigit('9')">9</button>
-              <button class="pin-key fn" @click="deletePinLast()"><i data-lucide="delete"></i></button>
-              <button class="pin-key" @click="enterPinDigit('0')">0</button>
-              <button class="pin-key fn" @click="verifyPin()"><i data-lucide="check"></i></button>
-            </div>
-          </div>
-        </template>
-
         <!-- Core Admin controls -->
-        <template x-if="adminUnlocked">
+        <template x-if="isAdmin">
           <div>
             <!-- Stage Filter Toggle -->
             <div class="stage-toggle">
@@ -1438,7 +1457,7 @@
               إعادة تعيين البيانات الافتراضية
             </button>
             
-            <button class="admin-logout" @click="lockAdmin()"><i data-lucide="lock"></i>قفل غرفة الإدارة</button>
+            <button class="admin-logout" @click="logout()"><i data-lucide="log-out"></i>تسجيل الخروج</button>
           </div>
         </template>
         
@@ -1744,7 +1763,7 @@
         </div>
 
         <!-- Gifting Console (only shown if not viewing own profile) -->
-        <template x-if="s.id !== activeId">
+        <template x-if="!isAdmin && s.id !== activeId">
           <div class="gift-box" style="margin-bottom:20px; padding:12px; border-radius:16px;">
             <div class="gift-title" style="font-size:11px; margin-bottom:8px; display:flex; align-items:center; gap:4px;">
               <div style="width:12px; height:12px; color:var(--orange);" x-html="getIconSvg('gift')"></div>
@@ -1860,7 +1879,7 @@
     <!-- BOTTOM FIXED NAV BAR -->
     <nav id="nav">
       <template x-for="n in navItems" :key="n.id">
-        <button class="nav-btn" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
+        <button class="nav-btn" x-show="n.id !== 'admin' || isAdmin" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
           <i :data-lucide="n.icon"></i>
           <span x-text="n.label"></span>
         </button>
@@ -1903,6 +1922,13 @@
       console.error("Supabase global init failed:", e);
     }
 
+    const ADMIN_ACCOUNTS = [
+      { id: 'sa', name: 'سلام الساعور', pin: '0597' },
+      { id: 'mq', name: 'مروان القادري', pin: '0553' },
+      { id: 'oq', name: 'عمر القادري', pin: '0501' },
+      { id: 'mn', name: 'محمد نعسان', pin: '0502' }
+    ];
+
     function serajApp() {
       // Mock data in the exact same shape as the second model's code
       const DEFAULT_STUDENTS = [
@@ -1941,6 +1967,7 @@
         
         // Login State
         isLoggedIn: false,
+        isAdmin: false,
         loginMode: 'login',
         loginInputId: '',
         loginInputPassword: '',
@@ -2270,6 +2297,14 @@
             const logged = localStorage.getItem('seraj_pwa_isLoggedIn');
             this.isLoggedIn = logged === 'true';
 
+            const adminLogged = localStorage.getItem('seraj_pwa_isAdmin');
+            this.isAdmin = adminLogged === 'true';
+            if (this.isAdmin) {
+              this.adminUnlocked = true;
+            } else {
+              this.adminUnlocked = false;
+            }
+
             // 6. Setup realtime subscriptions
             this.setupRealtime();
 
@@ -2320,6 +2355,14 @@
 
           const logged = localStorage.getItem('seraj_pwa_isLoggedIn');
           this.isLoggedIn = logged === 'true';
+
+          const adminLogged = localStorage.getItem('seraj_pwa_isAdmin');
+          this.isAdmin = adminLogged === 'true';
+          if (this.isAdmin) {
+            this.adminUnlocked = true;
+          } else {
+            this.adminUnlocked = false;
+          }
 
           const inv = localStorage.getItem('seraj_pwa_inventory');
           if (inv) {
@@ -2447,6 +2490,7 @@
         saveState() {
           localStorage.setItem('seraj_pwa_activeId', this.activeId);
           localStorage.setItem('seraj_pwa_isLoggedIn', this.isLoggedIn ? 'true' : 'false');
+          localStorage.setItem('seraj_pwa_isAdmin', this.isAdmin ? 'true' : 'false');
           localStorage.setItem('seraj_pwa_students', JSON.stringify(this.students));
           localStorage.setItem('seraj_pwa_inventory', JSON.stringify(this.inventoryList));
           localStorage.setItem('seraj_pwa_logs', JSON.stringify(this.activityLogs));
@@ -2459,11 +2503,33 @@
         async submitLogin() {
           this.loginErrorMsg = '';
           if (!this.loginInputId.trim() || !this.loginInputPassword.trim()) {
-            this.loginErrorMsg = 'يرجى إدخال معرف الطالب والرمز السري.';
+            this.loginErrorMsg = 'يرجى إدخال المعرف والرمز السري.';
             return;
           }
 
           const idNormalized = this.loginInputId.trim().toLowerCase();
+
+          // 1. Check if admin login
+          const admin = ADMIN_ACCOUNTS.find(a => a.id.toLowerCase() === idNormalized);
+          if (admin) {
+            if (this.loginInputPassword === admin.pin) {
+              this.activeId = admin.id;
+              this.isLoggedIn = true;
+              this.isAdmin = true;
+              this.adminUnlocked = true;
+              this.loginInputId = '';
+              this.loginInputPassword = '';
+              this.currentScreen = 'admin';
+              this.saveState();
+              this.$nextTick(() => lucide.createIcons());
+              return;
+            } else {
+              this.loginErrorMsg = 'الرمز السري للمشرف غير صحيح.';
+              return;
+            }
+          }
+
+          // 2. Check student list
           const student = this.students.find(s => s.id.toLowerCase() === idNormalized);
 
           if (!student) {
@@ -2471,7 +2537,7 @@
             if (pending) {
               this.loginErrorMsg = 'حسابك بانتظار موافقة المشرف.';
             } else {
-              this.loginErrorMsg = 'معرف الطالب غير صحيح.';
+              this.loginErrorMsg = 'المعرف غير صحيح.';
             }
             return;
           }
@@ -2480,6 +2546,8 @@
           if (this.loginInputPassword === correctPin) {
             this.activeId = student.id;
             this.isLoggedIn = true;
+            this.isAdmin = false;
+            this.adminUnlocked = false;
             this.loginInputId = '';
             this.loginInputPassword = '';
             this.saveState();
@@ -2612,6 +2680,8 @@
 
         logout() {
           this.isLoggedIn = false;
+          this.isAdmin = false;
+          this.adminUnlocked = false;
           this.currentScreen = 'leaderboard';
           this.saveState();
         },
