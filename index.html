@@ -1903,10 +1903,10 @@
     const SUPABASE_URL = "https://ttkvsoxzfhqcaqzopvaq.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_tMlScCfurHafq1BReDg0hg_xKKecVhE";
 
-    let supabase = null;
+    let supabaseClient = null;
     try {
       if (window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     } catch (e) {
       console.error("Supabase global init failed:", e);
@@ -2151,14 +2151,14 @@
           
           // Double check initialization
           try {
-            if (!supabase && window.supabase) {
-              supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            if (!supabaseClient && window.supabase) {
+              supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
           } catch (e) {
             console.error("Supabase Error during init (client connection):", e);
           }
 
-          if (!supabase) {
+          if (!supabaseClient) {
             console.warn("Supabase client is not available. Running in LocalStorage fallback mode.");
             this.loadFallbackLocalStorage();
             return;
@@ -2167,19 +2167,19 @@
           try {
             // 1. Fetch Students
             try {
-              let { data: dbStudents, error: fetchErr } = await supabase.from('students').select('*');
+              let { data: dbStudents, error: fetchErr } = await supabaseClient.from('students').select('*');
               if (fetchErr) {
                 console.error("Supabase Error during init (fetching students):", fetchErr);
                 this.students = DEFAULT_STUDENTS;
               } else {
                 if (!dbStudents || dbStudents.length === 0) {
                   // Seeding
-                  const { error: seedErr } = await supabase.from('students').insert(DEFAULT_STUDENTS);
+                  const { error: seedErr } = await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
                   if (seedErr) {
                     console.error("Supabase Error during init (seeding students):", seedErr);
                     this.students = DEFAULT_STUDENTS;
                   } else {
-                    let { data: reFetched } = await supabase.from('students').select('*');
+                    let { data: reFetched } = await supabaseClient.from('students').select('*');
                     this.students = reFetched && reFetched.length > 0 ? reFetched : DEFAULT_STUDENTS;
                   }
                 } else {
@@ -2193,7 +2193,7 @@
 
             // 2. Fetch Logs
             try {
-              let { data: dbLogs, error: logErr } = await supabase.from('activity_log').select('*');
+              let { data: dbLogs, error: logErr } = await supabaseClient.from('activity_log').select('*');
               if (logErr) {
                 console.error("Supabase Error during init (fetching logs):", logErr);
               }
@@ -2205,7 +2205,7 @@
 
             // 3. Fetch Inventory
             try {
-              let { data: dbInv, error: invErr } = await supabase.from('inventory').select('*');
+              let { data: dbInv, error: invErr } = await supabaseClient.from('inventory').select('*');
               if (invErr) {
                 console.error("Supabase Error during init (fetching inventory):", invErr);
               }
@@ -2217,7 +2217,7 @@
 
             // 4. Fetch Challenge Timer
             try {
-              let { data: chData, error: chErr } = await supabase.from('weekly_challenge').select('*').eq('id', 'main').single();
+              let { data: chData, error: chErr } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 'main').single();
               if (chErr || !chData) {
                 console.error("Supabase Error during init (fetching challenge, seeding if missing):", chErr);
                 const defaultCh = {
@@ -2229,7 +2229,7 @@
                   time_left: 600,
                   is_running: false
                 };
-                const { error: chInsertErr } = await supabase.from('weekly_challenge').insert(defaultCh);
+                const { error: chInsertErr } = await supabaseClient.from('weekly_challenge').insert(defaultCh);
                 if (chInsertErr) {
                   console.error("Supabase Error during init (seeding challenge):", chInsertErr);
                 }
@@ -2262,7 +2262,7 @@
 
             // 5. Fetch Pending Accounts
             try {
-              let { data: dbPending, error: pendingErr } = await supabase.from('pending_accounts').select('*');
+              let { data: dbPending, error: pendingErr } = await supabaseClient.from('pending_accounts').select('*');
               if (pendingErr) {
                 console.error("Supabase Error during init (fetching pending accounts):", pendingErr);
               }
@@ -2366,7 +2366,7 @@
         setupRealtime() {
           try {
             // Students changes
-            supabase
+            supabaseClient
               .channel('students_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, payload => {
                 if (payload.eventType === 'INSERT') {
@@ -2384,7 +2384,7 @@
               .subscribe();
 
             // Activity logs changes
-            supabase
+            supabaseClient
               .channel('activity_log_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, payload => {
                 if (payload.eventType === 'INSERT') {
@@ -2399,7 +2399,7 @@
               .subscribe();
 
             // Inventory changes
-            supabase
+            supabaseClient
               .channel('inventory_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
                 if (payload.eventType === 'INSERT') {
@@ -2414,7 +2414,7 @@
               .subscribe();
 
             // Weekly challenge changes
-            supabase
+            supabaseClient
               .channel('weekly_challenge_changes')
               .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'weekly_challenge' }, payload => {
                 this.weeklyChallenge.title = payload.new.title;
@@ -2435,7 +2435,7 @@
               .subscribe();
 
             // Pending accounts changes
-            supabase
+            supabaseClient
               .channel('pending_accounts_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_accounts' }, payload => {
                 if (payload.eventType === 'INSERT') {
@@ -2524,7 +2524,7 @@
             return;
           }
 
-          if (!supabase) {
+          if (!supabaseClient) {
             this.students.push({
               id: idNormalized,
               name: this.signupName.trim(),
@@ -2547,7 +2547,7 @@
             return;
           }
 
-          const { error } = await supabase.from('pending_accounts').insert({
+          const { error } = await supabaseClient.from('pending_accounts').insert({
             id: idNormalized,
             name: this.signupName.trim(),
             password: this.signupPassword.trim(),
@@ -2572,14 +2572,14 @@
           const req = this.pendingAccounts.find(p => p.id === id);
           if (!req) return;
 
-          if (!supabase) {
+          if (!supabaseClient) {
             const reqIdx = this.pendingAccounts.findIndex(p => p.id === id);
             if (reqIdx !== -1) this.pendingAccounts.splice(reqIdx, 1);
             this.saveState();
             return;
           }
 
-          const { error: insErr } = await supabase.from('students').insert({
+          const { error: insErr } = await supabaseClient.from('students').insert({
             id: req.id,
             name: req.name,
             stage: req.stage,
@@ -2600,18 +2600,18 @@
             return;
           }
 
-          await supabase.from('pending_accounts').delete().eq('id', id);
+          await supabaseClient.from('pending_accounts').delete().eq('id', id);
           this.showToast('تمت موافقة وتنشيط حساب الطالب بنجاح', 'success', 'user-check');
         },
 
         async rejectAccount(id) {
-          if (!supabase) {
+          if (!supabaseClient) {
             const reqIdx = this.pendingAccounts.findIndex(p => p.id === id);
             if (reqIdx !== -1) this.pendingAccounts.splice(reqIdx, 1);
             this.saveState();
             return;
           }
-          const { error } = await supabase.from('pending_accounts').delete().eq('id', id);
+          const { error } = await supabaseClient.from('pending_accounts').delete().eq('id', id);
           if (error) {
             console.error("Error rejecting account:", error);
             return;
@@ -2754,7 +2754,7 @@
         async saveAvatarSettings(studentId) {
           const st = this.getStudentById(studentId);
           if (st) {
-            if (!supabase) {
+            if (!supabaseClient) {
               st.avatarIcon = this.tempAvatarIcon;
               st.avatarColor = this.tempAvatarColor;
               this.avatarModalOpen = false;
@@ -2763,7 +2763,7 @@
               return;
             }
 
-            const { error: sErr } = await supabase.from('students').update({
+            const { error: sErr } = await supabaseClient.from('students').update({
               avatarIcon: this.tempAvatarIcon,
               avatarColor: this.tempAvatarColor
             }).eq('id', studentId);
@@ -2785,7 +2785,7 @@
             return;
           }
 
-          if (!supabase) {
+          if (!supabaseClient) {
             st.wallet -= reward.price;
             this.activityLogs.unshift({
               id: 'log_' + Date.now(),
@@ -2812,7 +2812,7 @@
           }
 
           const newWallet = st.wallet - reward.price;
-          const { error: sErr } = await supabase.from('students').update({
+          const { error: sErr } = await supabaseClient.from('students').update({
             wallet: newWallet
           }).eq('id', studentId);
 
@@ -2821,7 +2821,7 @@
             return;
           }
 
-          await supabase.from('activity_log').insert({
+          await supabaseClient.from('activity_log').insert({
             student_id: studentId,
             reason: `شراء: ${reward.name}`,
             delta: -reward.price,
@@ -2829,7 +2829,7 @@
           });
 
           const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-          await supabase.from('inventory').insert({
+          await supabaseClient.from('inventory').insert({
             id: invId,
             student_id: studentId,
             name: reward.name,
@@ -2847,7 +2847,7 @@
           if (!st) return;
           const item = this.inventoryList.find(i => i.id === rewardId);
           if (item && item.status === 'available') {
-            if (!supabase) {
+            if (!supabaseClient) {
               item.status = 'pending';
               this.activityLogs.unshift({
                 id: 'log_' + Date.now(),
@@ -2862,7 +2862,7 @@
               return;
             }
 
-            const { error: invErr } = await supabase.from('inventory').update({
+            const { error: invErr } = await supabaseClient.from('inventory').update({
               status: 'pending'
             }).eq('id', rewardId);
 
@@ -2871,7 +2871,7 @@
               return;
             }
 
-            await supabase.from('activity_log').insert({
+            await supabaseClient.from('activity_log').insert({
               student_id: studentId,
               reason: `طلب استخدام: ${item.name}`,
               delta: 0,
@@ -2887,7 +2887,7 @@
           if (!st) return;
           const item = this.inventoryList.find(i => i.id === rewardId);
           if (item) {
-            if (!supabase) {
+            if (!supabaseClient) {
               item.status = 'used';
               this.activityLogs.unshift({
                 id: 'log_' + Date.now(),
@@ -2902,7 +2902,7 @@
               return;
             }
 
-            const { error: invErr } = await supabase.from('inventory').update({
+            const { error: invErr } = await supabaseClient.from('inventory').update({
               status: 'used'
             }).eq('id', rewardId);
 
@@ -2911,7 +2911,7 @@
               return;
             }
 
-            await supabase.from('activity_log').insert({
+            await supabaseClient.from('activity_log').insert({
               student_id: studentId,
               reason: `تفعيل جائزة: ${item.name}`,
               delta: 0,
@@ -2927,7 +2927,7 @@
           if (!st) return;
           const item = this.inventoryList.find(i => i.id === rewardId);
           if (item) {
-            if (!supabase) {
+            if (!supabaseClient) {
               item.status = 'available';
               this.activityLogs.unshift({
                 id: 'log_' + Date.now(),
@@ -2942,7 +2942,7 @@
               return;
             }
 
-            const { error: invErr } = await supabase.from('inventory').update({
+            const { error: invErr } = await supabaseClient.from('inventory').update({
               status: 'available'
             }).eq('id', rewardId);
 
@@ -2951,7 +2951,7 @@
               return;
             }
 
-            await supabase.from('activity_log').insert({
+            await supabaseClient.from('activity_log').insert({
               student_id: studentId,
               reason: `رفض تفعيل: ${item.name}`,
               delta: 0,
@@ -2977,7 +2977,7 @@
             return;
           }
 
-          if (!supabase) {
+          if (!supabaseClient) {
             sender.wallet -= giftVal;
             recipient.wallet += giftVal;
             recipient.total += giftVal;
@@ -3003,7 +3003,7 @@
             return;
           }
 
-          const { error: senderErr } = await supabase.from('students').update({
+          const { error: senderErr } = await supabaseClient.from('students').update({
             wallet: sender.wallet - giftVal
           }).eq('id', sender.id);
 
@@ -3012,7 +3012,7 @@
             return;
           }
 
-          const { error: recErr } = await supabase.from('students').update({
+          const { error: recErr } = await supabaseClient.from('students').update({
             wallet: recipient.wallet + giftVal,
             total: recipient.total + giftVal
           }).eq('id', recipient.id);
@@ -3022,7 +3022,7 @@
             return;
           }
 
-          await supabase.from('activity_log').insert([
+          await supabaseClient.from('activity_log').insert([
             {
               student_id: sender.id,
               reason: `إهداء شعلات إلى ${recipient.name.split(' ')[0]}`,
@@ -3078,7 +3078,7 @@
         async awardPoints(studentId, delta, reason) {
           const s = this.getStudentById(studentId);
           if (s) {
-            if (!supabase) {
+            if (!supabaseClient) {
               s.wallet += delta;
               s.total += delta;
               this.activityLogs.unshift({
@@ -3094,7 +3094,7 @@
               return;
             }
 
-            const { error: sErr } = await supabase.from('students').update({
+            const { error: sErr } = await supabaseClient.from('students').update({
               wallet: s.wallet + delta,
               total: s.total + delta
             }).eq('id', studentId);
@@ -3104,7 +3104,7 @@
               return;
             }
 
-            await supabase.from('activity_log').insert({
+            await supabaseClient.from('activity_log').insert({
               student_id: studentId,
               reason: reason,
               delta: delta,
@@ -3118,7 +3118,7 @@
         async deductPoints(studentId, delta, reason) {
           const s = this.getStudentById(studentId);
           if (s) {
-            if (!supabase) {
+            if (!supabaseClient) {
               s.wallet = Math.max(0, s.wallet + delta);
               s.total = Math.max(0, s.total + delta);
               this.activityLogs.unshift({
@@ -3134,7 +3134,7 @@
               return;
             }
 
-            const { error: sErr } = await supabase.from('students').update({
+            const { error: sErr } = await supabaseClient.from('students').update({
               wallet: Math.max(0, s.wallet + delta),
               total: Math.max(0, s.total + delta)
             }).eq('id', studentId);
@@ -3144,7 +3144,7 @@
               return;
             }
 
-            await supabase.from('activity_log').insert({
+            await supabaseClient.from('activity_log').insert({
               student_id: studentId,
               reason: reason,
               delta: delta,
@@ -3169,14 +3169,14 @@
             added = true;
           }
 
-          if (!supabase) {
+          if (!supabaseClient) {
             s.badges = newBadges;
             this.saveState();
             this.showToast(added ? 'تم منح الوسام بنجاح' : 'تم سحب الوسام', 'info');
             return;
           }
 
-          const { error: sErr } = await supabase.from('students').update({
+          const { error: sErr } = await supabaseClient.from('students').update({
             badges: newBadges
           }).eq('id', studentId);
 
@@ -3189,7 +3189,7 @@
         },
 
         async toggleChallengeTimer() {
-          if (!supabase) {
+          if (!supabaseClient) {
             if (this.weeklyChallenge.is_running) {
               this.stopLocalTimer();
               this.weeklyChallenge.is_running = false;
@@ -3206,7 +3206,7 @@
           }
 
           if (this.weeklyChallenge.is_running) {
-            await supabase.from('weekly_challenge').update({
+            await supabaseClient.from('weekly_challenge').update({
               is_running: false,
               time_left: this.weeklyChallenge.timeLeft,
               updated_at: new Date().toISOString()
@@ -3217,7 +3217,7 @@
               currentSec = this.weeklyChallenge.duration;
             }
             const endsAt = new Date(Date.now() + currentSec * 1000).toISOString();
-            await supabase.from('weekly_challenge').update({
+            await supabaseClient.from('weekly_challenge').update({
               is_running: true,
               ends_at: endsAt,
               time_left: currentSec,
@@ -3227,7 +3227,7 @@
         },
 
         async resetChallengeTimer() {
-          if (!supabase) {
+          if (!supabaseClient) {
             this.stopLocalTimer();
             this.weeklyChallenge.is_running = false;
             this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
@@ -3237,7 +3237,7 @@
             return;
           }
 
-          const { error } = await supabase.from('weekly_challenge').update({
+          const { error } = await supabaseClient.from('weekly_challenge').update({
             is_running: false,
             time_left: this.weeklyChallenge.duration,
             ends_at: null,
@@ -3312,7 +3312,7 @@
         },
 
         async exportData() {
-          if (!supabase) {
+          if (!supabaseClient) {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.students));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
@@ -3321,7 +3321,7 @@
             return;
           }
 
-          let { data } = await supabase.from('students').select('*');
+          let { data } = await supabaseClient.from('students').select('*');
           const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
           const dlAnchorElem = document.createElement('a');
           dlAnchorElem.setAttribute("href", dataStr);
@@ -3337,7 +3337,7 @@
             try {
               const imported = JSON.parse(e.target.result);
               if (Array.isArray(imported)) {
-                if (!supabase) {
+                if (!supabaseClient) {
                   this.students = imported;
                   this.saveState();
                   this.showToast('تم استيراد ومزامنة البيانات محلياً', 'success');
@@ -3345,7 +3345,7 @@
                   return;
                 }
 
-                const { error } = await supabase.from('students').upsert(imported);
+                const { error } = await supabaseClient.from('students').upsert(imported);
                 if (error) {
                   this.showToast('فشل استيراد البيانات السحابية', 'neg');
                 } else {
@@ -3361,7 +3361,7 @@
 
         async resetToDefault() {
           if (confirm('هل أنت متأكد من إعادة تعيين كامل البيانات للافتراضية؟')) {
-            if (!supabase) {
+            if (!supabaseClient) {
               this.students = DEFAULT_STUDENTS;
               this.inventoryList = [];
               this.activityLogs = [];
@@ -3375,12 +3375,12 @@
               return;
             }
 
-            const { error: delErr } = await supabase.from('students').delete().neq('id', '_dummy_');
+            const { error: delErr } = await supabaseClient.from('students').delete().neq('id', '_dummy_');
             if (delErr) {
               console.error("Error clearing students:", delErr);
             }
-            await supabase.from('students').insert(DEFAULT_STUDENTS);
-            await supabase.from('pending_accounts').delete().neq('id', '_dummy_');
+            await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
+            await supabaseClient.from('pending_accounts').delete().neq('id', '_dummy_');
             this.showToast('تمت إعادة تعيين البيانات السحابية للافتراضية', 'success');
           }
         },
