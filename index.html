@@ -566,7 +566,7 @@
             <div class="glass" style="width: 100%; padding: 24px; border-radius: 24px; display: flex; flex-direction: column; gap: 16px;">
               <div style="text-align: right;">
                 <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">معرف الطالب</label>
-                <input type="text" x-model="loginInputId" placeholder="مثال: s1" 
+                <input type="text" x-model="loginInputId" placeholder="" 
                        style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;"
                        @focus="$el.style.borderColor = 'rgba(249,115,22,0.4)'"
                        @blur="$el.style.borderColor = 'var(--stroke)'" />
@@ -574,7 +574,7 @@
               
               <div style="text-align: right;">
                 <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">الرمز السري</label>
-                <input type="password" x-model="loginInputPassword" placeholder="••••" 
+                <input type="password" x-model="loginInputPassword" placeholder="" 
                        style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;"
                        @focus="$el.style.borderColor = 'rgba(249,115,22,0.4)'"
                        @blur="$el.style.borderColor = 'var(--stroke)'" />
@@ -635,7 +635,7 @@
 
                   <div style="text-align: right;">
                     <label style="font-size: 11px; color: var(--txt-dim); font-weight: 600; display: block; margin-bottom: 6px;">معرف الطالب (ID بالإنجليزية)</label>
-                    <input type="text" x-model="signupId" placeholder="" 
+                    <input type="text" x-model="signupId" placeholder="مثال: youssef" 
                            style="width: 100%; background: var(--bg2); border: 1px solid var(--stroke); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--txt); font-family: inherit; outline: none; transition: all 0.2s;" />
                   </div>
                   
