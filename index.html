@@ -1045,15 +1045,51 @@
 
             <!-- Badges Strip -->
             <div class="sect-title"><i data-lucide="award"></i>أوسمتي المضيئة</div>
-            <div class="glass" style="padding:16px 12px;">
-              <div class="badge-strip">
-                <template x-for="ach in achievements" :key="ach.id">
-                  <div class="mini-badge" :class="hasBadge(currentStudent.id, ach.id) ? 'lit' : ''" @click="openBadgeDetailModal(ach, currentStudent)" style="cursor:pointer;">
+            <div class="glass" style="padding:16px 12px; display: flex; flex-direction: column; gap: 16px;">
+              <!-- Row 1 -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; justify-items: center;">
+                <template x-for="ach in getBadgesByGroup(1)" :key="ach.id">
+                  <div class="mini-badge" :class="hasBadge(currentStudent.id, ach.id) ? 'lit' : ''" @click="openBadgeDetailModal(ach, currentStudent)" style="cursor:pointer; width: 100%;">
                     <div class="mini-badge-ic"><div style="width:28px; height:28px;" x-html="getIconSvg(ach.icon)"></div></div>
                     <div class="mini-badge-lbl" x-text="ach.name"></div>
                   </div>
                 </template>
               </div>
+
+              <!-- Row 2 -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; justify-items: center;">
+                <template x-for="ach in getBadgesByGroup(2)" :key="ach.id">
+                  <div class="mini-badge" :class="hasBadge(currentStudent.id, ach.id) ? 'lit' : ''" @click="openBadgeDetailModal(ach, currentStudent)" style="cursor:pointer; width: 100%;">
+                    <div class="mini-badge-ic"><div style="width:28px; height:28px;" x-html="getIconSvg(ach.icon)"></div></div>
+                    <div class="mini-badge-lbl" x-text="ach.name"></div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Row 3 -->
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; justify-items: center; max-width: 280px; margin: 0 auto; width: 100%;">
+                <template x-for="ach in getBadgesByGroup(3)" :key="ach.id">
+                  <div class="mini-badge" :class="hasBadge(currentStudent.id, ach.id) ? 'lit' : ''" @click="openBadgeDetailModal(ach, currentStudent)" style="cursor:pointer; width: 100%;">
+                    <div class="mini-badge-ic"><div style="width:28px; height:28px;" x-html="getIconSvg(ach.icon)"></div></div>
+                    <div class="mini-badge-lbl" x-text="ach.name"></div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Other Badges -->
+              <template x-if="getBadgesByGroup(4).length > 0">
+                <div style="border-top: 1px dashed var(--stroke); padding-top: 16px; margin-top: 4px;">
+                  <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 12px; text-align: center;">أوسمة إضافية</div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">
+                    <template x-for="ach in getBadgesByGroup(4)" :key="ach.id">
+                      <div class="mini-badge" :class="hasBadge(currentStudent.id, ach.id) ? 'lit' : ''" @click="openBadgeDetailModal(ach, currentStudent)" style="cursor:pointer;">
+                        <div class="mini-badge-ic"><div style="width:28px; height:28px;" x-html="getIconSvg(ach.icon)"></div></div>
+                        <div class="mini-badge-lbl" x-text="ach.name"></div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
             </div>
 
             <!-- Activity Log -->
@@ -2512,6 +2548,22 @@
             avatarColor: dbStudent.avatar_color || 'orange',
             gameScore: dbStudent.trend || 0
           };
+        },
+
+        getBadgesByGroup(groupIndex) {
+          const g1 = ['attendance_early_3', 'attendance_early_6', 'no_violation_3', 'no_violation_6'];
+          const g2 = ['seerah_early_3', 'seerah_early_6', 'weekly_win_2', 'weekly_win_3'];
+          const g3 = ['knowledge_beacon', 'seraj_knight', 'seraj_ambassador'];
+
+          if (groupIndex === 1) {
+            return this.achievements.filter(ach => g1.includes(ach.id));
+          } else if (groupIndex === 2) {
+            return this.achievements.filter(ach => g2.includes(ach.id));
+          } else if (groupIndex === 3) {
+            return this.achievements.filter(ach => g3.includes(ach.id));
+          } else {
+            return this.achievements.filter(ach => !g1.includes(ach.id) && !g2.includes(ach.id) && !g3.includes(ach.id));
+          }
         },
 
         mapStudentToDB(student) {
