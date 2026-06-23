@@ -2329,7 +2329,7 @@
       </div>
 
       <!-- List of Levels -->
-      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px; text-align:right;">
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:20px; direction:rtl; text-align:center;">
         <template x-for="lvl in [
           { level: 1, min: 0, max: 100, label: 'مبتدئ سراج', icon: 'sprout', color: 'emerald' },
           { level: 2, min: 100, max: 250, label: 'شعلة نشيطة', icon: 'flame', color: 'orange' },
@@ -2337,45 +2337,74 @@
           { level: 4, min: 500, max: 800, label: 'فارس سراج', icon: 'shield', color: 'purple' },
           { level: 5, min: 800, max: 999999, label: 'سفير سراج', icon: 'crown', color: 'yellow' }
         ]" :key="lvl.level">
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-radius:14px; border:1px solid var(--stroke); transition:all 0.2s;"
-               :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
-                       ? 'background:rgba(5,150,105,0.06); border-color:rgba(5,150,105,0.4); box-shadow:0 0 12px rgba(5,150,105,0.1);' 
-                       : 'background:rgba(255,255,255,0.01);'"
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 10px; border-radius: 18px; border: 1px solid var(--stroke); transition: all 0.2s;"
+               :style="(getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
+                       ? 'background: rgba(249,115,22,0.04); border-color: rgba(249,115,22,0.3); box-shadow: 0 0 12px rgba(249,115,22,0.05);' 
+                       : 'background: rgba(255,255,255,0.01); border-color: var(--stroke);') + (lvl.level === 5 ? ' grid-column: span 2;' : '')"
                :class="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'current-level-active' : ''">
             
-            <div style="display:flex; align-items:center; gap:10px;">
-              <!-- Level Icon Circle -->
-              <div style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; transition:all 0.2s;"
+            <!-- Circular Progress SVG & Icon -->
+            <div style="position: relative; width: 76px; height: 76px; display: grid; place-items: center; margin-bottom: 8px;">
+              <svg style="position: absolute; transform: rotate(-90deg); width: 76px; height: 76px;">
+                <!-- Background Circle -->
+                <circle cx="38" cy="38" r="32" stroke="rgba(255,255,255,0.05)" stroke-width="3" fill="transparent" />
+                <!-- Foreground Circle -->
+                <circle cx="38" cy="38" r="32" 
+                        :stroke="
+                          getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
+                            ? '#10b981' 
+                            : (getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? '#f97316' : 'rgba(255,255,255,0.08)')
+                        " 
+                        stroke-width="3.5" 
+                        fill="transparent" 
+                        stroke-dasharray="201.06" 
+                        :stroke-dashoffset="
+                          getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
+                            ? 0 
+                            : (getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
+                                ? (201.06 * (1 - getStudentLevelInfo(currentStudent.total).percent / 100)) 
+                                : 201.06)
+                        " 
+                        stroke-linecap="round"
+                        style="transition: stroke-dashoffset 0.6s ease-in-out;" />
+              </svg>
+              
+              <!-- Inner Circle with Icon -->
+              <div style="width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s;"
                    :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level
-                           ? 'background:rgba(5,150,105,0.15); color:#34d399;'
-                           : 'background:var(--glass2); color:var(--txt-faint);'">
-                <div style="width:18px; height:18px;" x-html="getIconSvg(lvl.icon)"></div>
-              </div>
-              <div>
-                <div style="font-size:12px; font-weight:700;" 
-                     :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'color:var(--txt);' : 'color:var(--txt-dim);'"
-                     x-text="lvl.label"></div>
-                <div style="font-size:9px; color:var(--txt-faint); margin-top:2px;" 
-                     x-text="lvl.level === 5 ? 'من 800 شعلة فما فوق' : 'من ' + lvl.min + ' إلى ' + lvl.max + ' شعلة'"></div>
+                           ? 'background: rgba(249,115,22,0.12); color: #ffb27a;'
+                           : (getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
+                               ? 'background: rgba(16,185,129,0.12); color: #34d399;' 
+                               : 'background: rgba(255,255,255,0.02); color: var(--txt-faint);')">
+                <div style="width: 22px; height: 22px;" x-html="getIconSvg(lvl.icon)"></div>
               </div>
             </div>
 
-            <!-- Current Rank Badge -->
-            <template x-if="getStudentLevelInfo(currentStudent.total).current.level === lvl.level">
-              <span style="font-size:9px; font-weight:700; background:rgba(5,150,105,0.2); border:1px solid rgba(5,150,105,0.4); color:#6ee7b7; padding:2px 8px; border-radius:6px;">رتبتك الحالية</span>
-            </template>
-            <template x-if="getStudentLevelInfo(currentStudent.total).current.level < lvl.level">
-              <span style="font-size:9px; color:var(--txt-faint); font-weight:600; display:inline-flex; align-items:center; gap:4px;">
-                <div style="width:10px; height:10px; display:inline-block; vertical-align:middle;" x-html="getIconSvg('lock')"></div>
-                مغلق
-              </span>
-            </template>
-            <template x-if="getStudentLevelInfo(currentStudent.total).current.level > lvl.level">
-              <span style="font-size:9px; color:#34d399; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
-                <div style="width:10px; height:10px; display:inline-block; vertical-align:middle;" x-html="getIconSvg('check')"></div>
-                مكتمل
-              </span>
-            </template>
+            <!-- Level Details -->
+            <div style="font-size: 12px; font-weight: 700;"
+                 :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'color: var(--txt);' : 'color: var(--txt-dim);'"
+                 x-text="lvl.label"></div>
+            <div style="font-size: 8.5px; color: var(--txt-faint); margin-top: 3px;"
+                 x-text="lvl.level === 5 ? 'من 800 شعلة فما فوق' : 'من ' + lvl.min + ' إلى ' + lvl.max + ' شعلة'"></div>
+
+            <!-- Status Badge -->
+            <div style="margin-top: 8px;">
+              <template x-if="getStudentLevelInfo(currentStudent.total).current.level === lvl.level">
+                <span style="font-size: 8.5px; font-weight: 700; background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); color: #ffb27a; padding: 2px 6px; border-radius: 6px; box-shadow: 0 0 8px rgba(249,115,22,0.1);">رتبتك الحالية</span>
+              </template>
+              <template x-if="getStudentLevelInfo(currentStudent.total).current.level < lvl.level">
+                <span style="font-size: 8.5px; color: var(--txt-faint); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; background: rgba(255,255,255,0.02); border: 1px solid var(--stroke); padding: 2px 6px; border-radius: 6px;">
+                  <div style="width: 9px; height: 9px; display: inline-block; color: var(--txt-faint);" x-html="getIconSvg('lock')"></div>
+                  مغلق
+                </span>
+              </template>
+              <template x-if="getStudentLevelInfo(currentStudent.total).current.level > lvl.level">
+                <span style="font-size: 8.5px; color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 2px 6px; border-radius: 6px;">
+                  <div style="width: 9px; height: 9px; display: inline-block; color: #34d399;" x-html="getIconSvg('check')"></div>
+                  مكتمل
+                </span>
+              </template>
+            </div>
 
           </div>
         </template>
