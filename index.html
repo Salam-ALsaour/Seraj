@@ -187,10 +187,11 @@
     /* admin main toggle switch (two tabs) */
     .admin-main-toggle{display:flex;background:var(--glass);border:1px solid var(--stroke);border-radius:30px;padding:5px;
       margin:0 0 20px;position:relative;}
-    .admin-main-toggle-ind{position:absolute;top:5px;bottom:5px;width:calc(50% - 5px);border-radius:26px;
+    .admin-main-toggle-ind{position:absolute;top:5px;bottom:5px;width:calc(33.333% - 5px);border-radius:26px;
       background:linear-gradient(135deg,rgba(249,115,22,.35),rgba(249,115,22,.15));border:1px solid rgba(249,115,22,.4);
       box-shadow:0 0 20px -4px var(--orange-glow);transition:transform .32s cubic-bezier(.4,1.2,.4,1);right:5px;}
     .admin-main-toggle-ind.req{transform:translateX(-100%);}
+    .admin-main-toggle-ind.notif{transform:translateX(-200%);}
     .admin-main-toggle button{flex:1;background:none;border:none;color:var(--txt-dim);font-family:inherit;font-size:13px;
       font-weight:600;padding:10px 0;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;
       transition:color .3s;cursor:pointer;}
@@ -969,6 +970,14 @@
                 </span>
                 <span class="lb-tag" x-text="'المركز ' + getStudentRank(currentStudent.id)"></span>
               </div>
+              
+              <!-- Enable device notifications button -->
+              <button @click="requestNotificationPermission()" 
+                      class="btn-redeem" 
+                      style="width:auto; padding:6px 12px; font-size:11px; border-radius:10px; margin: 10px auto 0; display:flex; align-items:center; gap:6px; background:rgba(249,115,22,0.1) !important; border:1px solid rgba(249,115,22,0.2) !important; color:#ffb27a !important; cursor:pointer;">
+                <div style="width:12px; height:12px;" x-html="getIconSvg('bell')"></div>
+                تفعيل إشعارات الجهاز
+              </button>
             </div>
 
             <!-- Level / XP progress bar -->
@@ -1289,14 +1298,17 @@
         <!-- Core Admin controls -->
         <template x-if="isAdmin">
           <div>
-            <!-- Main Admin Switcher (Two Tabs: Students Management & Requests Management) -->
+            <!-- Main Admin Switcher (Three Tabs: Students, Requests & Notifications Management) -->
             <div class="admin-main-toggle">
-              <div class="admin-main-toggle-ind" :class="adminMainTab === 'requests' ? 'req' : ''"></div>
+              <div class="admin-main-toggle-ind" :class="adminMainTab === 'requests' ? 'req' : (adminMainTab === 'notifications' ? 'notif' : '')"></div>
               <button :class="adminMainTab === 'students' ? 'active' : ''" @click="adminMainTab = 'students'">
                 <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('users')"></div>إدارة الطلاب
               </button>
               <button :class="adminMainTab === 'requests' ? 'active' : ''" @click="adminMainTab = 'requests'">
                 <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('clipboard-list')"></div>إدارة الطلبات
+              </button>
+              <button :class="adminMainTab === 'notifications' ? 'active' : ''" @click="adminMainTab = 'notifications'">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('bell')"></div>إدارة الإشعارات
               </button>
             </div>
 
@@ -1499,6 +1511,60 @@
               </div>
             </div>
 
+            <!-- Tab 3: Notifications Management -->
+            <div x-show="adminMainTab === 'notifications'">
+              <!-- Notification Sender Form -->
+              <div class="macro-label" style="color: var(--txt-dim); margin-top:0;">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('bell')"></div>
+                إرسال إشعار جماعي جديد
+              </div>
+              <div class="glass" style="padding:16px; display:flex; flex-direction:column; gap:12px; margin-bottom:20px; text-align:right;">
+                <div>
+                  <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">عنوان الإشعار *</label>
+                  <input type="text" x-model="newNotifTitle" placeholder="مثال: تحدي جديد بانتظاركم!" 
+                         style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+                </div>
+                <div>
+                  <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">محتوى الإشعار *</label>
+                  <textarea x-model="newNotifBody" placeholder="اكتب نص الإشعار هنا..." rows="3"
+                            style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; resize:none;"></textarea>
+                </div>
+                
+                <!-- Notification Permission & Send Buttons -->
+                <div style="display:flex; gap:10px; margin-top:6px;">
+                  <button @click="sendNotification()" 
+                          class="btn-redeem" 
+                          style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; margin-top:0; cursor:pointer;">
+                    إرسال الإشعار
+                  </button>
+                  <button @click="requestNotificationPermission()" 
+                          style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim); cursor:pointer;">
+                    تفعيل الإشعار بالجهاز
+                  </button>
+                </div>
+              </div>
+
+              <!-- Notifications History -->
+              <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('clock')"></div>
+                سجل الإشعارات المرسلة
+              </div>
+              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+                <template x-for="n in notifications" :key="n.id">
+                  <div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.02); border:1px solid var(--stroke); text-align:right;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="n.title"></span>
+                      <span style="font-size:9px; color:var(--txt-faint);" x-text="formatDateTime(n.created_at)"></span>
+                    </div>
+                    <p style="font-size:10px; color:var(--txt-dim); margin:0;" x-text="n.body"></p>
+                  </div>
+                </template>
+                <template x-if="notifications.length === 0">
+                  <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد إشعارات مرسلة حالياً.</div>
+                </template>
+              </div>
+            </div>
+
             <input type="file" x-ref="importFileInput" accept="application/json" style="display:none" @change="importData($event)">
           </div>
         </template>
@@ -1588,7 +1654,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         style="width:calc(100% - 32px); max-width:320px; padding:22px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:110; overflow-y:auto; max-height:85vh;">
+         style="width:calc(100% - 32px); max-width:320px; padding:22px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:110; overflow:visible;">
       
       <div style="text-align:center; margin-bottom:20px;">
         <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:4px;">تخصيص الشارة الرمزية</h3>
@@ -2341,6 +2407,9 @@
         newRewardDesc: '',
         newRewardPrice: 80,
         newRewardIcon: 'gift',
+        notifications: [],
+        newNotifTitle: '',
+        newNotifBody: '',
         
         // Login State
         isLoggedIn: false,
@@ -2675,7 +2744,10 @@
               if (invErr) {
                 console.error("Supabase Error during init (fetching inventory):", invErr);
               }
-              this.inventoryList = dbInv || [];
+              this.inventoryList = (dbInv || []).map(item => ({
+                ...item,
+                desc: item.desc_text || item.desc || ''
+              }));
             } catch (err) {
               console.error("Supabase Error during init (inventory block exception):", err);
               this.inventoryList = [];
@@ -2763,6 +2835,26 @@
                     time_left: 0
                   });
                 }
+
+                // Find Notifications Config (ID: 102)
+                let notifData = chRows ? chRows.find(r => parseInt(r.id) === 102) : null;
+                if (notifData && notifData.desc_text) {
+                  try {
+                    this.notifications = JSON.parse(notifData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse notifications config:", e);
+                  }
+                } else {
+                  // Seed notifications config if missing
+                  await supabaseClient.from('weekly_challenge').upsert({
+                    id: 102,
+                    title: 'notifications_config',
+                    desc_text: JSON.stringify(this.notifications),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
+                }
               }
             } catch (err) {
               console.error("Supabase Error during init (weekly_challenge configs exception):", err);
@@ -2816,6 +2908,40 @@
             this.$watch('adminUnlocked', () => {
               this.$nextTick(() => lucide.createIcons());
             });
+
+            // Pull to refresh implementation
+            let refreshStartY = 0;
+            let refreshStartX = 0;
+            let refreshing = false;
+
+            window.addEventListener('touchstart', (e) => {
+              if (window.scrollY === 0) {
+                refreshStartY = e.touches[0].pageY;
+                refreshStartX = e.touches[0].pageX;
+              }
+            }, { passive: true });
+
+            window.addEventListener('touchmove', async (e) => {
+              if (refreshStartY === 0 || refreshing) return;
+              const y = e.touches[0].pageY;
+              const x = e.touches[0].pageX;
+              const diffY = y - refreshStartY;
+              const diffX = x - refreshStartX;
+              
+              if (diffY > 150 && diffY > Math.abs(diffX) * 2) {
+                refreshing = true;
+                refreshStartY = 0;
+                this.showToast('جاري تحديث البيانات...', 'info', 'rotate-cw');
+                try {
+                  await this.init();
+                  this.showToast('تم تحديث البيانات بنجاح', 'success', 'check');
+                } catch(err) {
+                  this.showToast('فشل تحديث البيانات', 'neg', 'alert-circle');
+                } finally {
+                  refreshing = false;
+                }
+              }
+            }, { passive: true });
 
             // Touch swiping navigation for mobile
             let touchStartX = 0;
@@ -2991,6 +3117,9 @@
             supabaseClient
               .channel('inventory_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                if (payload.new) {
+                  payload.new.desc = payload.new.desc_text || payload.new.desc || '';
+                }
                 if (payload.eventType === 'INSERT') {
                   if (!this.inventoryList.some(i => i.id === payload.new.id)) {
                     this.inventoryList.push(payload.new);
@@ -3043,6 +3172,23 @@
                         this.achievements = JSON.parse(payload.new.desc_text);
                       } catch (e) {
                         console.error("Realtime failed to parse achievements JSON:", e);
+                      }
+                    }
+                  } else if (id === 102) {
+                    if (payload.new.desc_text) {
+                      try {
+                        const latestNotifications = JSON.parse(payload.new.desc_text);
+                        if (latestNotifications.length > 0) {
+                          const latest = latestNotifications[latestNotifications.length - 1];
+                          const alreadyHave = this.notifications.some(n => n.id === latest.id);
+                          if (!alreadyHave) {
+                            this.triggerDeviceNotification(latest.title, latest.body);
+                            this.showToast(latest.title, 'info', 'bell');
+                          }
+                        }
+                        this.notifications = latestNotifications;
+                      } catch (e) {
+                        console.error("Realtime failed to parse notifications JSON:", e);
                       }
                     }
                   }
@@ -3557,15 +3703,30 @@
               });
 
               const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-              await supabaseClient.from('inventory').insert({
+              const newInvItem = {
                 id: invId,
                 student_id: studentId,
                 name: reward.name,
-                desc: reward.desc,
+                desc_text: reward.desc || reward.desc_text || '',
                 icon: reward.icon || 'gift',
                 price: reward.price,
                 status: 'pending'
-              });
+              };
+
+              const { error: insertErr } = await supabaseClient.from('inventory').insert(newInvItem);
+              if (insertErr) {
+                console.error("Error inserting inventory item:", insertErr);
+                this.showToast('فشل إرسال الطلب لقاعدة البيانات', 'neg');
+                return;
+              }
+
+              const localItem = {
+                ...newInvItem,
+                desc: newInvItem.desc_text
+              };
+              if (!this.inventoryList.some(i => i.id === invId)) {
+                this.inventoryList.unshift(localItem);
+              }
 
               this.showToast(`تم تقديم طلب استبدال ${reward.name} بنجاح، بانتظار موافقة الإدارة.`, 'pos');
             }
@@ -3679,6 +3840,12 @@
           } else {
             this.saveState();
           }
+          
+          // Send automated system notification for new product in store
+          this.sendSystemNotification(
+            'جائزة جديدة في المتجر! 🎁',
+            `تمت إضافة جائزة جديدة: "${newReward.name}" مقابل ${newReward.price} شعلة. تفقد المتجر الآن!`
+          );
           
           this.showToast('تمت إضافة الجائزة بنجاح', 'success');
           this.addRewardModalOpen = false;
@@ -4349,6 +4516,75 @@
               this.showToast('تمت إعادة تعيين البيانات السحابية للافتراضية', 'success');
             }
           );
+        },
+
+        async requestNotificationPermission() {
+          if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              this.showToast('تم تفعيل إشعارات الجهاز بنجاح', 'success', 'bell');
+            } else {
+              this.showToast('تم رفض إشعارات الجهاز', 'neg', 'bell-off');
+            }
+          } else {
+            this.showToast('المتصفح لا يدعم الإشعارات', 'info');
+          }
+        },
+
+        triggerDeviceNotification(title, body) {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, {
+                  body: body,
+                  icon: 'icon.png',
+                  badge: 'icon.png',
+                  vibrate: [200, 100, 200],
+                  dir: 'rtl'
+                });
+              });
+            } else {
+              new Notification(title, {
+                body: body,
+                icon: 'icon.png',
+                dir: 'rtl'
+              });
+            }
+          }
+        },
+
+        async sendNotification() {
+          if (!this.newNotifTitle.trim() || !this.newNotifBody.trim()) {
+            this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
+            return;
+          }
+          await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
+          this.newNotifTitle = '';
+          this.newNotifBody = '';
+          this.showToast('تم إرسال الإشعار بنجاح', 'success');
+        },
+
+        async sendSystemNotification(title, body) {
+          const newNotif = {
+            id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            title: title,
+            body: body,
+            created_at: new Date().toISOString()
+          };
+          this.notifications.push(newNotif);
+
+          if (supabaseClient) {
+            await supabaseClient.from('weekly_challenge').upsert({
+              id: 102,
+              title: 'notifications_config',
+              desc_text: JSON.stringify(this.notifications),
+              points: 0,
+              duration: 0,
+              time_left: 0
+            });
+          } else {
+            this.saveState();
+          }
         },
 
         enterPinDigit(digit) {
