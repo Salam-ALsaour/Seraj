@@ -977,7 +977,11 @@
             </div>
 
             <!-- Level / XP progress bar -->
-            <div class="glass xp-card">
+            <div class="glass xp-card" 
+                 @click="showLevelsModal = true" 
+                 style="cursor: pointer; transition: all 0.2s;"
+                 @mouseenter="$el.style.borderColor = 'rgba(249,115,22,0.4)'; $el.style.boxShadow = '0 0 15px rgba(249,115,22,0.08)';"
+                 @mouseleave="$el.style.borderColor = 'var(--stroke)'; $el.style.boxShadow = 'none';">
               <div class="xp-header">
                 <div class="xp-title" style="display:flex; align-items:center; gap:6px;">
                   <div style="width:14px; height:14px; color:var(--orange);" x-html="getIconSvg(getStudentLevelInfo(currentStudent.total).current.icon)"></div>
@@ -1914,6 +1918,102 @@
     </template>
   </div>
 
+  <!-- Levels Modal Overlay -->
+  <div x-show="showLevelsModal" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:300; direction:rtl;">
+    
+    <!-- Backdrop Blur -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="showLevelsModal = false"></div>
+    
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:340px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:310; overflow-y:auto; max-height:85vh;">
+      
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--txt-dim);">مستويات ورتب سراج</h3>
+        <button @click="showLevelsModal = false" style="background:none; border:none; color:var(--txt-faint); cursor:pointer; width:22px; height:22px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Intro -->
+      <div style="font-size:11px; color:var(--txt-dim); line-height:1.5; margin-bottom:16px; text-align:right;">
+        اجمع الشعلات التراكمية لتفتح مستويات ورتباً أعلى وتزيد من توهج صورتك الرمزية!
+      </div>
+
+      <!-- List of Levels -->
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px; text-align:right;">
+        <template x-for="lvl in [
+          { level: 1, min: 0, max: 100, label: 'مبتدئ سراج', icon: 'sprout', color: 'emerald' },
+          { level: 2, min: 100, max: 250, label: 'شعلة نشيطة', icon: 'flame', color: 'orange' },
+          { level: 3, min: 250, max: 500, label: 'منارة المعرفة', icon: 'book-open', color: 'blue' },
+          { level: 4, min: 500, max: 800, label: 'فارس سراج', icon: 'shield', color: 'purple' },
+          { level: 5, min: 800, max: 999999, label: 'سفير سراج', icon: 'crown', color: 'yellow' }
+        ]" :key="lvl.level">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-radius:14px; border:1px solid var(--stroke); transition:all 0.2s;"
+               :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
+                       ? 'background:rgba(5,150,105,0.06); border-color:rgba(5,150,105,0.4); box-shadow:0 0 12px rgba(5,150,105,0.1);' 
+                       : 'background:rgba(255,255,255,0.01);'"
+               :class="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'current-level-active' : ''">
+            
+            <div style="display:flex; align-items:center; gap:10px;">
+              <!-- Level Icon Circle -->
+              <div style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; transition:all 0.2s;"
+                   :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level
+                           ? 'background:rgba(5,150,105,0.15); color:#34d399;'
+                           : 'background:var(--glass2); color:var(--txt-faint);'">
+                <div style="width:18px; height:18px;" x-html="getIconSvg(lvl.icon)"></div>
+              </div>
+              <div>
+                <div style="font-size:12px; font-weight:700;" 
+                     :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'color:var(--txt);' : 'color:var(--txt-dim);'"
+                     x-text="lvl.label"></div>
+                <div style="font-size:9px; color:var(--txt-faint); margin-top:2px;" 
+                     x-text="lvl.level === 5 ? 'من 800 شعلة فما فوق' : 'من ' + lvl.min + ' إلى ' + lvl.max + ' شعلة'"></div>
+              </div>
+            </div>
+
+            <!-- Current Rank Badge -->
+            <template x-if="getStudentLevelInfo(currentStudent.total).current.level === lvl.level">
+              <span style="font-size:9px; font-weight:700; background:rgba(5,150,105,0.2); border:1px solid rgba(5,150,105,0.4); color:#6ee7b7; padding:2px 8px; border-radius:6px;">رتبتك الحالية</span>
+            </template>
+            <template x-if="getStudentLevelInfo(currentStudent.total).current.level < lvl.level">
+              <span style="font-size:9px; color:var(--txt-faint); font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                <div style="width:10px; height:10px; display:inline-block; vertical-align:middle;" x-html="getIconSvg('lock')"></div>
+                مغلق
+              </span>
+            </template>
+            <template x-if="getStudentLevelInfo(currentStudent.total).current.level > lvl.level">
+              <span style="font-size:9px; color:#34d399; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                <div style="width:10px; height:10px; display:inline-block; vertical-align:middle;" x-html="getIconSvg('check')"></div>
+                مكتمل
+              </span>
+            </template>
+
+          </div>
+        </template>
+      </div>
+
+      <!-- Close Button -->
+      <button @click="showLevelsModal = false" 
+              class="btn-redeem" style="width:100%; padding:11px; font-size:13px; border-radius:14px;">موافق</button>
+      
+    </div>
+  </div>
+
     <!-- BOTTOM FIXED NAV BAR -->
     <nav id="nav">
       <template x-for="n in navItems" :key="n.id">
@@ -1981,6 +2081,7 @@
         viewOnlyStudentId: null,
         selectedBadge: null,
         selectedBadgeStudent: null,
+        showLevelsModal: false,
         adminTab: 'pos',
         adminStageFilter: 'all',
         
