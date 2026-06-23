@@ -184,6 +184,19 @@
     .stage-toggle button.active{color:var(--txt);}
     .stage-toggle button i, .stage-toggle button svg{width:16px;height:16px;}
 
+    /* admin main toggle switch (two tabs) */
+    .admin-main-toggle{display:flex;background:var(--glass);border:1px solid var(--stroke);border-radius:30px;padding:5px;
+      margin:0 0 20px;position:relative;}
+    .admin-main-toggle-ind{position:absolute;top:5px;bottom:5px;width:calc(50% - 5px);border-radius:26px;
+      background:linear-gradient(135deg,rgba(249,115,22,.35),rgba(249,115,22,.15));border:1px solid rgba(249,115,22,.4);
+      box-shadow:0 0 20px -4px var(--orange-glow);transition:transform .32s cubic-bezier(.4,1.2,.4,1);right:5px;}
+    .admin-main-toggle-ind.req{transform:translateX(-100%);}
+    .admin-main-toggle button{flex:1;background:none;border:none;color:var(--txt-dim);font-family:inherit;font-size:13px;
+      font-weight:600;padding:10px 0;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;
+      transition:color .3s;cursor:pointer;}
+    .admin-main-toggle button.active{color:var(--txt);}
+    .admin-main-toggle button i, .admin-main-toggle button svg{width:16px;height:16px;}
+
     /* leaderboard rows */
     .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:9px;}
     .lb-rank{width:26px;text-align:center;font-size:16px;font-weight:700;color:var(--txt-faint);flex-shrink:0;}
@@ -1105,6 +1118,14 @@
               </div>
             </div>
             
+            <!-- Add Reward Button -->
+            <button @click="addRewardModalOpen = true" 
+                    class="btn-redeem" 
+                    style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:14px; margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
+              <div style="width:14px; height:14px;" x-html="getIconSvg('plus')"></div>
+              إضافة جائزة جديدة للمتجر
+            </button>
+            
             <div style="display:flex; flex-direction:column; gap:12px;">
               <template x-for="(r, index) in rewards" :key="index">
                 <div class="glass" 
@@ -1127,7 +1148,11 @@
                       <div style="width:12px; height:12px;" x-html="getIconSvg('flame')"></div>
                       <span x-text="r.price"></span>
                     </div>
-                    <span style="font-size:11px; color:var(--txt-faint); background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:8px; border:1px solid var(--stroke);">معاينة فقط</span>
+                    <button @click="deleteReward(index)" 
+                            class="btn-redeem" 
+                            style="width:auto; min-width:80px; padding:5px 10px; font-size:11px; border-radius:10px; background:rgba(239,68,68,0.15) !important; border:1px solid #ef4444 !important; color:#fca5a5 !important; margin-top:0; cursor:pointer;">
+                      حذف الجائزة
+                    </button>
                   </div>
 
                 </div>
@@ -1264,178 +1289,214 @@
         <!-- Core Admin controls -->
         <template x-if="isAdmin">
           <div>
-            <!-- Stage Filter Toggle -->
-            <div class="stage-toggle">
-              <div class="stage-toggle-ind" :class="adminStageFilter === 'middle' ? 'mid' : (adminStageFilter === 'high' ? 'high' : '')"></div>
-              <button :class="adminStageFilter === 'all' ? 'active' : ''" @click="setAdminStageFilter('all')">
-                الكل
+            <!-- Main Admin Switcher (Two Tabs: Students Management & Requests Management) -->
+            <div class="admin-main-toggle">
+              <div class="admin-main-toggle-ind" :class="adminMainTab === 'requests' ? 'req' : ''"></div>
+              <button :class="adminMainTab === 'students' ? 'active' : ''" @click="adminMainTab = 'students'">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('users')"></div>إدارة الطلاب
               </button>
-              <button :class="adminStageFilter === 'middle' ? 'active' : ''" @click="setAdminStageFilter('middle')">
-                المتوسط
-              </button>
-              <button :class="adminStageFilter === 'high' ? 'active' : ''" @click="setAdminStageFilter('high')">
-                الثانوي
+              <button :class="adminMainTab === 'requests' ? 'active' : ''" @click="adminMainTab = 'requests'">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('clipboard-list')"></div>إدارة الطلبات
               </button>
             </div>
 
-            <!-- Students Horizontal Carousel -->
-            <div class="admin-bar">
-              <template x-for="st in students.filter(s => adminStageFilter === 'all' || s.stage === adminStageFilter)" :key="st.id">
-                <div class="admin-chip" :class="st.id === adminActiveStudentId ? 'active' : ''" @click="adminActiveStudentId === st.id ? (viewOnlyStudentId = st.id) : (adminActiveStudentId = st.id)">
-                  <div class="admin-chip-av"
-                       style="position:relative;"
-                       :style="{
-                         'border-color': st.id === adminActiveStudentId ? avatarColorMap[st.avatarColor || 'orange'] : 'var(--stroke)',
-                         'color': avatarColorLightMap[st.avatarColor || 'orange'],
-                         'background': st.id === adminActiveStudentId ? 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)' : 'linear-gradient(150deg,var(--glass2),transparent)'
-                       }">
-                    <div style="width:20px; height:20px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
-                    <!-- Level Badge -->
-                    <div style="position:absolute; bottom:-4px; right:-4px; width:12px; height:12px; border-radius:50%; background:var(--bg2); border:0.8px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
-                         :title="getStudentLevelInfo(st.total).current.label">
-                      <div style="width:7px; height:7px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+            <!-- Tab 1: Students Management -->
+            <div x-show="adminMainTab === 'students'">
+              <!-- Stage Filter Toggle -->
+              <div class="stage-toggle">
+                <div class="stage-toggle-ind" :class="adminStageFilter === 'middle' ? 'mid' : (adminStageFilter === 'high' ? 'high' : '')"></div>
+                <button :class="adminStageFilter === 'all' ? 'active' : ''" @click="setAdminStageFilter('all')">
+                  الكل
+                </button>
+                <button :class="adminStageFilter === 'middle' ? 'active' : ''" @click="setAdminStageFilter('middle')">
+                  المتوسط
+                </button>
+                <button :class="adminStageFilter === 'high' ? 'active' : ''" @click="setAdminStageFilter('high')">
+                  الثانوي
+                </button>
+              </div>
+
+              <!-- Students Horizontal Carousel -->
+              <div class="admin-bar">
+                <template x-for="st in students.filter(s => adminStageFilter === 'all' || s.stage === adminStageFilter)" :key="st.id">
+                  <div class="admin-chip" :class="st.id === adminActiveStudentId ? 'active' : ''" @click="adminActiveStudentId === st.id ? (viewOnlyStudentId = st.id) : (adminActiveStudentId = st.id)">
+                    <div class="admin-chip-av"
+                         style="position:relative;"
+                         :style="{
+                           'border-color': st.id === adminActiveStudentId ? avatarColorMap[st.avatarColor || 'orange'] : 'var(--stroke)',
+                           'color': avatarColorLightMap[st.avatarColor || 'orange'],
+                           'background': st.id === adminActiveStudentId ? 'linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent)' : 'linear-gradient(150deg,var(--glass2),transparent)'
+                         }">
+                      <div style="width:20px; height:20px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
+                      <!-- Level Badge -->
+                      <div style="position:absolute; bottom:-4px; right:-4px; width:12px; height:12px; border-radius:50%; background:var(--bg2); border:0.8px solid var(--stroke2); color:var(--orange); display:grid; place-items:center; z-index:5;"
+                           :title="getStudentLevelInfo(st.total).current.label">
+                        <div style="width:7px; height:7px;" x-html="getIconSvg(getStudentLevelInfo(st.total).current.icon)"></div>
+                      </div>
                     </div>
+                    <div class="admin-chip-name" x-text="st.name.split(' ')[0]"></div>
+                    <div class="admin-chip-pts" x-text="st.total + ' شعلة'"></div>
                   </div>
-                  <div class="admin-chip-name" x-text="st.name.split(' ')[0]"></div>
-                  <div class="admin-chip-pts" x-text="st.total + ' شعلة'"></div>
+                </template>
+              </div>
+
+              <!-- Admin Controls Switcher Toggle -->
+              <div class="admin-toggle">
+                <div class="admin-toggle-ind" :class="adminTab === 'neg' ? 'neg' : (adminTab === 'badges' ? 'ach' : '')"></div>
+                <button :class="adminTab === 'pos' ? 'active' : ''" @click="adminTab = 'pos'">
+                  <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('plus-circle')"></div>إضافة شعلات
+                </button>
+                <button :class="adminTab === 'neg' ? 'active' : ''" @click="adminTab = 'neg'">
+                  <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('minus-circle')"></div>خصم شعلات
+                </button>
+                <button :class="adminTab === 'badges' ? 'active' : ''" @click="adminTab = 'badges'">
+                  <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('award')"></div>الأوسمة
+                </button>
+              </div>
+
+              <!-- Positive Macros Grid -->
+              <div x-show="adminTab === 'pos'">
+                <div class="macro-label pos"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('plus-circle')"></div>إضافة شعلات</div>
+                <div class="macro-grid">
+                  <template x-for="(m, index) in macrosPos" :key="index">
+                    <button class="macro-btn pos" @click="awardPoints(adminActiveStudentId, m.delta, m.reason)">
+                      <div class="macro-btn-top">
+                        <div style="width:16px; height:16px;" x-html="getIconSvg(m.icon)"></div>
+                        <span class="macro-btn-delta" x-text="'+' + m.delta"></span>
+                      </div>
+                      <span class="macro-btn-reason" x-text="m.reason"></span>
+                    </button>
+                  </template>
                 </div>
-              </template>
-            </div>
-
-
-
-            <!-- Admin Controls Switcher Toggle -->
-            <div class="admin-toggle">
-              <div class="admin-toggle-ind" :class="adminTab === 'neg' ? 'neg' : (adminTab === 'badges' ? 'ach' : '')"></div>
-              <button :class="adminTab === 'pos' ? 'active' : ''" @click="adminTab = 'pos'">
-                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('plus-circle')"></div>إضافة شعلات
-              </button>
-              <button :class="adminTab === 'neg' ? 'active' : ''" @click="adminTab = 'neg'">
-                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('minus-circle')"></div>خصم شعلات
-              </button>
-              <button :class="adminTab === 'badges' ? 'active' : ''" @click="adminTab = 'badges'">
-                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:3px;" x-html="getIconSvg('award')"></div>الأوسمة
-              </button>
-            </div>
-
-            <!-- Positive Macros Grid -->
-            <div x-show="adminTab === 'pos'">
-              <div class="macro-label pos"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('plus-circle')"></div>إضافة شعلات</div>
-              <div class="macro-grid">
-                <template x-for="(m, index) in macrosPos" :key="index">
-                  <button class="macro-btn pos" @click="awardPoints(adminActiveStudentId, m.delta, m.reason)">
-                    <div class="macro-btn-top">
-                      <div style="width:16px; height:16px;" x-html="getIconSvg(m.icon)"></div>
-                      <span class="macro-btn-delta" x-text="'+' + m.delta"></span>
-                    </div>
-                    <span class="macro-btn-reason" x-text="m.reason"></span>
-                  </button>
-                </template>
               </div>
-            </div>
 
-            <!-- Negative Macros Grid -->
-            <div x-show="adminTab === 'neg'">
-              <div class="macro-label neg"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('minus-circle')"></div>خصم شعلات</div>
-              <div class="macro-grid">
-                <template x-for="(m, index) in macrosNeg" :key="index">
-                  <button class="macro-btn neg" @click="deductPoints(adminActiveStudentId, m.delta, m.reason)">
-                    <div class="macro-btn-top">
-                      <div style="width:16px; height:16px;" x-html="getIconSvg(m.icon)"></div>
-                      <span class="macro-btn-delta" x-text="m.delta"></span>
-                    </div>
-                    <span class="macro-btn-reason" x-text="m.reason"></span>
-                  </button>
-                </template>
+              <!-- Negative Macros Grid -->
+              <div x-show="adminTab === 'neg'">
+                <div class="macro-label neg"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('minus-circle')"></div>خصم شعلات</div>
+                <div class="macro-grid">
+                  <template x-for="(m, index) in macrosNeg" :key="index">
+                    <button class="macro-btn neg" @click="deductPoints(adminActiveStudentId, m.delta, m.reason)">
+                      <div class="macro-btn-top">
+                        <div style="width:16px; height:16px;" x-html="getIconSvg(m.icon)"></div>
+                        <span class="macro-btn-delta" x-text="m.delta"></span>
+                      </div>
+                      <span class="macro-btn-reason" x-text="m.reason"></span>
+                    </button>
+                  </template>
+                </div>
               </div>
-            </div>
 
-            <!-- Glowing Badges Administration Controls -->
-            <div x-show="adminTab === 'badges'">
-              <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('award')"></div>إدارة الأوسمة المضيئة للطالب</div>
-              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
-                <template x-for="ach in achievements" :key="ach.id">
-                  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.01); border:1px solid var(--stroke);">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <div style="width:16px; height:16px; color:var(--orange);" x-html="getIconSvg(ach.icon)"></div>
-                      <div>
-                        <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="ach.name"></span>
-                        <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="ach.desc"></span>
+              <!-- Glowing Badges Administration Controls -->
+              <div x-show="adminTab === 'badges'">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px; margin-bottom:8px;">
+                  <div class="macro-label" style="color: var(--txt-dim); margin-top:0;"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('award')"></div>إدارة الأوسمة المضيئة للطالب</div>
+                  <!-- Add Badge Button -->
+                  <button @click="addBadgeModalOpen = true" 
+                          class="btn-redeem" 
+                          style="width:auto; padding:5px 12px; font-size:10px; border-radius:10px; margin-top:0; font-weight:700;">
+                    + إضافة وسام
+                  </button>
+                </div>
+                <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+                  <template x-for="ach in achievements" :key="ach.id">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.01); border:1px solid var(--stroke);">
+                      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+                        <div style="width:16px; height:16px; color:var(--orange); flex-shrink:0;" x-html="getIconSvg(ach.icon)"></div>
+                        <div style="flex:1; min-width:0; text-align:right;">
+                          <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="ach.name"></span>
+                            <span style="font-size:10px; font-weight:700; color:#ffb27a; text-shadow:0 0 10px var(--orange-glow);" x-text="'+' + ach.reward + ' شعلة'"></span>
+                          </div>
+                          <span style="font-size:9px; color:var(--txt-faint); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="ach.desc"></span>
+                        </div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <button @click="toggleStudentBadge(adminActiveStudentId, ach.id)"
+                                style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.2s;"
+                                :style="hasBadge(adminActiveStudentId, ach.id) 
+                                        ? 'background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0;' 
+                                        : 'background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim);'"
+                                x-text="hasBadge(adminActiveStudentId, ach.id) ? 'سحب الوسام' : 'منح الوسام'"></button>
+                        
+                        <!-- Delete Badge Button -->
+                        <button @click="deleteBadge(ach.id)"
+                                style="width:28px; height:28px; border-radius:8px; display:grid; place-items:center; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; cursor:pointer; transition:all 0.2s;"
+                                @mouseenter="$el.style.background = 'rgba(239,68,68,0.15)';"
+                                @mouseleave="$el.style.background = 'rgba(239,68,68,0.08)';">
+                          <div style="width:14px; height:14px;" x-html="getIconSvg('trash-2')"></div>
+                        </button>
                       </div>
                     </div>
-                    <button @click="toggleStudentBadge(adminActiveStudentId, ach.id)"
-                            style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.2s;"
-                            :style="hasBadge(adminActiveStudentId, ach.id) 
-                                    ? 'background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0;' 
-                                    : 'background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim);'"
-                            x-text="hasBadge(adminActiveStudentId, ach.id) ? 'سحب الوسام' : 'منح الوسام'"></button>
-                  </div>
-                </template>
+                  </template>
+                </div>
               </div>
+            </div>
 
-              <!-- Pending Inventory Requests in Admin Panel -->
-              <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
-                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('briefcase')"></div>
-                طلبات استبدال الجوائز المقدمة للطالب
+            <!-- Tab 2: Requests Management -->
+            <div x-show="adminMainTab === 'requests'">
+              <!-- Pending Reward Requests -->
+              <div class="macro-label" style="color: var(--txt-dim); margin-top:0;">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('gift')"></div>
+                طلبات استبدال الجوائز المعلقة
               </div>
-              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
-                <template x-for="item in (activeStudent.inventory || []).filter(i => i.status === 'pending')" :key="item.id">
+              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+                <template x-for="item in pendingRewards" :key="item.id">
                   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(234,179,8,0.03); border:1px solid rgba(234,179,8,0.2);">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <div style="width:16px; height:16px; color:var(--orange);" x-html="getIconSvg(item.icon)"></div>
-                      <div>
+                    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+                      <div style="width:16px; height:16px; color:var(--orange); flex-shrink:0;" x-html="getIconSvg(item.icon || 'gift')"></div>
+                      <div style="flex:1; min-width:0; text-align:right;">
                         <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="item.name"></span>
-                        <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="item.desc"></span>
+                        <span style="font-size:9px; color:var(--txt-faint); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="'طالب: ' + item.studentName + ' | ' + item.desc + ' (' + item.price + ' شعلة)'"></span>
                       </div>
                     </div>
-                    <div style="display:flex; gap:6px;">
-                      <button @click="adminApproveReward(activeStudent.id, item.id)"
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                      <button @click="adminApproveReward(item.student_id, item.id)"
                               style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0; border:none;">
                         قبول
                       </button>
-                      <button @click="adminRejectReward(activeStudent.id, item.id)"
+                      <button @click="adminRejectReward(item.student_id, item.id)"
                               style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border:none;">
                         رفض
                       </button>
                     </div>
                   </div>
                 </template>
-                <template x-if="!(activeStudent.inventory && activeStudent.inventory.filter(i => i.status === 'pending').length)">
-                  <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد طلبات استبدال معلقة لهذا الطالب حالياً.</div>
+                <template x-if="pendingRewards.length === 0">
+                  <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد طلبات استبدال معلقة حالياً.</div>
                 </template>
               </div>
-            </div>
 
-            <!-- Pending Account Requests in Admin Panel -->
-            <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
-              <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('user-plus')"></div>
-              طلبات الحسابات المعلقة للإدارة
-            </div>
-            <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
-              <template x-for="req in pendingAccounts" :key="req.id">
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(234,179,8,0.03); border:1px solid rgba(234,179,8,0.2);">
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <div style="width:16px; height:16px; color:var(--orange);" x-html="getIconSvg('user')"></div>
-                    <div>
-                      <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="req.name"></span>
-                      <span style="font-size:9px; color:var(--txt-faint); display:block;" x-text="'المعرف: ' + req.id + ' | الرمز: ' + req.password + ' | ' + getStageLabel(req.stage)"></span>
+              <!-- Pending Account Requests -->
+              <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
+                <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('user-plus')"></div>
+                طلبات الحسابات المعلقة
+              </div>
+              <div class="glass" style="padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
+                <template x-for="req in pendingAccounts" :key="req.id">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:14px; background:rgba(234,179,8,0.03); border:1px solid rgba(234,179,8,0.2);">
+                    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+                      <div style="width:16px; height:16px; color:var(--orange); flex-shrink:0;" x-html="getIconSvg('user')"></div>
+                      <div style="flex:1; min-width:0; text-align:right;">
+                        <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="req.name"></span>
+                        <span style="font-size:9px; color:var(--txt-faint); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="'المعرف: ' + req.id + ' | الرمز: ' + req.password + ' | ' + getStageLabel(req.stage)"></span>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                      <button @click="approveAccount(req.id)"
+                              style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0; border:none;">
+                        موافقة
+                      </button>
+                      <button @click="rejectAccount(req.id)"
+                              style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border:none;">
+                        رفض
+                      </button>
                     </div>
                   </div>
-                  <div style="display:flex; gap:6px;">
-                    <button @click="approveAccount(req.id)"
-                            style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0; border:none;">
-                      موافقة
-                    </button>
-                    <button @click="rejectAccount(req.id)"
-                            style="padding:6px 12px; border-radius:10px; font-size:10px; font-weight:600; cursor:pointer; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border:none;">
-                      رفض
-                    </button>
-                  </div>
-                </div>
-              </template>
-              <template x-if="pendingAccounts.length === 0">
-                <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد طلبات إنشاء حساب معلقة حالياً.</div>
-              </template>
+                </template>
+                <template x-if="pendingAccounts.length === 0">
+                  <div class="empty-note" style="text-align:center; padding:8px; color:var(--txt-faint); font-size:11px;">لا توجد طلبات إنشاء حساب معلقة حالياً.</div>
+                </template>
+              </div>
             </div>
 
             <input type="file" x-ref="importFileInput" accept="application/json" style="display:none" @change="importData($event)">
@@ -1818,7 +1879,7 @@
 
         <!-- Admin Delete Account Button -->
         <template x-if="isAdmin">
-          <button @click="if(confirm('هل أنت متأكد من حذف حساب الطالب ' + s.name + ' نهائياً وبشكل كامل؟ لا يمكن التراجع عن هذا الإجراء.')) { deleteStudentAccount(s.id); }" 
+          <button @click="confirmDeleteStudent(s)" 
                   class="btn-redeem" 
                   style="width:100%; padding:10px; font-size:13px; border-radius:14px; background:rgba(239,68,68,0.15) !important; border:1px solid #ef4444 !important; color:#fca5a5 !important; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
             <div style="width:14px; height:14px;" x-html="getIconSvg('trash-2')"></div>
@@ -1832,6 +1893,203 @@
 
       </div>
     </template>
+  </div>
+
+  <!-- Confirm Modal Overlay -->
+  <div x-show="confirmModal.show" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:400; direction:rtl; display:none;">
+    
+    <!-- Backdrop Blur -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="confirmModal.show = false"></div>
+    
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:340px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:410; border-radius:20px; text-align:center;">
+      
+      <!-- Warning/Info Icon -->
+      <div style="width:50px; height:50px; border-radius:50%; background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.3); color:var(--orange); display:grid; place-items:center; margin:0 auto 16px;">
+        <div style="width:24px; height:24px;" x-html="getIconSvg('help-circle')"></div>
+      </div>
+      
+      <!-- Title -->
+      <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:10px;" x-text="confirmModal.title"></h3>
+      
+      <!-- Message -->
+      <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:24px;" x-text="confirmModal.message"></p>
+      
+      <!-- Actions -->
+      <div style="display:flex; gap:10px;">
+        <button @click="confirmModal.onConfirm ? confirmModal.onConfirm() : null; confirmModal.show = false" 
+                class="btn-redeem" 
+                style="flex:1; padding:10px; font-size:12px; border-radius:12px; margin-top:0; font-weight:700;">
+          تأكيد
+        </button>
+        <button @click="confirmModal.show = false" 
+                style="flex:1; padding:10px; font-size:12px; border-radius:12px; background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim); cursor:pointer; font-weight:700;">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Badge Modal Overlay -->
+  <div x-show="addBadgeModalOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:300; direction:rtl; display:none;">
+    
+    <!-- Backdrop Blur -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="addBadgeModalOpen = false"></div>
+    
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:340px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:310; overflow-y:auto; max-height:85vh;">
+      
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--txt-dim);">إضافة وسام جديد</h3>
+        <button @click="addBadgeModalOpen = false" style="background:none; border:none; color:var(--txt-faint); cursor:pointer; width:22px; height:22px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Form Content -->
+      <div style="display:flex; flex-direction:column; gap:14px; text-align:right;">
+        <div>
+          <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">اسم الوسام *</label>
+          <input type="text" x-model="newBadgeName" placeholder="مثال: البطل المتميز" 
+                 style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+        </div>
+
+        <div>
+          <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">وصف شروط الحصول عليه *</label>
+          <textarea x-model="newBadgeDesc" placeholder="شرح مبسط لما يجب فعله للحصول عليه" rows="3"
+                    style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; resize:none;"></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">مكافأة الشعلات</label>
+            <input type="number" x-model.number="newBadgeReward" min="0"
+                   style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">رمز الأيقونة</label>
+            <select x-model="newBadgeIcon"
+                    style="width:100%; padding:10px; border-radius:12px; background:#121414; border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+              <template x-for="item in selectableIcons" :key="item.id">
+                <option :value="item.id" x-text="item.label"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+
+        <button @click="createBadge()" 
+                class="btn-redeem" 
+                style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:14px; margin-top:10px;">
+          حفظ وإضافة الوسام
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Reward Modal Overlay -->
+  <div x-show="addRewardModalOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:300; direction:rtl; display:none;">
+    
+    <!-- Backdrop Blur -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="addRewardModalOpen = false"></div>
+    
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:340px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:310; overflow-y:auto; max-height:85vh;">
+      
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--txt-dim);">إضافة جائزة جديدة للمتجر</h3>
+        <button @click="addRewardModalOpen = false" style="background:none; border:none; color:var(--txt-faint); cursor:pointer; width:22px; height:22px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Form Content -->
+      <div style="display:flex; flex-direction:column; gap:14px; text-align:right;">
+        <div>
+          <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">اسم الجائزة *</label>
+          <input type="text" x-model="newRewardName" placeholder="مثال: وجبة عشاء" 
+                 style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+        </div>
+
+        <div>
+          <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">وصف الجائزة *</label>
+          <textarea x-model="newRewardDesc" placeholder="شرح مبسط لما يحصل عليه الطالب" rows="3"
+                    style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; resize:none;"></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">سعر الجائزة (شعلة)</label>
+            <input type="number" x-model.number="newRewardPrice" min="0"
+                   style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">رمز الأيقونة</label>
+            <select x-model="newRewardIcon"
+                    style="width:100%; padding:10px; border-radius:12px; background:#121414; border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+              <option value="gift">هدية</option>
+              <option value="coffee">ضيافة/شاي</option>
+              <option value="clock">ساعة/تأخير</option>
+              <option value="pen-tool">قلم/تخصيص</option>
+              <option value="cup-soda">مشروب بارد</option>
+              <option value="sparkles">توهج</option>
+              <option value="smartphone">هاتف محمول</option>
+              <option value="star">نجمة</option>
+              <option value="award">وسام</option>
+            </select>
+          </div>
+        </div>
+
+        <button @click="createReward()" 
+                class="btn-redeem" 
+                style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:14px; margin-top:10px;">
+          حفظ وإضافة الجائزة
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Badge Details Modal Overlay -->
@@ -2066,6 +2324,23 @@
         showLevelsModal: false,
         adminTab: 'pos',
         adminStageFilter: 'all',
+        adminMainTab: 'students',
+        addBadgeModalOpen: false,
+        addRewardModalOpen: false,
+        confirmModal: {
+          show: false,
+          title: '',
+          message: '',
+          onConfirm: null
+        },
+        newBadgeName: '',
+        newBadgeDesc: '',
+        newBadgeReward: 50,
+        newBadgeIcon: 'award',
+        newRewardName: '',
+        newRewardDesc: '',
+        newRewardPrice: 80,
+        newRewardIcon: 'gift',
         
         // Login State
         isLoggedIn: false,
@@ -2098,6 +2373,17 @@
             student.inventory = this.inventoryList.filter(item => item.student_id === student.id);
           }
           return student || this.students[0] || { id: '', name: '', stage: 'high', team: 'khwarizmi', wallet: 0, total: 0, avatarIcon: 'user', avatarColor: 'orange' };
+        },
+        get pendingRewards() {
+          return this.inventoryList
+            .filter(item => item.status === 'pending')
+            .map(item => {
+              const student = this.getStudentById(item.student_id);
+              return {
+                ...item,
+                studentName: student ? student.name : 'مجهول'
+              };
+            });
         },
         
         // Avatar Editor Modal State
@@ -2395,48 +2681,91 @@
               this.inventoryList = [];
             }
 
-            // 4. Fetch Challenge Timer
+            // 4. Fetch Challenge Timer & Configurations
             try {
-              let { data: chData, error: chErr } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 'main').single();
-              if (chErr || !chData) {
-                console.error("Supabase Error during init (fetching challenge, seeding if missing):", chErr);
-                const defaultCh = {
-                  id: 'main',
-                  title: 'معركة الكلمات السريعة',
-                  desc: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
-                  points: 30,
-                  duration: 600,
-                  time_left: 600,
-                  is_running: false
-                };
-                const { error: chInsertErr } = await supabaseClient.from('weekly_challenge').insert(defaultCh);
-                if (chInsertErr) {
-                  console.error("Supabase Error during init (seeding challenge):", chInsertErr);
-                }
-                this.weeklyChallenge.title = defaultCh.title;
-                this.weeklyChallenge.desc = defaultCh.desc;
-                this.weeklyChallenge.points = defaultCh.points;
-                this.weeklyChallenge.duration = defaultCh.duration;
-                this.weeklyChallenge.time_left = defaultCh.time_left;
-                this.weeklyChallenge.is_running = defaultCh.is_running;
-                this.weeklyChallenge.timeLeft = defaultCh.time_left;
+              let { data: chRows, error: chErr } = await supabaseClient.from('weekly_challenge').select('*');
+              if (chErr) {
+                console.error("Supabase Error during init (fetching weekly_challenge rows):", chErr);
               } else {
-                this.weeklyChallenge.title = chData.title;
-                this.weeklyChallenge.desc = chData.desc;
-                this.weeklyChallenge.points = chData.points;
-                this.weeklyChallenge.duration = chData.duration;
-                this.weeklyChallenge.time_left = chData.time_left;
-                this.weeklyChallenge.is_running = chData.is_running;
-                this.weeklyChallenge.ends_at = chData.ends_at;
-
-                if (this.weeklyChallenge.is_running) {
-                  this.startLocalTimer();
+                // Find Timer (ID: 1)
+                let chData = chRows ? chRows.find(r => parseInt(r.id) === 1) : null;
+                if (!chData) {
+                  // Seed challenge timer if missing
+                  const defaultCh = {
+                    id: 1,
+                    title: 'معركة الكلمات السريعة',
+                    desc_text: 'فريقان، كلمة واحدة كل دور، والأسرع في بناء جملة مفيدة بلا تكرار يكسب الشعلة.',
+                    points: 30,
+                    duration: 600,
+                    time_left: 600,
+                    is_running: false
+                  };
+                  await supabaseClient.from('weekly_challenge').insert(defaultCh);
+                  this.weeklyChallenge.title = defaultCh.title;
+                  this.weeklyChallenge.desc = defaultCh.desc_text;
+                  this.weeklyChallenge.points = defaultCh.points;
+                  this.weeklyChallenge.duration = defaultCh.duration;
+                  this.weeklyChallenge.time_left = defaultCh.time_left;
+                  this.weeklyChallenge.is_running = defaultCh.is_running;
+                  this.weeklyChallenge.timeLeft = defaultCh.time_left;
                 } else {
-                  this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+                  this.weeklyChallenge.title = chData.title;
+                  this.weeklyChallenge.desc = chData.desc_text || chData.desc || '';
+                  this.weeklyChallenge.points = chData.points;
+                  this.weeklyChallenge.duration = chData.duration;
+                  this.weeklyChallenge.time_left = chData.time_left;
+                  this.weeklyChallenge.is_running = chData.is_running;
+                  this.weeklyChallenge.ends_at = chData.ends_at;
+
+                  if (this.weeklyChallenge.is_running) {
+                    this.startLocalTimer();
+                  } else {
+                    this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+                  }
+                }
+
+                // Find Rewards Config (ID: 100)
+                let rewardsData = chRows ? chRows.find(r => parseInt(r.id) === 100) : null;
+                if (rewardsData && rewardsData.desc_text) {
+                  try {
+                    this.rewards = JSON.parse(rewardsData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse rewards config:", e);
+                  }
+                } else {
+                  // Seed rewards config if missing
+                  await supabaseClient.from('weekly_challenge').upsert({
+                    id: 100,
+                    title: 'rewards_config',
+                    desc_text: JSON.stringify(this.rewards),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
+                }
+
+                // Find Achievements Config (ID: 101)
+                let achievementsData = chRows ? chRows.find(r => parseInt(r.id) === 101) : null;
+                if (achievementsData && achievementsData.desc_text) {
+                  try {
+                    this.achievements = JSON.parse(achievementsData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse achievements config:", e);
+                  }
+                } else {
+                  // Seed achievements config if missing
+                  await supabaseClient.from('weekly_challenge').upsert({
+                    id: 101,
+                    title: 'badges_config',
+                    desc_text: JSON.stringify(this.achievements),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
                 }
               }
             } catch (err) {
-              console.error("Supabase Error during init (challenge block exception):", err);
+              console.error("Supabase Error during init (weekly_challenge configs exception):", err);
               this.weeklyChallenge.timeLeft = 600;
             }
 
@@ -2675,23 +3004,48 @@
               })
               .subscribe();
 
-            // Weekly challenge changes
+            // Weekly challenge & configuration changes
             supabaseClient
               .channel('weekly_challenge_changes')
-              .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'weekly_challenge' }, payload => {
-                this.weeklyChallenge.title = payload.new.title;
-                this.weeklyChallenge.desc = payload.new.desc;
-                this.weeklyChallenge.points = payload.new.points;
-                this.weeklyChallenge.duration = payload.new.duration;
-                this.weeklyChallenge.time_left = payload.new.time_left;
-                this.weeklyChallenge.is_running = payload.new.is_running;
-                this.weeklyChallenge.ends_at = payload.new.ends_at;
-
-                if (this.weeklyChallenge.is_running) {
-                  this.startLocalTimer();
-                } else {
-                  this.stopLocalTimer();
-                  this.weeklyChallenge.timeLeft = this.weeklyChallenge.time_left;
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_challenge' }, payload => {
+                if (payload.new) {
+                  const id = parseInt(payload.new.id);
+                  if (id === 1) {
+                    this.weeklyChallenge.title = payload.new.title;
+                    this.weeklyChallenge.desc = payload.new.desc_text || payload.new.desc || '';
+                    this.weeklyChallenge.points = payload.new.points;
+                    this.weeklyChallenge.duration = payload.new.duration;
+                    this.weeklyChallenge.time_left = payload.new.time_left;
+                    this.weeklyChallenge.is_running = payload.new.is_running;
+                    
+                    if (payload.new.is_running && payload.new.updated_at) {
+                      const updatedTime = new Date(payload.new.updated_at).getTime();
+                      const timeLeftSec = payload.new.time_left;
+                      this.weeklyChallenge.ends_at = new Date(updatedTime + timeLeftSec * 1000).toISOString();
+                      this.startLocalTimer();
+                    } else {
+                      this.stopLocalTimer();
+                      this.weeklyChallenge.is_running = false;
+                      this.weeklyChallenge.ends_at = null;
+                      this.weeklyChallenge.timeLeft = payload.new.time_left;
+                    }
+                  } else if (id === 100) {
+                    if (payload.new.desc_text) {
+                      try {
+                        this.rewards = JSON.parse(payload.new.desc_text);
+                      } catch (e) {
+                        console.error("Realtime failed to parse rewards JSON:", e);
+                      }
+                    }
+                  } else if (id === 101) {
+                    if (payload.new.desc_text) {
+                      try {
+                        this.achievements = JSON.parse(payload.new.desc_text);
+                      } catch (e) {
+                        console.error("Realtime failed to parse achievements JSON:", e);
+                      }
+                    }
+                  }
                 }
               })
               .subscribe();
@@ -3131,6 +3485,23 @@
           }
         },
 
+        showConfirm(title, message, callback) {
+          this.confirmModal.title = title;
+          this.confirmModal.message = message;
+          this.confirmModal.onConfirm = callback;
+          this.confirmModal.show = true;
+        },
+
+        confirmDeleteStudent(student) {
+          this.showConfirm(
+            'حذف حساب الطالب',
+            `هل أنت متأكد من حذف حساب الطالب ${student.name} نهائياً وبشكل كامل؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع سجلاته.`,
+            async () => {
+              await this.deleteStudentAccount(student.id);
+            }
+          );
+        },
+
         async purchaseReward(studentId, reward) {
           const st = this.getStudentById(studentId);
           if (!st || st.wallet < reward.price) {
@@ -3138,65 +3509,183 @@
             return;
           }
 
-          if (!confirm(`هل أنت متأكد من استبدال ${reward.name} مقابل ${reward.price} شعلة؟ سيتم خصم الشعلات وإرسال طلب استبدال فوري للإدارة.`)) {
+          this.showConfirm(
+            'تأكيد استبدال الجائزة',
+            `هل أنت متأكد من استبدال ${reward.name} مقابل ${reward.price} شعلة؟ سيتم خصم الشعلات وإرسال طلب استبدال فوري للإدارة.`,
+            async () => {
+              if (!supabaseClient) {
+                st.wallet -= reward.price;
+                this.activityLogs.unshift({
+                  id: 'log_' + Date.now(),
+                  student_id: studentId,
+                  reason: `طلب استبدال: ${reward.name}`,
+                  delta: -reward.price,
+                  pos: false,
+                  created_at: new Date().toISOString()
+                });
+                const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                this.inventoryList.unshift({
+                  id: invId,
+                  student_id: studentId,
+                  name: reward.name,
+                  desc: reward.desc,
+                  icon: reward.icon || 'gift',
+                  price: reward.price,
+                  status: 'pending',
+                  created_at: new Date().toISOString()
+                });
+                this.saveState();
+                this.showToast(`تم تقديم طلب استبدال ${reward.name} بنجاح، بانتظار موافقة الإدارة.`, 'pos');
+                return;
+              }
+
+              const newWallet = st.wallet - reward.price;
+              const { error: sErr } = await supabaseClient.from('students').update({
+                wallet: newWallet
+              }).eq('id', studentId);
+
+              if (sErr) {
+                console.error("Error updating student wallet:", sErr);
+                return;
+              }
+
+              await supabaseClient.from('activity_log').insert({
+                student_id: studentId,
+                reason: `طلب استبدال: ${reward.name}`,
+                delta: -reward.price,
+                pos: false
+              });
+
+              const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+              await supabaseClient.from('inventory').insert({
+                id: invId,
+                student_id: studentId,
+                name: reward.name,
+                desc: reward.desc,
+                icon: reward.icon || 'gift',
+                price: reward.price,
+                status: 'pending'
+              });
+
+              this.showToast(`تم تقديم طلب استبدال ${reward.name} بنجاح، بانتظار موافقة الإدارة.`, 'pos');
+            }
+          );
+        },
+
+        async deleteBadge(badgeId) {
+          this.showConfirm(
+            'تأكيد حذف الوسام',
+            'هل أنت متأكد من رغبتك في حذف هذا الوسام نهائياً من النظام؟',
+            async () => {
+              this.achievements = this.achievements.filter(ach => ach.id !== badgeId);
+              if (supabaseClient) {
+                await supabaseClient.from('weekly_challenge').upsert({
+                  id: 101,
+                  title: 'badges_config',
+                  desc_text: JSON.stringify(this.achievements),
+                  points: 0,
+                  duration: 0,
+                  time_left: 0
+                });
+              } else {
+                this.saveState();
+              }
+              this.showToast('تم حذف الوسام بنجاح', 'pos');
+            }
+          );
+        },
+
+        async createBadge() {
+          if (!this.newBadgeName.trim() || !this.newBadgeDesc.trim()) {
+            this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
             return;
           }
-
-          if (!supabaseClient) {
-            st.wallet -= reward.price;
-            this.activityLogs.unshift({
-              id: 'log_' + Date.now(),
-              student_id: studentId,
-              reason: `طلب استبدال: ${reward.name}`,
-              delta: -reward.price,
-              pos: false,
-              created_at: new Date().toISOString()
+          const id = 'ach_' + Date.now();
+          const newBadge = {
+            id: id,
+            name: this.newBadgeName.trim(),
+            desc: this.newBadgeDesc.trim(),
+            reward: parseInt(this.newBadgeReward) || 0,
+            icon: this.newBadgeIcon
+          };
+          this.achievements.push(newBadge);
+          
+          if (supabaseClient) {
+            await supabaseClient.from('weekly_challenge').upsert({
+              id: 101,
+              title: 'badges_config',
+              desc_text: JSON.stringify(this.achievements),
+              points: 0,
+              duration: 0,
+              time_left: 0
             });
-            const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            this.inventoryList.unshift({
-              id: invId,
-              student_id: studentId,
-              name: reward.name,
-              desc: reward.desc,
-              icon: reward.icon || 'gift',
-              price: reward.price,
-              status: 'pending',
-              created_at: new Date().toISOString()
-            });
+          } else {
             this.saveState();
-            this.showToast(`تم تقديم طلب استبدال ${reward.name} بنجاح، بانتظار موافقة الإدارة.`, 'pos');
+          }
+          
+          this.showToast('تمت إضافة الوسام بنجاح', 'success');
+          this.addBadgeModalOpen = false;
+          this.newBadgeName = '';
+          this.newBadgeDesc = '';
+          this.newBadgeReward = 50;
+          this.newBadgeIcon = 'award';
+        },
+
+        async deleteReward(index) {
+          this.showConfirm(
+            'تأكيد حذف الجائزة',
+            'هل أنت متأكد من رغبتك في حذف هذه الجائزة من المتجر نهائياً؟',
+            async () => {
+              this.rewards.splice(index, 1);
+              if (supabaseClient) {
+                await supabaseClient.from('weekly_challenge').upsert({
+                  id: 100,
+                  title: 'rewards_config',
+                  desc_text: JSON.stringify(this.rewards),
+                  points: 0,
+                  duration: 0,
+                  time_left: 0
+                });
+              } else {
+                this.saveState();
+              }
+              this.showToast('تم حذف الجائزة بنجاح', 'pos');
+            }
+          );
+        },
+
+        async createReward() {
+          if (!this.newRewardName.trim() || !this.newRewardDesc.trim()) {
+            this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
             return;
           }
-
-          const newWallet = st.wallet - reward.price;
-          const { error: sErr } = await supabaseClient.from('students').update({
-            wallet: newWallet
-          }).eq('id', studentId);
-
-          if (sErr) {
-            console.error("Error updating student wallet:", sErr);
-            return;
+          const newReward = {
+            name: this.newRewardName.trim(),
+            desc: this.newRewardDesc.trim(),
+            price: parseInt(this.newRewardPrice) || 0,
+            icon: this.newRewardIcon
+          };
+          this.rewards.push(newReward);
+          
+          if (supabaseClient) {
+            await supabaseClient.from('weekly_challenge').upsert({
+              id: 100,
+              title: 'rewards_config',
+              desc_text: JSON.stringify(this.rewards),
+              points: 0,
+              duration: 0,
+              time_left: 0
+            });
+          } else {
+            this.saveState();
           }
-
-          await supabaseClient.from('activity_log').insert({
-            student_id: studentId,
-            reason: `طلب استبدال: ${reward.name}`,
-            delta: -reward.price,
-            pos: false
-          });
-
-          const invId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-          await supabaseClient.from('inventory').insert({
-            id: invId,
-            student_id: studentId,
-            name: reward.name,
-            desc: reward.desc,
-            icon: reward.icon || 'gift',
-            price: reward.price,
-            status: 'pending'
-          });
-
-          this.showToast(`تم تقديم طلب استبدال ${reward.name} بنجاح، بانتظار موافقة الإدارة.`, 'pos');
+          
+          this.showToast('تمت إضافة الجائزة بنجاح', 'success');
+          this.addRewardModalOpen = false;
+          this.newRewardName = '';
+          this.newRewardDesc = '';
+          this.newRewardPrice = 80;
+          this.newRewardIcon = 'gift';
         },
 
         async adminApproveReward(studentId, rewardId) {
@@ -3538,19 +4027,17 @@
               is_running: false,
               time_left: this.weeklyChallenge.timeLeft,
               updated_at: new Date().toISOString()
-            }).eq('id', 'main');
+            }).eq('id', 1);
           } else {
             let currentSec = this.weeklyChallenge.timeLeft;
             if (currentSec <= 0) {
               currentSec = this.weeklyChallenge.duration;
             }
-            const endsAt = new Date(Date.now() + currentSec * 1000).toISOString();
             await supabaseClient.from('weekly_challenge').update({
               is_running: true,
-              ends_at: endsAt,
               time_left: currentSec,
               updated_at: new Date().toISOString()
-            }).eq('id', 'main');
+            }).eq('id', 1);
           }
         },
 
@@ -3568,9 +4055,8 @@
           const { error } = await supabaseClient.from('weekly_challenge').update({
             is_running: false,
             time_left: this.weeklyChallenge.duration,
-            ends_at: null,
             updated_at: new Date().toISOString()
-          }).eq('id', 'main');
+          }).eq('id', 1);
 
           if (error) {
             console.error("Error resetting timer:", error);
@@ -3834,31 +4320,35 @@
         },
 
         async resetToDefault() {
-          if (confirm('هل أنت متأكد من إعادة تعيين كامل البيانات للافتراضية؟')) {
-            if (!supabaseClient) {
-              this.students = DEFAULT_STUDENTS;
-              this.inventoryList = [];
-              this.activityLogs = [];
-              this.pendingAccounts = [];
-              this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
-              this.weeklyChallenge.is_running = false;
-              this.weeklyChallenge.ends_at = null;
-              this.saveState();
-              this.showToast('تمت إعادة تعيين البيانات محلياً', 'success');
-              this.render();
-              return;
-            }
+          this.showConfirm(
+            'إعادة تعيين البيانات',
+            'هل أنت متأكد من إعادة تعيين كامل البيانات للافتراضية؟ لا يمكن التراجع عن هذا الإجراء وسيتم مسح كافة البيانات الحالية.',
+            async () => {
+              if (!supabaseClient) {
+                this.students = DEFAULT_STUDENTS;
+                this.inventoryList = [];
+                this.activityLogs = [];
+                this.pendingAccounts = [];
+                this.weeklyChallenge.timeLeft = this.weeklyChallenge.duration;
+                this.weeklyChallenge.is_running = false;
+                this.weeklyChallenge.ends_at = null;
+                this.saveState();
+                this.showToast('تمت إعادة تعيين البيانات محلياً', 'success');
+                this.render();
+                return;
+              }
 
-            const { error: delErr } = await supabaseClient.from('students').delete().neq('id', '_dummy_');
-            if (delErr) {
-              console.error("Error clearing students:", delErr);
+              const { error: delErr } = await supabaseClient.from('students').delete().neq('id', '_dummy_');
+              if (delErr) {
+                console.error("Error clearing students:", delErr);
+              }
+              if (DEFAULT_STUDENTS.length > 0) {
+                await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
+              }
+              await supabaseClient.from('pending_accounts').delete().neq('id', '_dummy_');
+              this.showToast('تمت إعادة تعيين البيانات السحابية للافتراضية', 'success');
             }
-            if (DEFAULT_STUDENTS.length > 0) {
-              await supabaseClient.from('students').insert(DEFAULT_STUDENTS);
-            }
-            await supabaseClient.from('pending_accounts').delete().neq('id', '_dummy_');
-            this.showToast('تمت إعادة تعيين البيانات السحابية للافتراضية', 'success');
-          }
+          );
         },
 
         enterPinDigit(digit) {
