@@ -713,7 +713,7 @@
 
     <template x-if="isLoggedIn">
       <div style="display:contents;">
-        <div id="scroll">
+        <div id="scroll" :style="gamePlaying ? 'overflow-y: hidden !important;' : ''">
       <!-- HEADER -->
       <div class="app-head">
         <div class="brand">
@@ -1262,40 +1262,6 @@
                       style="width: 100%; max-width: 200px; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px; display: block; margin: 0 auto;">
                 بدء اللعب
               </button>
-            </div>
-          </template>
-
-          <!-- When Playing -->
-          <template x-if="gamePlaying">
-            <div style="width: 100%;">
-              <!-- Stats Bar -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 10px;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 12px; color: var(--txt-dim);">النقاط الحالية:</span>
-                  <span style="font-size: 18px; font-weight: 700; color: #ffb27a;" x-text="gameScoreCurrent"></span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 12px; color: var(--txt-dim);">الوقت المتبقي:</span>
-                  <span style="font-size: 18px; font-weight: 700; color: #ef4444;" x-text="gameTimeLeft + ' ث'"></span>
-                </div>
-              </div>
-              
-              <!-- Game Board -->
-              <div style="width: 100%; height: 220px; background: rgba(0,0,0,0.5); border: 1px solid var(--stroke2); border-radius: 16px; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
-                <!-- Glowing Flame Target -->
-                <button @click="clickFlame()" 
-                        type="button"
-                        style="position: absolute; width: 44px; height: 44px; padding: 0; background: none; border: none; cursor: pointer; transition: all 0.05s; display: grid; place-items: center; border-radius: 50%; outline: none;"
-                        :style="{
-                          top: flamePos.top,
-                          left: flamePos.left,
-                          transform: 'translate(-50%, -50%)',
-                          color: '#ffb27a',
-                          'filter': 'drop-shadow(0 0 8px #f97316)'
-                        }">
-                  <div style="width: 32px; height: 32px;" x-html="getIconSvg('flame')"></div>
-                </button>
-              </div>
             </div>
           </template>
         </div>
@@ -2329,7 +2295,7 @@
       </div>
 
       <!-- List of Levels -->
-      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:20px; direction:rtl; text-align:center;">
+      <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px; direction:rtl; text-align:center;">
         <template x-for="lvl in [
           { level: 1, min: 0, max: 100, label: 'مبتدئ سراج', icon: 'sprout', color: 'emerald' },
           { level: 2, min: 100, max: 250, label: 'شعلة نشيطة', icon: 'flame', color: 'orange' },
@@ -2337,70 +2303,74 @@
           { level: 4, min: 500, max: 800, label: 'فارس سراج', icon: 'shield', color: 'purple' },
           { level: 5, min: 800, max: 999999, label: 'سفير سراج', icon: 'crown', color: 'yellow' }
         ]" :key="lvl.level">
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 10px; border-radius: 18px; border: 1px solid var(--stroke); transition: all 0.2s;"
-               :style="(getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
-                       ? 'background: rgba(249,115,22,0.04); border-color: rgba(249,115,22,0.3); box-shadow: 0 0 12px rgba(249,115,22,0.05);' 
-                       : 'background: rgba(255,255,255,0.01); border-color: var(--stroke);') + (lvl.level === 5 ? ' grid-column: span 2;' : '')"
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; border-radius: 20px; border: 1px solid var(--stroke); transition: all 0.2s;"
+               :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
+                       ? 'background: rgba(249,115,22,0.05); border-color: rgba(249,115,22,0.35); box-shadow: 0 0 16px rgba(249,115,22,0.08);' 
+                       : 'background: rgba(255,255,255,0.015); border-color: var(--stroke);'"
                :class="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'current-level-active' : ''">
             
             <!-- Circular Progress SVG & Icon -->
-            <div style="position: relative; width: 76px; height: 76px; display: grid; place-items: center; margin-bottom: 8px;">
-              <svg style="position: absolute; transform: rotate(-90deg); width: 76px; height: 76px;">
+            <div style="position: relative; width: 80px; height: 80px; display: grid; place-items: center; margin-bottom: 10px;">
+              <svg style="position: absolute; transform: rotate(-90deg); width: 80px; height: 80px;">
                 <!-- Background Circle -->
-                <circle cx="38" cy="38" r="32" stroke="rgba(255,255,255,0.05)" stroke-width="3" fill="transparent" />
+                <circle cx="40" cy="40" r="34" stroke="rgba(255,255,255,0.05)" stroke-width="3" fill="transparent" />
                 <!-- Foreground Circle -->
-                <circle cx="38" cy="38" r="32" 
+                <circle cx="40" cy="40" r="34" 
                         :stroke="
                           getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
                             ? '#10b981' 
                             : (getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? '#f97316' : 'rgba(255,255,255,0.08)')
                         " 
-                        stroke-width="3.5" 
+                        stroke-width="4" 
                         fill="transparent" 
-                        stroke-dasharray="201.06" 
+                        stroke-dasharray="213.63" 
                         :stroke-dashoffset="
                           getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
                             ? 0 
                             : (getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
-                                ? (201.06 * (1 - getStudentLevelInfo(currentStudent.total).percent / 100)) 
-                                : 201.06)
+                                ? (213.63 * (1 - getStudentLevelInfo(currentStudent.total).percent / 100)) 
+                                : 213.63)
                         " 
                         stroke-linecap="round"
-                        style="transition: stroke-dashoffset 0.6s ease-in-out;" />
+                        :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level 
+                                ? 'filter: drop-shadow(0 0 4px rgba(249,115,22,0.6)); transition: stroke-dashoffset 0.6s ease-in-out;' 
+                                : (getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
+                                    ? 'filter: drop-shadow(0 0 4px rgba(16,185,129,0.5)); transition: stroke-dashoffset 0.6s ease-in-out;' 
+                                    : 'transition: stroke-dashoffset 0.6s ease-in-out;')" />
               </svg>
               
               <!-- Inner Circle with Icon -->
-              <div style="width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s;"
+              <div style="width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s;"
                    :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level
-                           ? 'background: rgba(249,115,22,0.12); color: #ffb27a;'
+                           ? 'background: rgba(249,115,22,0.15); color: #ffb27a;'
                            : (getStudentLevelInfo(currentStudent.total).current.level > lvl.level 
-                               ? 'background: rgba(16,185,129,0.12); color: #34d399;' 
-                               : 'background: rgba(255,255,255,0.02); color: var(--txt-faint);')">
-                <div style="width: 22px; height: 22px;" x-html="getIconSvg(lvl.icon)"></div>
+                               ? 'background: rgba(16,185,129,0.15); color: #34d399;' 
+                               : 'background: rgba(255,255,255,0.03); color: var(--txt-faint);')">
+                <div style="width: 24px; height: 24px;" x-html="getIconSvg(lvl.icon)"></div>
               </div>
             </div>
 
             <!-- Level Details -->
-            <div style="font-size: 12px; font-weight: 700;"
+            <div style="font-size: 13px; font-weight: 700;"
                  :style="getStudentLevelInfo(currentStudent.total).current.level === lvl.level ? 'color: var(--txt);' : 'color: var(--txt-dim);'"
                  x-text="lvl.label"></div>
-            <div style="font-size: 8.5px; color: var(--txt-faint); margin-top: 3px;"
+            <div style="font-size: 9px; color: var(--txt-faint); margin-top: 4px;"
                  x-text="lvl.level === 5 ? 'من 800 شعلة فما فوق' : 'من ' + lvl.min + ' إلى ' + lvl.max + ' شعلة'"></div>
 
             <!-- Status Badge -->
-            <div style="margin-top: 8px;">
+            <div style="margin-top: 10px;">
               <template x-if="getStudentLevelInfo(currentStudent.total).current.level === lvl.level">
-                <span style="font-size: 8.5px; font-weight: 700; background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); color: #ffb27a; padding: 2px 6px; border-radius: 6px; box-shadow: 0 0 8px rgba(249,115,22,0.1);">رتبتك الحالية</span>
+                <span style="font-size: 9px; font-weight: 700; background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); color: #ffb27a; padding: 3px 8px; border-radius: 6px; box-shadow: 0 0 8px rgba(249,115,22,0.1);">رتبتك الحالية</span>
               </template>
               <template x-if="getStudentLevelInfo(currentStudent.total).current.level < lvl.level">
-                <span style="font-size: 8.5px; color: var(--txt-faint); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; background: rgba(255,255,255,0.02); border: 1px solid var(--stroke); padding: 2px 6px; border-radius: 6px;">
-                  <div style="width: 9px; height: 9px; display: inline-block; color: var(--txt-faint);" x-html="getIconSvg('lock')"></div>
+                <span style="font-size: 9px; color: var(--txt-faint); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.02); border: 1px solid var(--stroke); padding: 3px 8px; border-radius: 6px;">
+                  <div style="width: 10px; height: 10px; display: inline-block; color: var(--txt-faint);" x-html="getIconSvg('lock')"></div>
                   مغلق
                 </span>
               </template>
               <template x-if="getStudentLevelInfo(currentStudent.total).current.level > lvl.level">
-                <span style="font-size: 8.5px; color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 2px 6px; border-radius: 6px;">
-                  <div style="width: 9px; height: 9px; display: inline-block; color: #34d399;" x-html="getIconSvg('check')"></div>
+                <span style="font-size: 9px; color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 3px 8px; border-radius: 6px;">
+                  <div style="width: 10px; height: 10px; display: inline-block; color: #34d399;" x-html="getIconSvg('check')"></div>
                   مكتمل
                 </span>
               </template>
@@ -2426,6 +2396,83 @@
         </button>
       </template>
     </nav>
+      </div>
+
+      <!-- Fullscreen Arcade Clicker Game Overlay -->
+      <div x-show="gamePlaying" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 scale-95"
+           x-transition:enter-end="opacity-100 scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 scale-95"
+           style="position: absolute; inset: 0; z-index: 600; background: radial-gradient(circle at center, #141617 0%, #0c0e0e 100%); display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px) 20px; direction: rtl; overflow: hidden;"
+           class="fullscreen-game">
+        
+        <!-- Ambient atmospheric glow behind the game -->
+        <div style="position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;">
+          <div style="position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(249,115,22,0.15), transparent 70%); filter: blur(50px);"></div>
+        </div>
+
+        <!-- Game Header (Score, Timer, Exit) -->
+        <div style="position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--stroke); padding: 12px 16px; border-radius: 18px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); margin-bottom: 16px;">
+          
+          <!-- Score -->
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 22px; height: 22px; color: #ffb27a; filter: drop-shadow(0 0 5px rgba(249,115,22,0.6));" x-html="getIconSvg('flame')"></div>
+            <span style="font-size: 12px; color: var(--txt-dim);">النقاط:</span>
+            <span style="font-size: 20px; font-weight: 800; color: #ffb27a;" x-text="gameScoreCurrent"></span>
+          </div>
+
+          <!-- Timer -->
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; color: #ef4444; filter: drop-shadow(0 0 5px rgba(239,68,68,0.5));" x-html="getIconSvg('clock')"></div>
+            <span style="font-size: 12px; color: var(--txt-dim);">الزمن:</span>
+            <span style="font-size: 20px; font-weight: 800; color: #ef4444;" x-text="gameTimeLeft + ' ث'"></span>
+          </div>
+
+          <!-- Quit Button -->
+          <button @click="endGame()" 
+                  type="button"
+                  style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; cursor: pointer; transition: all 0.2s;"
+                  @mouseenter="$el.style.background = 'rgba(239, 68, 68, 0.2)'; $el.style.borderColor = 'rgba(239, 68, 68, 0.45)';"
+                  @mouseleave="$el.style.background = 'rgba(239, 68, 68, 0.1)'; $el.style.borderColor = 'rgba(239, 68, 68, 0.25)';"
+                  title="إنهاء اللعبة">
+            <div style="width: 16px; height: 16px;" x-html="getIconSvg('x')"></div>
+          </button>
+        </div>
+
+        <!-- Big Game Board (Flexible viewport-height panel) -->
+        <div style="position: relative; z-index: 10; flex: 1; border-radius: 28px; border: 1.5px solid rgba(249,115,22,0.25); background: radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-image: radial-gradient(rgba(249,115,22,0.04) 1.5px, transparent 0), radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-size: 24px 24px, 100% 100%; box-shadow: inset 0 0 40px rgba(0,0,0,0.95); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          
+          <!-- Instructions overlay -->
+          <div x-show="gameScoreCurrent === 0" 
+               x-transition:leave="transition ease-in duration-300"
+               style="position: absolute; pointer-events: none; text-align: center; color: var(--txt-faint); font-size: 13px; z-index: 5;">
+            <div style="width: 48px; height: 48px; margin: 0 auto 12px; color: rgba(249,115,22,0.4); animation: pulse 1.5s infinite;" x-html="getIconSvg('flame')"></div>
+            اضغط على الشعلة الطائرة بأقصى سرعة!
+          </div>
+
+          <!-- Target Button (The Flame) -->
+          <button @click="clickFlame()" 
+                  type="button"
+                  style="position: absolute; width: 62px; height: 62px; padding: 0; background: radial-gradient(circle, rgba(249,115,22,0.4) 0%, rgba(249,115,22,0.08) 70%); border: 1.5px solid rgba(249,115,22,0.55); cursor: pointer; transition: all 0.05s; display: grid; place-items: center; border-radius: 50%; outline: none; box-shadow: 0 0 20px rgba(249,115,22,0.45); z-index: 15;"
+                  :style="{
+                    top: flamePos.top,
+                    left: flamePos.left,
+                    transform: 'translate(-50%, -50%)',
+                  }"
+                  @mousedown="$el.style.transform = 'translate(-50%, -50%) scale(0.9)';"
+                  @mouseup="$el.style.transform = 'translate(-50%, -50%) scale(1.05)';"
+                  @touchstart="$el.style.transform = 'translate(-50%, -50%) scale(0.9)';"
+                  @touchend="$el.style.transform = 'translate(-50%, -50%) scale(1.05)';">
+            <div style="width: 32px; height: 32px; color: #ffb27a; filter: drop-shadow(0 0 6px #f97316);" x-html="getIconSvg('flame')"></div>
+          </button>
+        </div>
+
+        <!-- Footer indicator / safe area margin -->
+        <div style="height: 10px;"></div>
+
       </div>
     </template>
 
@@ -4891,7 +4938,8 @@
             'wand-2': '<path d="m21.5 2-1.5 1.5M22 6.5L20.5 5M16 1.5L17.5 3M19 12l-7 7-3-3 7-7 3 3z"></path>',
             'users': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>',
             'timer-off': '<path d="M16.2 16.2L20 20M12 6V2M16.5 2H19M2 12a10 10 0 0 0 18 6M6.2 6.2a10 10 0 0 1 14.1 0"></path>',
-            'volume-2': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>'
+            'volume-2': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>',
+            'x': '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>'
           };
           const path = dict[iconName] || dict['user'];
           return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;">${path}</svg>`;
