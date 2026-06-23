@@ -538,6 +538,27 @@
       transition: transform 0.2s;
     }
 
+    .game-flame-btn {
+      position: absolute;
+      width: 62px;
+      height: 62px;
+      padding: 0;
+      background: radial-gradient(circle, rgba(249,115,22,0.4) 0%, rgba(249,115,22,0.08) 70%);
+      border: 1.5px solid rgba(249,115,22,0.55);
+      cursor: pointer;
+      transition: transform 0.05s;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      outline: none;
+      box-shadow: 0 0 20px rgba(249,115,22,0.45);
+      z-index: 15;
+      transform: translate(-50%, -50%);
+    }
+    .game-flame-btn:active {
+      transform: translate(-50%, -50%) scale(0.9) !important;
+    }
+
     @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
   </style>
 </head>
@@ -2455,16 +2476,8 @@
           <!-- Target Button (The Flame) -->
           <button @click="clickFlame()" 
                   type="button"
-                  style="position: absolute; width: 62px; height: 62px; padding: 0; background: radial-gradient(circle, rgba(249,115,22,0.4) 0%, rgba(249,115,22,0.08) 70%); border: 1.5px solid rgba(249,115,22,0.55); cursor: pointer; transition: all 0.05s; display: grid; place-items: center; border-radius: 50%; outline: none; box-shadow: 0 0 20px rgba(249,115,22,0.45); z-index: 15;"
-                  :style="{
-                    top: flamePos.top,
-                    left: flamePos.left,
-                    transform: 'translate(-50%, -50%)',
-                  }"
-                  @mousedown="$el.style.transform = 'translate(-50%, -50%) scale(0.9)';"
-                  @mouseup="$el.style.transform = 'translate(-50%, -50%) scale(1.05)';"
-                  @touchstart="$el.style.transform = 'translate(-50%, -50%) scale(0.9)';"
-                  @touchend="$el.style.transform = 'translate(-50%, -50%) scale(1.05)';">
+                  class="game-flame-btn"
+                  :style="{ top: flamePos.top, left: flamePos.left }">
             <div style="width: 32px; height: 32px; color: #ffb27a; filter: drop-shadow(0 0 6px #f97316);" x-html="getIconSvg('flame')"></div>
           </button>
         </div>
