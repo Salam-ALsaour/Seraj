@@ -104,6 +104,8 @@
 
     .page{animation:fade .35s ease;}
     @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+    .animate-spin{animation:spin 1s linear infinite;}
+    @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 
     .sect-title{font-size:13px;color:var(--txt-dim);font-weight:600;margin:22px 4px 12px;display:flex;align-items:center;gap:7px;}
     .sect-title i{width:15px;height:15px;}
@@ -543,6 +545,27 @@
 
   <!-- PWA Container -->
   <div id="app" x-data="serajApp()" x-init="init()">
+    
+    <!-- Pull-to-refresh spinner (only shows at top of screen without full loading overlay) -->
+    <div x-show="isRefreshing" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-4"
+         style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--bg2); border: 1px solid var(--stroke2); padding: 8px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 10px var(--orange-glow); display: flex; align-items: center; justify-content: center; width: 38px; height: 38px;">
+      <svg class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+        <line x1="12" y1="2" x2="12" y2="6"/>
+        <line x1="12" y1="18" x2="12" y2="22"/>
+        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+        <line x1="2" y1="12" x2="6" y2="12"/>
+        <line x1="18" y1="12" x2="22" y2="12"/>
+        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+      </svg>
+    </div>
     
     <!-- Loading Spinner Overlay -->
     <div x-show="isLoading" class="absolute inset-0 bg-[#121414] z-50 flex flex-col items-center justify-center gap-4">
@@ -1403,7 +1426,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px; margin-bottom:8px;">
                   <div class="macro-label" style="color: var(--txt-dim); margin-top:0;"><div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('award')"></div>إدارة الأوسمة المضيئة للطالب</div>
                   <!-- Add Badge Button -->
-                  <button @click="addBadgeModalOpen = true" 
+                  <button @click="openCreateBadgeModal()" 
                           class="btn-redeem" 
                           style="width:auto; padding:5px 12px; font-size:10px; border-radius:10px; margin-top:0; font-weight:700;">
                     + إضافة وسام
@@ -1429,6 +1452,14 @@
                                         ? 'background:rgba(5,150,105,0.18); border:1px solid rgba(5,150,105,0.4); color:#a7f3d0;' 
                                         : 'background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim);'"
                                 x-text="hasBadge(adminActiveStudentId, ach.id) ? 'سحب الوسام' : 'منح الوسام'"></button>
+                        
+                        <!-- Edit Badge Button -->
+                        <button @click="openEditBadgeModal(ach)"
+                                style="width:28px; height:28px; border-radius:8px; display:grid; place-items:center; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); color:#93c5fd; cursor:pointer; transition:all 0.2s;"
+                                @mouseenter="$el.style.background = 'rgba(59,130,246,0.15)';"
+                                @mouseleave="$el.style.background = 'rgba(59,130,246,0.08)';">
+                          <div style="width:14px; height:14px;" x-html="getIconSvg('edit-2')"></div>
+                        </button>
                         
                         <!-- Delete Badge Button -->
                         <button @click="deleteBadge(ach.id)"
@@ -2022,7 +2053,7 @@
     
     <!-- Backdrop Blur -->
     <div style="position:absolute; inset:0; background:rgba(12,14,14,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
-         @click="addBadgeModalOpen = false"></div>
+         @click="closeBadgeModal()"></div>
     
     <div class="modal-card" 
          x-transition:enter="transition ease-out duration-300"
@@ -2035,8 +2066,8 @@
       
       <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-        <h3 style="font-size:15px; font-weight:700; color:var(--txt-dim);">إضافة وسام جديد</h3>
-        <button @click="addBadgeModalOpen = false" style="background:none; border:none; color:var(--txt-faint); cursor:pointer; width:22px; height:22px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--txt-dim);" x-text="editBadgeMode ? 'تعديل الوسام الحالي' : 'إضافة وسام جديد'">إضافة وسام جديد</h3>
+        <button @click="closeBadgeModal()" style="background:none; border:none; color:var(--txt-faint); cursor:pointer; width:22px; height:22px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -2074,7 +2105,8 @@
 
         <button @click="createBadge()" 
                 class="btn-redeem" 
-                style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:14px; margin-top:10px;">
+                style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:14px; margin-top:10px;"
+                x-text="editBadgeMode ? 'حفظ التعديلات' : 'حفظ وإضافة الوسام'">
           حفظ وإضافة الوسام
         </button>
       </div>
@@ -2381,6 +2413,7 @@
         // App State
         students: DEFAULT_STUDENTS,
         isLoading: true,
+        listenersRegistered: false,
         activeId: 's1',
         currentScreen: 'leaderboard',
         lbMode: 'individual',
@@ -2410,6 +2443,9 @@
         notifications: [],
         newNotifTitle: '',
         newNotifBody: '',
+        isRefreshing: false,
+        editBadgeMode: false,
+        editingBadgeId: null,
         
         // Login State
         isLoggedIn: false,
@@ -2503,6 +2539,9 @@
         selectableIcons: [
           { id: 'user', label: 'مستخدم' },
           { id: 'flame', label: 'شعلة سراج' },
+          { id: 'award', label: 'وسام تقدير' },
+          { id: 'calendar-check', label: 'حضور منضبط' },
+          { id: 'sparkles', label: 'توهج إبداعي' },
           { id: 'zap', label: 'برق التميز' },
           { id: 'crown', label: 'تاج الصدارة' },
           { id: 'star', label: 'نجمة التفوق' },
@@ -2628,7 +2667,18 @@
         achievements: [
           { id: 'committed', name: 'الملتزم', icon: 'calendar-check', reward: 50, desc: 'الحضور المبكر ٤ أسابيع متتالية دون انقطاع.' },
           { id: 'digital', name: 'المبدع الرقمي', icon: 'sparkles', reward: 60, desc: 'تسليم المهمة العملية بتميز مرتين متتاليتين.' },
-          { id: 'unity', name: 'القلب الواحد', icon: 'heart-handshake', reward: 40, desc: 'أسبوع كامل دون أي مخالفة أو خصم شعلات.' }
+          { id: 'unity', name: 'القلب الواحد', icon: 'heart-handshake', reward: 40, desc: 'أسبوع كامل دون أي مخالفة أو خصم شعلات.' },
+          { id: 'attendance_early_3', name: 'حضور مبكر ثلاثي', icon: 'clock', reward: 30, desc: 'حضور مبكر أو على الموعد لـ 3 لقاءات متتالية.' },
+          { id: 'attendance_early_6', name: 'حضور مبكر سداسي', icon: 'clock', reward: 70, desc: 'حضور مبكر أو على الموعد لـ 6 لقاءات متتالية.' },
+          { id: 'no_violation_3', name: 'درع الالتزام الثلاثي', icon: 'shield', reward: 50, desc: 'ثلاثة أسابيع متتالية دون تسجيل أي مخالفات أو خصومات.' },
+          { id: 'no_violation_6', name: 'درع الالتزام سداسي', icon: 'shield', reward: 120, desc: 'ستة أسابيع متتالية دون تسجيل أي مخالفات أو خصومات.' },
+          { id: 'seerah_early_3', name: 'حضور السيرة الثلاثي', icon: 'book-open', reward: 40, desc: 'حضور لقاء السيرة مبكراً أو على الموعد لـ 3 لقاءات متتالية.' },
+          { id: 'seerah_early_6', name: 'حضور السيرة السداسي', icon: 'book-open', reward: 90, desc: 'حضور لقاء السيرة مبكراً أو على الموعد لـ 6 لقاءات متتالية.' },
+          { id: 'weekly_win_2', name: 'بطل التحديات المتتالية', icon: 'zap', reward: 60, desc: 'الفوز بالمسابقة الأسبوعية الخارجية لمرتين متتاليتين.' },
+          { id: 'weekly_win_3', name: 'سيد التحديات الأسبوعية', icon: 'zap', reward: 100, desc: 'الفوز بثلاث مسابقات أسبوعية خارجية مختلفة.' },
+          { id: 'knowledge_beacon', name: 'منارة المعرفة', icon: 'sun', reward: 150, desc: 'الحصول على وسام منارة المعرفة للتميز الثقافي والعلمي.' },
+          { id: 'seraj_knight', name: 'فارس سراج', icon: 'shield', reward: 200, desc: 'الحصول على لقب فارس سراج للقدوة الحسنة والأداء المتميز.' },
+          { id: 'seraj_ambassador', name: 'سفير سراج', icon: 'crown', reward: 300, desc: 'الحصول على لقب سفير سراج للمساهمة القيادية والتفوق الاستثنائي.' }
         ],
         
         rewards: [
@@ -2674,8 +2724,12 @@
         toastTimeout: null,
 
         // Init
-        async init() {
-          this.isLoading = true;
+        async init(silent = false) {
+          if (!silent) {
+            this.isLoading = true;
+          } else {
+            this.isRefreshing = true;
+          }
           
           // Double check initialization
           try {
@@ -2889,120 +2943,127 @@
             }
 
             // 6. Setup realtime subscriptions
-            this.setupRealtime();
+            if (!silent) {
+              this.setupRealtime();
+            }
 
           } catch (globalErr) {
             console.error("Supabase Error during init (global exception):", globalErr);
           } finally {
-            this.isLoading = false;
+            if (!silent) {
+              this.isLoading = false;
+            } else {
+              this.isRefreshing = false;
+            }
             
-            // Watches for Lucide icons rendering
-            this.$watch('currentScreen', () => {
-              this.$nextTick(() => lucide.createIcons());
-            });
+            if (!this.listenersRegistered) {
+              this.listenersRegistered = true;
 
-            this.$watch('lbMode', () => {
-              this.$nextTick(() => lucide.createIcons());
-            });
+              // Watches for Lucide icons rendering
+              this.$watch('currentScreen', () => {
+                this.$nextTick(() => lucide.createIcons());
+              });
 
-            this.$watch('adminUnlocked', () => {
-              this.$nextTick(() => lucide.createIcons());
-            });
+              this.$watch('lbMode', () => {
+                this.$nextTick(() => lucide.createIcons());
+              });
 
-            // Pull to refresh implementation
-            let refreshStartY = 0;
-            let refreshStartX = 0;
-            let refreshing = false;
+              this.$watch('adminUnlocked', () => {
+                this.$nextTick(() => lucide.createIcons());
+              });
 
-            window.addEventListener('touchstart', (e) => {
-              if (window.scrollY === 0) {
-                refreshStartY = e.touches[0].pageY;
-                refreshStartX = e.touches[0].pageX;
-              }
-            }, { passive: true });
+              // Pull to refresh implementation
+              let refreshStartY = 0;
+              let refreshStartX = 0;
 
-            window.addEventListener('touchmove', async (e) => {
-              if (refreshStartY === 0 || refreshing) return;
-              const y = e.touches[0].pageY;
-              const x = e.touches[0].pageX;
-              const diffY = y - refreshStartY;
-              const diffX = x - refreshStartX;
-              
-              if (diffY > 150 && diffY > Math.abs(diffX) * 2) {
-                refreshing = true;
-                refreshStartY = 0;
-                this.showToast('جاري تحديث البيانات...', 'info', 'rotate-cw');
-                try {
-                  await this.init();
-                  this.showToast('تم تحديث البيانات بنجاح', 'success', 'check');
-                } catch(err) {
-                  this.showToast('فشل تحديث البيانات', 'neg', 'alert-circle');
-                } finally {
-                  refreshing = false;
+              window.addEventListener('touchstart', (e) => {
+                const scrollEl = document.getElementById('scroll');
+                if (scrollEl && scrollEl.scrollTop === 0) {
+                  refreshStartY = e.touches[0].pageY;
+                  refreshStartX = e.touches[0].pageX;
                 }
-              }
-            }, { passive: true });
+              }, { passive: true });
 
-            // Touch swiping navigation for mobile
-            let touchStartX = 0;
-            let touchStartY = 0;
-            
-            window.addEventListener('touchstart', (e) => {
-              const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
-              const targetTag = e.target.tagName.toLowerCase();
-              if (
-                ignoreTags.includes(targetTag) || 
-                e.target.closest('.badge-strip') || 
-                e.target.closest('.admin-bar') || 
-                e.target.closest('.modal-card') || 
-                e.target.closest('.stage-toggle')
-              ) {
-                return;
-              }
-              touchStartX = e.changedTouches[0].screenX;
-              touchStartY = e.changedTouches[0].screenY;
-            }, { passive: true });
-            
-            window.addEventListener('touchend', (e) => {
-              const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
-              const targetTag = e.target.tagName.toLowerCase();
-              if (
-                ignoreTags.includes(targetTag) || 
-                e.target.closest('.badge-strip') || 
-                e.target.closest('.admin-bar') || 
-                e.target.closest('.modal-card') || 
-                e.target.closest('.stage-toggle')
-              ) {
-                return;
-              }
-              const touchEndX = e.changedTouches[0].screenX;
-              const touchEndY = e.changedTouches[0].screenY;
-              
-              const diffX = touchEndX - touchStartX;
-              const diffY = touchEndY - touchStartY;
-              
-              if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
-                // Only swipe if the user is logged in
-                if (!this.isLoggedIn) return;
+              window.addEventListener('touchmove', async (e) => {
+                if (refreshStartY === 0 || this.isRefreshing) return;
+                const y = e.touches[0].pageY;
+                const x = e.touches[0].pageX;
+                const diffY = y - refreshStartY;
+                const diffX = x - refreshStartX;
                 
-                const ids = this.navItems
-                  .filter(n => n.id !== 'admin' || this.isAdmin)
-                  .map(n => n.id);
-                  
-                const curIdx = ids.indexOf(this.currentScreen);
-                if (curIdx !== -1) {
-                  let newIdx = curIdx;
-                  if (diffX < 0) {
-                    // Swipe left -> next page
-                    newIdx = (curIdx + 1) % ids.length;
-                  } else {
-                    // Swipe right -> previous page
-                    newIdx = (curIdx - 1 + ids.length) % ids.length;
+                if (diffY > 150 && diffY > Math.abs(diffX) * 2) {
+                  refreshStartY = 0;
+                  try {
+                    await this.init(true);
+                    this.showToast('تم تحديث البيانات بنجاح', 'success', 'check');
+                  } catch(err) {
+                    this.showToast('فشل تحديث البيانات', 'neg', 'alert-circle');
+                    this.isRefreshing = false;
                   }
-                  this.go(ids[newIdx]);
                 }
-              }
-            }, { passive: true });
+              }, { passive: true });
+
+              // Touch swiping navigation for mobile
+              let touchStartX = 0;
+              let touchStartY = 0;
+              
+              window.addEventListener('touchstart', (e) => {
+                const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
+                const targetTag = e.target.tagName.toLowerCase();
+                if (
+                  ignoreTags.includes(targetTag) || 
+                  e.target.closest('.badge-strip') || 
+                  e.target.closest('.admin-bar') || 
+                  e.target.closest('.modal-card') || 
+                  e.target.closest('.stage-toggle')
+                ) {
+                  return;
+                }
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+              }, { passive: true });
+              
+              window.addEventListener('touchend', (e) => {
+                const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
+                const targetTag = e.target.tagName.toLowerCase();
+                if (
+                  ignoreTags.includes(targetTag) || 
+                  e.target.closest('.badge-strip') || 
+                  e.target.closest('.admin-bar') || 
+                  e.target.closest('.modal-card') || 
+                  e.target.closest('.stage-toggle')
+                ) {
+                  return;
+                }
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+                
+                if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
+                  // Only swipe if the user is logged in
+                  if (!this.isLoggedIn) return;
+                  
+                  const ids = this.navItems
+                    .filter(n => n.id !== 'admin' || this.isAdmin)
+                    .map(n => n.id);
+                    
+                  const curIdx = ids.indexOf(this.currentScreen);
+                  if (curIdx !== -1) {
+                    let newIdx = curIdx;
+                    if (diffX < 0) {
+                      // Swipe left -> next page
+                      newIdx = (curIdx + 1) % ids.length;
+                    } else {
+                      // Swipe right -> previous page
+                      newIdx = (curIdx - 1 + ids.length) % ids.length;
+                    }
+                    this.go(ids[newIdx]);
+                  }
+                }
+              }, { passive: true });
+            }
 
             this.$nextTick(() => lucide.createIcons());
           }
@@ -3756,20 +3817,61 @@
           );
         },
 
+        openEditBadgeModal(badge) {
+          this.editBadgeMode = true;
+          this.editingBadgeId = badge.id;
+          this.newBadgeName = badge.name;
+          this.newBadgeDesc = badge.desc;
+          this.newBadgeReward = badge.reward;
+          this.newBadgeIcon = badge.icon || 'award';
+          this.addBadgeModalOpen = true;
+        },
+
+        openCreateBadgeModal() {
+          this.editBadgeMode = false;
+          this.editingBadgeId = null;
+          this.newBadgeName = '';
+          this.newBadgeDesc = '';
+          this.newBadgeReward = 50;
+          this.newBadgeIcon = 'award';
+          this.addBadgeModalOpen = true;
+        },
+
+        closeBadgeModal() {
+          this.addBadgeModalOpen = false;
+          this.newBadgeName = '';
+          this.newBadgeDesc = '';
+          this.newBadgeReward = 50;
+          this.newBadgeIcon = 'award';
+          this.editBadgeMode = false;
+          this.editingBadgeId = null;
+        },
+
         async createBadge() {
           if (!this.newBadgeName.trim() || !this.newBadgeDesc.trim()) {
             this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
             return;
           }
-          const id = 'ach_' + Date.now();
-          const newBadge = {
-            id: id,
-            name: this.newBadgeName.trim(),
-            desc: this.newBadgeDesc.trim(),
-            reward: parseInt(this.newBadgeReward) || 0,
-            icon: this.newBadgeIcon
-          };
-          this.achievements.push(newBadge);
+
+          if (this.editBadgeMode) {
+            const idx = this.achievements.findIndex(a => a.id === this.editingBadgeId);
+            if (idx !== -1) {
+              this.achievements[idx].name = this.newBadgeName.trim();
+              this.achievements[idx].desc = this.newBadgeDesc.trim();
+              this.achievements[idx].reward = parseInt(this.newBadgeReward) || 0;
+              this.achievements[idx].icon = this.newBadgeIcon;
+            }
+          } else {
+            const id = 'ach_' + Date.now();
+            const newBadge = {
+              id: id,
+              name: this.newBadgeName.trim(),
+              desc: this.newBadgeDesc.trim(),
+              reward: parseInt(this.newBadgeReward) || 0,
+              icon: this.newBadgeIcon
+            };
+            this.achievements.push(newBadge);
+          }
           
           if (supabaseClient) {
             await supabaseClient.from('weekly_challenge').upsert({
@@ -3784,12 +3886,14 @@
             this.saveState();
           }
           
-          this.showToast('تمت إضافة الوسام بنجاح', 'success');
+          this.showToast(this.editBadgeMode ? 'تم تعديل الوسام بنجاح' : 'تمت إضافة الوسام بنجاح', 'success');
           this.addBadgeModalOpen = false;
           this.newBadgeName = '';
           this.newBadgeDesc = '';
           this.newBadgeReward = 50;
           this.newBadgeIcon = 'award';
+          this.editBadgeMode = false;
+          this.editingBadgeId = null;
         },
 
         async deleteReward(index) {
@@ -4624,6 +4728,7 @@
 
         getIconSvg(iconName) {
           const dict = {
+            'edit-2': '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>',
             'calendar-check': '<line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M19.8 14.8c-.8-.6-2-.6-2.8 0l-4.5 4.5-2-2c-.8-.8-2-.8-2.8 0s-.8 2 0 2.8l3.4 3.4c.4.4.9.6 1.4.6s1-.2 1.4-.6l5.9-5.9c.8-.8.8-2 0-2.8z"></path><rect x="3" y="4" width="18" height="18" rx="2"></rect>',
             'sparkles': '<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.3-6.3l-.7.7M6.7 17.3l-.7.7m12.6 0l-.7-.7M6.7 6.7l-.7-.7N"></path><path d="M10 8.5L12 6l2 2.5L16.5 7l-1 2.5 2.5 1-2.5 2 1 2.5-2.5-1-2 2.5-2-2.5-2.5 1 1-2.5-2.5-1 2.5-2z" fill="currentColor"></path>',
             'heart-handshake': '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 5 12h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 1 2-2h2Z" fill="currentColor" opacity="0.2"></path>',
