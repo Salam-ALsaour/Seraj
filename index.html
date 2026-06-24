@@ -3678,6 +3678,8 @@
                 setTimeout(() => {
                   this.showNotificationPrompt = true;
                 }, 1500);
+              } else if (granted) {
+                this.subscribeToPushNotifications();
               }
               return;
             } else {
@@ -3718,6 +3720,8 @@
               setTimeout(() => {
                 this.showNotificationPrompt = true;
               }, 1500);
+            } else if (granted) {
+              this.subscribeToPushNotifications();
             }
           } else {
             this.loginErrorMsg = 'الرمز السري غير صحيح.';
@@ -4533,6 +4537,9 @@
           const scrollEl = document.getElementById('scroll');
           if (scrollEl) {
             scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          if (id === 'profile' && 'Notification' in window && Notification.permission === 'granted') {
+            this.subscribeToPushNotifications();
           }
         },
 
