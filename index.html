@@ -27,6 +27,9 @@
   
   <!-- Supabase JS CDN -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <!-- html2pdf.js CDN for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root{
@@ -1253,11 +1256,18 @@
                       <div style="width:12px; height:12px;" x-html="getIconSvg('flame')"></div>
                       <span x-text="r.price"></span>
                     </div>
-                    <button @click="deleteReward(index)" 
-                            class="btn-redeem" 
-                            style="width:auto; min-width:80px; padding:5px 10px; font-size:11px; border-radius:10px; background:rgba(239,68,68,0.15) !important; border:1px solid #ef4444 !important; color:#fca5a5 !important; margin-top:0; cursor:pointer;">
-                      حذف الجائزة
-                    </button>
+                    <div style="display:flex; gap:6px;">
+                      <button @click="openEditRewardModal(r, index)" 
+                              class="btn-redeem" 
+                              style="width:auto; min-width:55px; padding:5px 10px; font-size:11px; border-radius:10px; background:rgba(249,115,22,0.15) !important; border:1px solid var(--orange) !important; color:#ffb27a !important; margin-top:0; cursor:pointer;">
+                        تعديل
+                      </button>
+                      <button @click="deleteReward(index)" 
+                              class="btn-redeem" 
+                              style="width:auto; min-width:55px; padding:5px 10px; font-size:11px; border-radius:10px; background:rgba(239,68,68,0.15) !important; border:1px solid #ef4444 !important; color:#fca5a5 !important; margin-top:0; cursor:pointer;">
+                        حذف
+                      </button>
+                    </div>
                   </div>
 
                 </div>
@@ -1442,6 +1452,16 @@
                     </button>
                   </template>
                 </div>
+                
+                <!-- Manual Points Entry -->
+                <div class="manual-points-box" style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); text-align: right;">
+                  <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 8px;">إضافة يدوية مخصصة:</div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="number" x-model="manualPoints" placeholder="عدد الشعلات" style="flex: 1; min-width: 80px; padding: 8px 12px; font-size: 11px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
+                    <input type="text" x-model="manualReason" placeholder="السبب أو الرسالة" style="flex: 2; min-width: 150px; padding: 8px 12px; font-size: 11px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
+                    <button @click="submitManualPoints(true)" class="btn-redeem" style="padding: 8px 16px; font-size: 11px; border-radius: 8px; background: var(--orange) !important; color: #000 !important; font-weight: 700; cursor: pointer; border: none; margin-top:0; height: auto; line-height: normal;">إضافة</button>
+                  </div>
+                </div>
               </div>
 
               <!-- Negative Macros Grid -->
@@ -1457,6 +1477,16 @@
                       <span class="macro-btn-reason" x-text="m.reason"></span>
                     </button>
                   </template>
+                </div>
+                
+                <!-- Manual Points Entry -->
+                <div class="manual-points-box" style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); text-align: right;">
+                  <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 8px;">خصم يدوي مخصص:</div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="number" x-model="manualPoints" placeholder="عدد الشعلات" style="flex: 1; min-width: 80px; padding: 8px 12px; font-size: 11px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
+                    <input type="text" x-model="manualReason" placeholder="السبب أو الرسالة" style="flex: 2; min-width: 150px; padding: 8px 12px; font-size: 11px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;" />
+                    <button @click="submitManualPoints(false)" class="btn-redeem" style="padding: 8px 16px; font-size: 11px; border-radius: 8px; background: #ef4444 !important; color: #fff !important; font-weight: 700; cursor: pointer; border: none; margin-top:0; height: auto; line-height: normal;">خصم</button>
+                  </div>
                 </div>
               </div>
 
@@ -1638,7 +1668,14 @@
                   <div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.02); border:1px solid var(--stroke); text-align:right;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                       <span style="font-size:12px; font-weight:700; color:var(--txt);" x-text="n.title"></span>
-                      <span style="font-size:9px; color:var(--txt-faint);" x-text="formatDateTime(n.created_at)"></span>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:9px; color:var(--txt-faint);" x-text="formatDateTime(n.created_at)"></span>
+                        <button @click="deleteNotification(n.id)" 
+                                style="background:none; border:none; color:#ef4444; padding:2px; cursor:pointer; display:flex; align-items:center;"
+                                title="حذف الإشعار">
+                          <div style="width:12px; height:12px; color:#ef4444;" x-html="getIconSvg('trash-2')"></div>
+                        </button>
+                      </div>
                     </div>
                     <p style="font-size:10px; color:var(--txt-dim); margin:0;" x-text="n.body"></p>
                   </div>
@@ -1699,6 +1736,12 @@
             <button class="data-btn w-full" @click="exportCSV(); adminMenuOpen = false;" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:14px; font-size:13px; margin:0;">
               <div style="width:16px; height:16px;" x-html="getIconSvg('file-spreadsheet')"></div>
               تصدير بيانات الطلاب CSV (إكسل)
+            </button>
+            
+            <!-- Export PDF -->
+            <button class="data-btn w-full" @click="exportLeaderboardPDF(); adminMenuOpen = false;" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:14px; font-size:13px; margin:0;">
+              <div style="width:16px; height:16px;" x-html="getIconSvg('file-text')"></div>
+              تصدير PDF للوحة الصدارة كاملة
             </button>
             
             <!-- Logout -->
@@ -2243,6 +2286,83 @@
     </div>
   </div>
 
+  <!-- Edit Reward Modal Overlay -->
+  <div x-show="editRewardModalOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:300; direction:rtl; display:none;">
+    
+    <!-- Backdrop Blur -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="editRewardModalOpen = false"></div>
+    
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:340px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:310; overflow-y:auto; max-height:85vh;">
+      
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--txt-dim);">تعديل الجائزة</h3>
+        <button @click="editRewardModalOpen = false" style="background:none; border:none; color:var(--txt-faint); cursor:pointer; width:22px; height:22px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Form Content -->
+      <div style="display:flex; flex-direction:column; gap:14px; text-align:right;">
+        <div>
+          <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">اسم الجائزة *</label>
+          <input type="text" x-model="editRewardName" placeholder="مثال: وجبة عشاء" 
+                 style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+        </div>
+
+        <div>
+          <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">وصف الجائزة *</label>
+          <textarea x-model="editRewardDesc" placeholder="شرح مبسط لما يحصل عليه الطالب" rows="3"
+                    style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; resize:none;"></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">سعر الجائزة (شعلة)</label>
+            <input type="number" x-model.number="editRewardPrice" min="0"
+                   style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">رمز الأيقونة</label>
+            <select x-model="editRewardIcon"
+                    style="width:100%; padding:10px; border-radius:12px; background:#121414; border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px;">
+              <option value="gift">هدية</option>
+              <option value="coffee">ضيافة/شاي</option>
+              <option value="clock">ساعة/تأخير</option>
+              <option value="pen-tool">قلم/تخصيص</option>
+              <option value="cup-soda">مشروب بارد</option>
+              <option value="sparkles">توهج</option>
+              <option value="smartphone">هاتف محمول</option>
+              <option value="star">نجمة</option>
+              <option value="award">وسام</option>
+            </select>
+          </div>
+        </div>
+
+        <button @click="saveReward()" 
+                class="btn-redeem" 
+                style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:14px; margin-top:10px;">
+          حفظ التعديلات
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Badge Details Modal Overlay -->
   <div x-show="selectedBadge !== null" 
        x-transition:enter="transition ease-out duration-300"
@@ -2715,6 +2835,14 @@
         isRefreshing: false,
         editBadgeMode: false,
         editingBadgeId: null,
+        editRewardModalOpen: false,
+        editRewardIndex: null,
+        editRewardName: '',
+        editRewardDesc: '',
+        editRewardPrice: 80,
+        editRewardIcon: 'gift',
+        manualPoints: '',
+        manualReason: '',
         
         // Login State
         isLoggedIn: false,
@@ -2983,12 +3111,8 @@
         ],
 
         macrosPos: [
-          { reason: 'حضور مبكر', delta: 15, icon: 'sunrise' },
-          { reason: 'حضور في الموعد', delta: 10, icon: 'log-in' },
           { reason: 'تفاعل ومشاركة', delta: 10, icon: 'message-circle' },
-          { reason: 'إنجاز مهمة', delta: 40, icon: 'check-check' },
-          { reason: 'تميز إبداعي', delta: 15, icon: 'wand-2' },
-          { reason: 'تميز وسلوك رائع', delta: 20, icon: 'user-check' }
+          { reason: 'إنجاز مهمة', delta: 40, icon: 'check-check' }
         ],
 
         macrosNeg: [
@@ -4345,6 +4469,48 @@
           this.newRewardIcon = 'gift';
         },
 
+        openEditRewardModal(reward, index) {
+          this.editRewardIndex = index;
+          this.editRewardName = reward.name;
+          this.editRewardDesc = reward.desc || reward.desc_text || '';
+          this.editRewardPrice = reward.price;
+          this.editRewardIcon = reward.icon || 'gift';
+          this.editRewardModalOpen = true;
+        },
+
+        async saveReward() {
+          if (!this.editRewardName.trim() || !this.editRewardDesc.trim()) {
+            this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
+            return;
+          }
+          if (this.editRewardIndex === null) return;
+
+          const updatedReward = {
+            name: this.editRewardName.trim(),
+            desc: this.editRewardDesc.trim(),
+            price: parseInt(this.editRewardPrice) || 0,
+            icon: this.editRewardIcon
+          };
+
+          this.rewards[this.editRewardIndex] = updatedReward;
+          this.editRewardModalOpen = false;
+
+          if (supabaseClient) {
+            await supabaseClient.from('weekly_challenge').upsert({
+              id: 100,
+              title: 'rewards_config',
+              desc_text: JSON.stringify(this.rewards),
+              points: 0,
+              duration: 0,
+              time_left: 0
+            });
+          } else {
+            this.saveState();
+          }
+
+          this.showToast('تم تعديل الجائزة بنجاح', 'success');
+        },
+
         async adminApproveReward(studentId, rewardId) {
           const st = this.getStudentById(studentId);
           if (!st) return;
@@ -4632,6 +4798,29 @@
           }
         },
 
+        async submitManualPoints(isPos) {
+          const pts = parseInt(this.manualPoints);
+          if (isNaN(pts) || pts <= 0) {
+            this.showToast('يرجى إدخال عدد شعلات صحيح أكبر من الصفر', 'neg', 'alert-circle');
+            return;
+          }
+          const reason = this.manualReason.trim();
+          if (!reason) {
+            this.showToast('يرجى كتابة سبب الإضافة أو الخصم', 'neg', 'alert-circle');
+            return;
+          }
+
+          if (isPos) {
+            await this.awardPoints(this.adminActiveStudentId, pts, reason);
+          } else {
+            await this.deductPoints(this.adminActiveStudentId, -pts, reason);
+          }
+
+          // Clear inputs
+          this.manualPoints = '';
+          this.manualReason = '';
+        },
+
         async toggleStudentBadge(studentId, badgeId) {
           const s = this.getStudentById(studentId);
           if (!s) return;
@@ -4646,15 +4835,47 @@
             added = true;
           }
 
+          const badge = this.achievements.find(a => a.id === badgeId);
+          const reward = badge ? badge.reward : 0;
+          const badgeName = badge ? badge.name : 'وسام';
+
           if (!supabaseClient) {
             s.badges = newBadges;
+            if (added) {
+              s.wallet += reward;
+              s.total += reward;
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: `منح وسام: ${badgeName}`,
+                delta: reward,
+                pos: true,
+                created_at: new Date().toISOString()
+              });
+            } else {
+              s.wallet = Math.max(0, s.wallet - reward);
+              s.total = Math.max(0, s.total - reward);
+              this.activityLogs.unshift({
+                id: 'log_' + Date.now(),
+                student_id: studentId,
+                reason: `سحب وسام: ${badgeName}`,
+                delta: -reward,
+                pos: false,
+                created_at: new Date().toISOString()
+              });
+            }
             this.saveState();
-            this.showToast(added ? 'تم منح الوسام بنجاح' : 'تم سحب الوسام', 'info');
+            this.showToast(added ? `تم منح وسام ${badgeName} (+${reward} شعلة)` : `تم سحب وسام ${badgeName} (-${reward} شعلة)`, 'info');
             return;
           }
 
+          const nextWallet = added ? (s.wallet + reward) : Math.max(0, s.wallet - reward);
+          const nextTotal = added ? (s.total + reward) : Math.max(0, s.total - reward);
+
           const { error: sErr } = await supabaseClient.from('students').update({
-            badges: newBadges
+            badges: newBadges,
+            wallet: nextWallet,
+            total: nextTotal
           }).eq('id', studentId);
 
           if (sErr) {
@@ -4662,7 +4883,15 @@
             return;
           }
 
-          this.showToast(added ? 'تم منح الوسام بنجاح' : 'تم سحب الوسام', 'info');
+          // Insert activity log
+          await supabaseClient.from('activity_log').insert({
+            student_id: studentId,
+            reason: added ? `منح وسام: ${badgeName}` : `سحب وسام: ${badgeName}`,
+            delta: added ? reward : -reward,
+            pos: added
+          });
+
+          this.showToast(added ? `تم منح وسام ${badgeName} (+${reward} شعلة)` : `تم سحب وسام ${badgeName} (-${reward} شعلة)`, 'info');
         },
 
         async toggleChallengeTimer() {
@@ -4942,6 +5171,127 @@
           }
         },
 
+        exportLeaderboardPDF() {
+          const sortedStudents = this.getSortedStudents();
+          const today = new Date().toLocaleDateString('ar-EG', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          // Translate stages to Arabic
+          const stageMap = {
+            'middle': 'المتوسط',
+            'high': 'الثانوي'
+          };
+
+          // Generate HTML table rows
+          let tableRowsHtml = '';
+          sortedStudents.forEach((st, idx) => {
+            const rank = idx + 1;
+            const stageName = stageMap[st.stage] || st.stage || '-';
+            const badgesCount = (st.badges || []).length;
+            const rowStyle = idx % 2 === 0 ? 'background-color: #f9fafb;' : 'background-color: #ffffff;';
+            tableRowsHtml += `
+              <tr style="${rowStyle} border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 16px; text-align: center; font-size: 13px; font-weight: bold; color: #374151;">${rank}</td>
+                <td style="padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #111827;">${st.name}</td>
+                <td style="padding: 12px 16px; text-align: center; font-size: 13px; color: #4b5563;">${stageName}</td>
+                <td style="padding: 12px 16px; text-align: center; font-size: 13px; font-weight: 600; color: #047857;">${st.wallet}</td>
+                <td style="padding: 12px 16px; text-align: center; font-size: 13px; font-weight: bold; color: #f97316;">${st.total}</td>
+                <td style="padding: 12px 16px; text-align: center; font-size: 13px; color: #4b5563;">${badgesCount}</td>
+              </tr>
+            `;
+          });
+
+          // Assemble the full document structure
+          const container = document.createElement('div');
+          container.style.position = 'absolute';
+          container.style.left = '-9999px';
+          container.style.top = '-9999px';
+          container.style.width = '790px'; // Fit perfectly on A4 width with margins
+          container.dir = 'rtl';
+          container.innerHTML = `
+            <div style="font-family: 'Inter', Arial, sans-serif; padding: 40px; background: #ffffff; color: #111827;">
+              <!-- Header -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f97316; padding-bottom: 20px; margin-bottom: 30px;">
+                <div style="text-align: right;">
+                  <h1 style="font-size: 24px; font-weight: 800; color: #111827; margin: 0 0 6px 0;">تطبيق سراج 🏆</h1>
+                  <p style="font-size: 14px; color: #4b5563; margin: 0;">تقرير لوحة الصدارة العامة للطلاب</p>
+                </div>
+                <div style="text-align: left; font-size: 12px; color: #6b7280; line-height: 1.5;">
+                  <div>تاريخ التصدير:</div>
+                  <div style="font-weight: 600; color: #374151;">${today}</div>
+                </div>
+              </div>
+
+              <!-- Summary Cards -->
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px;">
+                <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 16px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 12px; color: #ea580c; font-weight: 600; margin-bottom: 4px;">إجمالي الطلاب</div>
+                  <div style="font-size: 20px; font-weight: 800; color: #c2410c;">${sortedStudents.length}</div>
+                </div>
+                <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 16px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 12px; color: #16a34a; font-weight: 600; margin-bottom: 4px;">مجموع الشعلات الموزعة</div>
+                  <div style="font-size: 20px; font-weight: 800; color: #15803d;">${sortedStudents.reduce((sum, s) => sum + (s.total || 0), 0)}</div>
+                </div>
+                <div style="background: #eff6ff; border: 1px solid #dbeafe; padding: 16px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 12px; color: #2563eb; font-weight: 600; margin-bottom: 4px;">الأوسمة الممنوحة</div>
+                  <div style="font-size: 20px; font-weight: 800; color: #1d4ed8;">${sortedStudents.reduce((sum, s) => sum + (s.badges || []).length, 0)}</div>
+                </div>
+              </div>
+
+              <!-- Main Table -->
+              <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <thead>
+                  <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 700; color: #4b5563; width: 60px;">الترتيب</th>
+                    <th style="padding: 12px 16px; text-align: right; font-size: 12px; font-weight: 700; color: #4b5563;">اسم الطالب</th>
+                    <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 700; color: #4b5563; width: 100px;">المرحلة</th>
+                    <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 700; color: #4b5563; width: 100px;">رصيد المتجر</th>
+                    <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 700; color: #4b5563; width: 120px;">مجموع الشعلات</th>
+                    <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 700; color: #4b5563; width: 100px;">عدد الأوسمة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRowsHtml}
+                </tbody>
+              </table>
+
+              <!-- Footer -->
+              <div style="margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 16px; text-align: center; font-size: 11px; color: #9ca3af;">
+                تم تصدير هذا التقرير تلقائياً بواسطة نظام إدارة سراج. جميع الحقوق محفوظة © ${new Date().getFullYear()}
+              </div>
+            </div>
+          `;
+
+          document.body.appendChild(container);
+
+          const opt = {
+            margin: 10,
+            filename: `seraj-leaderboard-${new Date().toISOString().slice(0, 10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          // Generate the PDF
+          this.showToast('جاري إنشاء ملف PDF للوحة الصدارة...', 'info', 'loader');
+          html2pdf().from(container).set(opt).save()
+            .then(() => {
+              this.showToast('تم تصدير ملف PDF بنجاح', 'success', 'check');
+              document.body.removeChild(container);
+            })
+            .catch((err) => {
+              console.error('PDF export failed:', err);
+              this.showToast('فشل تصدير ملف PDF', 'neg');
+              document.body.removeChild(container);
+            });
+        },
+
         async importData(event) {
           const file = event.target.files[0];
           if (!file) return;
@@ -5149,6 +5499,34 @@
           this.newNotifTitle = '';
           this.newNotifBody = '';
           this.showToast('تم إرسال الإشعار بنجاح', 'success');
+        },
+
+        async deleteNotification(notifId) {
+          if (!confirm('هل تريد بالتأكيد حذف هذا الإشعار من السجل؟')) return;
+
+          this.notifications = this.notifications.filter(n => n.id !== notifId);
+
+          if (!supabaseClient) {
+            this.saveState();
+            this.showToast('تم حذف الإشعار محلياً', 'info');
+            return;
+          }
+
+          const { error } = await supabaseClient.from('weekly_challenge').upsert({
+            id: 102,
+            title: 'notifications_config',
+            desc_text: JSON.stringify(this.notifications),
+            points: 0,
+            duration: 0,
+            time_left: 0
+          });
+
+          if (error) {
+            console.error("Error deleting notification:", error);
+            this.showToast('فشل حذف الإشعار من السحابة', 'neg');
+          } else {
+            this.showToast('تم حذف الإشعار بنجاح', 'success', 'trash-2');
+          }
         },
 
         async sendSystemNotification(title, body) {
