@@ -652,7 +652,7 @@
               إنشاء حساب جديد
             </button>
             
-            <div style="margin-top: 30px; font-size: 10px; color: var(--txt-faint);">إصدار التطبيق v1.0.7</div>
+            <div style="margin-top: 30px; font-size: 10px; color: var(--txt-faint);">إصدار التطبيق v1.0.8</div>
             
             
           </div>
@@ -2471,23 +2471,26 @@
         </div>
 
         <!-- Big Game Board (Flexible viewport-height panel) -->
-        <div style="position: relative; z-index: 10; flex: 1; border-radius: 28px; border: 1.5px solid rgba(249,115,22,0.25); background: radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-image: radial-gradient(rgba(249,115,22,0.04) 1.5px, transparent 0), radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-size: 24px 24px, 100% 100%; box-shadow: inset 0 0 40px rgba(0,0,0,0.95); overflow: hidden;">
+        <div style="position: relative; z-index: 10; flex: 1; min-height: 0; border-radius: 28px; border: 1.5px solid rgba(249,115,22,0.25); background: radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-image: radial-gradient(rgba(249,115,22,0.04) 1.5px, transparent 0), radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-size: 24px 24px, 100% 100%; box-shadow: inset 0 0 40px rgba(0,0,0,0.95); overflow: hidden;">
           
-          <!-- Instructions overlay -->
-          <div x-show="gameScoreCurrent === 0" 
-               x-transition:leave="transition ease-in duration-300"
-               style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-align: center; color: var(--txt-dim); font-size: 13px; z-index: 5; width: 100%; max-width: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="width: 48px; height: 48px; margin: 0 auto 12px; color: rgba(249,115,22,0.4); animation: pulse 1.5s infinite;" x-html="getIconSvg('flame')"></div>
-            اضغط على الشعلة الطائرة بأقصى سرعة!
-          </div>
+          <!-- Inner Absolute Wrapper to bypass flexbox height calculation bugs in some webview browsers -->
+          <div style="position: absolute; inset: 0;">
+            <!-- Instructions overlay -->
+            <div x-show="gameScoreCurrent === 0" 
+                 x-transition:leave="transition ease-in duration-300"
+                 style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-align: center; color: var(--txt-dim); font-size: 13px; z-index: 5; width: 100%; max-width: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div style="width: 48px; height: 48px; margin: 0 auto 12px; color: rgba(249,115,22,0.4); animation: pulse 1.5s infinite;" x-html="getIconSvg('flame')"></div>
+              اضغط على الشعلة الطائرة بأقصى سرعة!
+            </div>
 
-          <!-- Target Button (The Flame) -->
-          <button @click="clickFlame()" 
-                  type="button"
-                  class="game-flame-btn"
-                  :style="'top: ' + flamePos.top + '; left: ' + flamePos.left + ';'">
-            <div style="width: 32px; height: 32px; color: #ffb27a; filter: drop-shadow(0 0 6px #f97316);" x-html="getIconSvg('flame')"></div>
-          </button>
+            <!-- Target Button (The Flame) -->
+            <button @click="clickFlame()" 
+                    type="button"
+                    class="game-flame-btn"
+                    :style="'top: ' + flamePos.top + '; left: ' + flamePos.left + ';'">
+              <div style="width: 32px; height: 32px; color: #ffb27a; filter: drop-shadow(0 0 6px #f97316);" x-html="getIconSvg('flame')"></div>
+            </button>
+          </div>
         </div>
 
         <!-- Footer indicator / safe area margin -->
@@ -4535,10 +4538,6 @@
         },
 
         startGame() {
-          if (this.isAdmin) {
-            this.showToast('المشرفون لا يمكنهم اللعب', 'info', 'shield');
-            return;
-          }
           this.gamePlaying = true;
           this.gameScoreCurrent = 0;
           this.gameTimeLeft = 20;
@@ -4577,6 +4576,11 @@
           }
           this.playGameEndSound();
           this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
+          
+          if (this.isAdmin) {
+            this.showToast('انتهت اللعبة للتجربة! لن يتم حفظ النقاط لأنك مشرف 🛡️', 'info', 'shield');
+            return;
+          }
           
           const st = this.getStudentById(this.activeId);
           if (st && this.gameScoreCurrent > (st.gameScore || 0)) {
