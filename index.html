@@ -3111,8 +3111,10 @@
         ],
 
         macrosPos: [
+          { reason: 'الحضور المبكر', delta: 15, icon: 'sunrise' },
           { reason: 'تفاعل ومشاركة', delta: 10, icon: 'message-circle' },
-          { reason: 'إنجاز مهمة', delta: 40, icon: 'check-check' }
+          { reason: 'إنجاز مهمة', delta: 40, icon: 'check-check' },
+          { reason: 'تميز إبداعي', delta: 10, icon: 'wand-2' }
         ],
 
         macrosNeg: [
@@ -5208,11 +5210,17 @@
           });
 
           // Assemble the full document structure
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'fixed';
+          wrapper.style.left = '-9999px';
+          wrapper.style.top = '-9999px';
+          wrapper.style.width = '0';
+          wrapper.style.height = '0';
+          wrapper.style.overflow = 'hidden';
+
           const container = document.createElement('div');
-          container.style.position = 'absolute';
-          container.style.left = '-9999px';
-          container.style.top = '-9999px';
           container.style.width = '790px'; // Fit perfectly on A4 width with margins
+          container.style.backgroundColor = '#ffffff';
           container.dir = 'rtl';
           container.innerHTML = `
             <div style="font-family: 'Inter', Arial, sans-serif; padding: 40px; background: #ffffff; color: #111827;">
@@ -5268,7 +5276,8 @@
             </div>
           `;
 
-          document.body.appendChild(container);
+          wrapper.appendChild(container);
+          document.body.appendChild(wrapper);
 
           const opt = {
             margin: 10,
@@ -5283,12 +5292,12 @@
           html2pdf().from(container).set(opt).save()
             .then(() => {
               this.showToast('تم تصدير ملف PDF بنجاح', 'success', 'check');
-              document.body.removeChild(container);
+              document.body.removeChild(wrapper);
             })
             .catch((err) => {
               console.error('PDF export failed:', err);
               this.showToast('فشل تصدير ملف PDF', 'neg');
-              document.body.removeChild(container);
+              document.body.removeChild(wrapper);
             });
         },
 
@@ -5501,32 +5510,36 @@
           this.showToast('تم إرسال الإشعار بنجاح', 'success');
         },
 
-        async deleteNotification(notifId) {
-          if (!confirm('هل تريد بالتأكيد حذف هذا الإشعار من السجل؟')) return;
+        deleteNotification(notifId) {
+          this.showConfirm(
+            'تأكيد حذف الإشعار',
+            'هل تريد بالتأكيد حذف هذا الإشعار من السجل؟',
+            async () => {
+              this.notifications = this.notifications.filter(n => n.id !== notifId);
 
-          this.notifications = this.notifications.filter(n => n.id !== notifId);
+              if (!supabaseClient) {
+                this.saveState();
+                this.showToast('تم حذف الإشعار محلياً', 'info');
+                return;
+              }
 
-          if (!supabaseClient) {
-            this.saveState();
-            this.showToast('تم حذف الإشعار محلياً', 'info');
-            return;
-          }
+              const { error } = await supabaseClient.from('weekly_challenge').upsert({
+                id: 102,
+                title: 'notifications_config',
+                desc_text: JSON.stringify(this.notifications),
+                points: 0,
+                duration: 0,
+                time_left: 0
+              });
 
-          const { error } = await supabaseClient.from('weekly_challenge').upsert({
-            id: 102,
-            title: 'notifications_config',
-            desc_text: JSON.stringify(this.notifications),
-            points: 0,
-            duration: 0,
-            time_left: 0
-          });
-
-          if (error) {
-            console.error("Error deleting notification:", error);
-            this.showToast('فشل حذف الإشعار من السحابة', 'neg');
-          } else {
-            this.showToast('تم حذف الإشعار بنجاح', 'success', 'trash-2');
-          }
+              if (error) {
+                console.error("Error deleting notification:", error);
+                this.showToast('فشل حذف الإشعار من السحابة', 'neg');
+              } else {
+                this.showToast('تم حذف الإشعار بنجاح', 'success', 'trash-2');
+              }
+            }
+          );
         },
 
         async sendSystemNotification(title, body) {
