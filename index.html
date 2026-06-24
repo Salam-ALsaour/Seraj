@@ -5577,26 +5577,34 @@
             const currentKey = this.vapidKeys.publicKey;
             const registeredKey = localStorage.getItem('seraj_push_registered_vapid');
             
-            if (sub && registeredKey === currentKey) {
-              console.log("Push notification subscription is already up-to-date.");
+            // Check if current subscription endpoint is already in the loaded database list
+            const isSubscribedInDb = sub && (this.pushSubscriptions || []).some(s => s.subscription.endpoint === sub.endpoint && s.student_id === this.activeId);
+            
+            if (sub && registeredKey === currentKey && isSubscribedInDb) {
+              console.log("Push notification subscription is already up-to-date and registered in the database.");
               return;
             }
             
-            if (sub) {
-              try {
-                await sub.unsubscribe();
-              } catch (e) {
-                console.warn("Failed to unsubscribe existing subscription:", e);
-              }
-              sub = null;
-            }
+            // If the browser has a valid subscription with correct keys, but it's just missing from the database, reuse it
+            const needNewSubscription = !sub || registeredKey !== currentKey;
             
-            this.showToast('جاري إنشاء اشتراك إشعارات جديد للجهاز...', 'info');
-            const pubKeyUint8 = this.urlBase64ToUint8Array(currentKey);
-            sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: pubKeyUint8
-            });
+            if (needNewSubscription) {
+              if (sub) {
+                try {
+                  await sub.unsubscribe();
+                } catch (e) {
+                  console.warn("Failed to unsubscribe existing subscription:", e);
+                }
+                sub = null;
+              }
+              
+              this.showToast('جاري إنشاء اشتراك إشعارات جديد للجهاز...', 'info');
+              const pubKeyUint8 = this.urlBase64ToUint8Array(currentKey);
+              sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: pubKeyUint8
+              });
+            }
             
             this.showToast('جاري ربط جهازك بقاعدة البيانات السحابية...', 'info');
             if (sub && this.isLoggedIn && this.activeId) {
