@@ -5030,12 +5030,27 @@
 
         async subscribeToPushNotifications() {
           try {
-            if (!('serviceWorker' in navigator) || !this.vapidKeys) return;
+            if (!('serviceWorker' in navigator)) {
+              this.showToast('المتصفح لا يدعم Service Worker', 'neg');
+              return;
+            }
+            if (!this.vapidKeys) {
+              this.showToast('مفاتيح الإشعارات غير متوفرة بعد', 'neg');
+              return;
+            }
+            
+            this.showToast('جاري التحقق من جاهزية خدمة الإشعارات...', 'info');
             const reg = await navigator.serviceWorker.ready;
             
-            // Check if subscription already exists
+            this.showToast('جاري التحقق من اشتراك المتصفح الحالي...', 'info');
+            if (!reg.pushManager) {
+              this.showToast('المتصفح لا يدعم PushManager', 'neg');
+              return;
+            }
+            
             let sub = await reg.pushManager.getSubscription();
             if (!sub) {
+              this.showToast('جاري إنشاء اشتراك إشعارات جديد للجهاز...', 'info');
               const pubKeyUint8 = this.urlBase64ToUint8Array(this.vapidKeys.publicKey);
               sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -5043,7 +5058,7 @@
               });
             }
             
-            // Save subscription to Supabase
+            this.showToast('جاري ربط جهازك بقاعدة البيانات السحابية...', 'info');
             if (sub && this.isLoggedIn && this.activeId) {
               const subObj = JSON.parse(JSON.stringify(sub));
               const entry = {
@@ -5053,19 +5068,17 @@
                 updated_at: new Date().toISOString()
               };
               
-              // Fetch latest subs from DB to avoid overwriting others
               const { data } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
               let subs = [];
               if (data && data.desc_text) {
                 try { subs = JSON.parse(data.desc_text); } catch(e){}
               }
               
-              // Remove old subscription for this device endpoint or student
               subs = subs.filter(s => s.subscription.endpoint !== subObj.endpoint && s.student_id !== this.activeId);
               subs.push(entry);
               this.pushSubscriptions = subs;
               
-              await supabaseClient.from('weekly_challenge').upsert({
+              const { error: upsertErr } = await supabaseClient.from('weekly_challenge').upsert({
                 id: 104,
                 title: 'push_subscriptions_config',
                 desc_text: JSON.stringify(subs),
@@ -5073,8 +5086,15 @@
                 duration: 0,
                 time_left: 0
               });
-              console.log("Push subscription saved successfully!");
-              this.showToast('تم ربط الجهاز بقاعدة البيانات بنجاح!', 'success');
+              
+              if (upsertErr) {
+                this.showToast('فشل الحفظ في قاعدة البيانات: ' + upsertErr.message, 'neg');
+              } else {
+                console.log("Push subscription saved successfully!");
+                this.showToast('تم ربط الجهاز بقاعدة البيانات بنجاح!', 'pos');
+              }
+            } else {
+              this.showToast('لم يتم الحفظ: activeId غير متوفر أو غير مسجل دخول', 'neg');
             }
           } catch(err) {
             console.error("Failed to subscribe to push notifications:", err);
