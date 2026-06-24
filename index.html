@@ -2641,11 +2641,16 @@
   <script>
     // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      const registerSW = () => {
         navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('Service Worker registered successfully!', reg))
           .catch(err => console.error('Service Worker registration failed:', err));
-      });
+      };
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        registerSW();
+      } else {
+        window.addEventListener('load', registerSW);
+      }
     }
 
     // Initialize Supabase Client Safely
@@ -5069,9 +5074,11 @@
                 time_left: 0
               });
               console.log("Push subscription saved successfully!");
+              this.showToast('تم ربط الجهاز بقاعدة البيانات بنجاح!', 'success');
             }
           } catch(err) {
             console.error("Failed to subscribe to push notifications:", err);
+            this.showToast('فشل تفعيل إشعارات الخلفية: ' + err.message, 'neg');
           }
         },
 
