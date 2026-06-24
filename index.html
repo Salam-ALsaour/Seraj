@@ -2754,7 +2754,7 @@
         adminMenuOpen: false,
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
-        version: '1.1.0',
+        version: '1.1.1',
         notificationPermission: ('Notification' in window ? Notification.permission : 'unsupported'),
         showNotificationPrompt: false,
 
@@ -3430,10 +3430,15 @@
 
         setupRealtime() {
           try {
-            // Students changes
-            supabaseClient
-              .channel('students_changes')
+            if (!supabaseClient) return;
+
+            // Use a single channel for all database changes to optimize websocket performance and reliability
+            const realtimeChannel = supabaseClient.channel('seraj_realtime_channel');
+
+            realtimeChannel
+              // 1. Students changes
               .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, payload => {
+                console.log("Realtime: Students change received:", payload.eventType);
                 if (payload.new) {
                   payload.new = this.mapStudentFromDB(payload.new);
                 }
@@ -3451,12 +3456,9 @@
                 }
                 this.render();
               })
-              .subscribe();
-
-            // Activity logs changes
-            supabaseClient
-              .channel('activity_log_changes')
+              // 2. Activity logs changes
               .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, payload => {
+                console.log("Realtime: Activity log change received:", payload.eventType);
                 if (payload.eventType === 'INSERT') {
                   if (!this.activityLogs.some(l => l.id === payload.new.id)) {
                     this.activityLogs.push(payload.new);
@@ -3468,12 +3470,9 @@
                   if (idx !== -1) this.activityLogs[idx] = payload.new;
                 }
               })
-              .subscribe();
-
-            // Inventory changes
-            supabaseClient
-              .channel('inventory_changes')
+              // 3. Inventory changes
               .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                console.log("Realtime: Inventory change received:", payload.eventType);
                 if (payload.new) {
                   payload.new.desc = payload.new.desc_text || payload.new.desc || '';
                 }
@@ -3488,12 +3487,9 @@
                   if (idx !== -1) this.inventoryList[idx] = payload.new;
                 }
               })
-              .subscribe();
-
-            // Weekly challenge & configuration changes
-            supabaseClient
-              .channel('weekly_challenge_changes')
+              // 4. Weekly challenge & configuration changes
               .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_challenge' }, payload => {
+                console.log("Realtime: Weekly challenge change received:", payload.eventType, payload.new ? payload.new.id : '');
                 if (payload.new) {
                   const id = parseInt(payload.new.id);
                   if (id === 1) {
@@ -3537,7 +3533,8 @@
                         const latestNotifications = JSON.parse(payload.new.desc_text);
                         if (latestNotifications.length > 0) {
                           const latest = latestNotifications[latestNotifications.length - 1];
-                          const alreadyHave = this.notifications.some(n => n.id === latest.id);
+                          const alreadyHave = (this.notifications || []).some(n => n && n.id === latest.id);
+                          console.log("Realtime: New notification check. alreadyHave:", alreadyHave, "latest:", latest);
                           if (!alreadyHave) {
                             this.triggerDeviceNotification(latest.title, latest.body);
                             this.showToast(latest.title, 'info', 'bell');
@@ -3551,12 +3548,9 @@
                   }
                 }
               })
-              .subscribe();
-
-            // Pending accounts changes
-            supabaseClient
-              .channel('pending_accounts_changes')
+              // 5. Pending accounts changes
               .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_accounts' }, payload => {
+                console.log("Realtime: Pending accounts change received:", payload.eventType);
                 if (payload.eventType === 'INSERT') {
                   if (!this.pendingAccounts.some(p => p.id === payload.new.id)) {
                     this.pendingAccounts.push(payload.new);
@@ -3568,7 +3562,13 @@
                   if (idx !== -1) this.pendingAccounts[idx] = payload.new;
                 }
               })
-              .subscribe();
+              .subscribe((status, err) => {
+                if (err) {
+                  console.error("Realtime Subscription Error:", err);
+                } else {
+                  console.log("Realtime Channel Status:", status);
+                }
+              });
           } catch (e) {
             console.error("Error setting up realtime:", e);
           }
