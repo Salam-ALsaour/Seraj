@@ -5574,14 +5574,29 @@
             }
             
             let sub = await reg.pushManager.getSubscription();
-            if (!sub) {
-              this.showToast('جاري إنشاء اشتراك إشعارات جديد للجهاز...', 'info');
-              const pubKeyUint8 = this.urlBase64ToUint8Array(this.vapidKeys.publicKey);
-              sub = await reg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: pubKeyUint8
-              });
+            const currentKey = this.vapidKeys.publicKey;
+            const registeredKey = localStorage.getItem('seraj_push_registered_vapid');
+            
+            if (sub && registeredKey === currentKey) {
+              console.log("Push notification subscription is already up-to-date.");
+              return;
             }
+            
+            if (sub) {
+              try {
+                await sub.unsubscribe();
+              } catch (e) {
+                console.warn("Failed to unsubscribe existing subscription:", e);
+              }
+              sub = null;
+            }
+            
+            this.showToast('جاري إنشاء اشتراك إشعارات جديد للجهاز...', 'info');
+            const pubKeyUint8 = this.urlBase64ToUint8Array(currentKey);
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: pubKeyUint8
+            });
             
             this.showToast('جاري ربط جهازك بقاعدة البيانات السحابية...', 'info');
             if (sub && this.isLoggedIn && this.activeId) {
@@ -5616,6 +5631,7 @@
                 this.showToast('فشل الحفظ في قاعدة البيانات: ' + upsertErr.message, 'neg');
               } else {
                 console.log("Push subscription saved successfully!");
+                localStorage.setItem('seraj_push_registered_vapid', currentKey);
                 this.showToast('تم ربط الجهاز بقاعدة البيانات بنجاح!', 'pos');
               }
             } else {
@@ -5747,10 +5763,23 @@
                       vapidKeys: this.vapidKeys,
                       token: "seraj_push_token_2026"
                     })
-                  }).then(res => {
-                    console.log("Cloudflare push notification request sent, status:", res.status);
+                  }).then(async res => {
+                    const resData = await res.json().catch(() => ({}));
+                    console.log("Cloudflare push notification request completed, status:", res.status, resData);
+                    if (resData.success) {
+                      const successes = (resData.results || []).filter(r => r.status === 201 || r.status === 200).length;
+                      const failures = (resData.results || []).length - successes;
+                      if (failures > 0) {
+                        this.showToast(`تم الإرسال: نجح ${successes} وفشل ${failures}`, 'info');
+                      } else {
+                        this.showToast('تم إرسال الإشعار لجميع الأجهزة بنجاح!', 'pos');
+                      }
+                    } else {
+                      this.showToast('فشل إرسال الإشعار: ' + (resData.error || 'خطأ غير معروف'), 'neg');
+                    }
                   }).catch(err => {
                     console.error("Cloudflare push notification request failed:", err);
+                    this.showToast('فشل الاتصال بخادم الإشعارات', 'neg');
                   });
                 }
               }
