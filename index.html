@@ -1047,9 +1047,15 @@
                 </button>
               </template>
               <template x-if="notificationPermission === 'granted'">
-                <div style="font-size:11px; color:#10b981; margin:10px auto 0; display:flex; align-items:center; gap:6px; justify-content:center;">
-                  <div style="width:12px; height:12px; color:#10b981;" x-html="getIconSvg('check-circle')"></div>
-                  الإشعارات مفعلة على هذا الجهاز
+                <div style="font-size:11px; color:#10b981; margin:10px auto 0; display:flex; flex-direction:column; align-items:center; gap:5px; justify-content:center;">
+                  <div style="display:flex; align-items:center; gap:6px; justify-content:center;">
+                    <div style="width:12px; height:12px; color:#10b981;" x-html="getIconSvg('check-circle')"></div>
+                    <span>الإشعارات مفعلة على هذا الجهاز</span>
+                  </div>
+                  <button @click="subscribeToPushNotifications()" 
+                          style="background:none; border:none; color:#ea580c; text-decoration:underline; font-size:10px; font-weight:600; cursor:pointer; padding:2px 6px;">
+                    تحديث ربط الجهاز 🔄
+                  </button>
                 </div>
               </template>
             </div>
@@ -1661,9 +1667,14 @@
                     </button>
                   </template>
                   <template x-if="notificationPermission === 'granted'">
-                    <div style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:#34d399; display:flex; align-items:center; justify-content:center; gap:6px;">
-                      <div style="width:14px; height:14px; color:#34d399;" x-html="getIconSvg('check-circle')"></div>
-                      تنبيهات الجهاز مفعلة
+                    <div @click="subscribeToPushNotifications()" 
+                         style="flex:1; padding:8px 10px; font-size:12px; font-weight:700; border-radius:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:#34d399; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer;"
+                         title="اضغط لتحديث ربط الجهاز بالسحابة">
+                      <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <div style="width:14px; height:14px; color:#34d399;" x-html="getIconSvg('check-circle')"></div>
+                        <span>تنبيهات الجهاز مفعلة</span>
+                      </div>
+                      <span style="font-size:9px; text-decoration:underline; color:#ffb27a; font-weight:500;">تحديث ربط الجهاز 🔄</span>
                     </div>
                   </template>
                 </div>
@@ -3018,6 +3029,7 @@
         pushSubscriptions: [],
         workerUrl: localStorage.getItem('seraj_pwa_worker_url') || '',
         showNotificationPrompt: false,
+        realtimeChannel: null,
 
         // Clicker Game State
         gamePlaying: false,
@@ -3742,8 +3754,13 @@
           try {
             if (!supabaseClient) return;
 
-            // Use a single channel for all database changes to optimize websocket performance and reliability
+            if (this.realtimeChannel) {
+              console.log("Realtime: Channel already active, skipping duplicate registration.");
+              return;
+            }
+
             const realtimeChannel = supabaseClient.channel('seraj_realtime_channel');
+            this.realtimeChannel = realtimeChannel;
 
             realtimeChannel
               // 1. Students changes
