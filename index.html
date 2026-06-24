@@ -1599,6 +1599,12 @@
                   <textarea x-model="newNotifBody" placeholder="اكتب نص الإشعار هنا..." rows="3"
                             style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; resize:none;"></textarea>
                 </div>
+                <div>
+                  <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">رابط خادم الإشعارات (Cloudflare Worker URL) *</label>
+                  <input type="text" x-model="workerUrl" @input="localStorage.setItem('seraj_pwa_worker_url', workerUrl)" placeholder="https://seraj-push.username.workers.dev"
+                         style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; direction:ltr;" />
+                  <span style="font-size:9px; color:var(--txt-faint); display:block; margin-top:4px; text-align:right;">ألصق رابط الـ Worker بعد نشره في Cloudflare لتفعيل التنبيهات في الخلفية.</span>
+                </div>
                 
                 <!-- Notification Permission & Send Buttons -->
                 <div style="display:flex; gap:10px; margin-top:6px;">
@@ -2754,8 +2760,11 @@
         adminMenuOpen: false,
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
-        version: '1.1.1',
+        version: '1.2.0',
         notificationPermission: ('Notification' in window ? Notification.permission : 'unsupported'),
+        vapidKeys: null,
+        pushSubscriptions: [],
+        workerUrl: localStorage.getItem('seraj_pwa_worker_url') || '',
         showNotificationPrompt: false,
 
         // Clicker Game State
@@ -3186,6 +3195,50 @@
                     time_left: 0
                   });
                 }
+
+                // Find VAPID Keys Config (ID: 103)
+                let vapidData = chRows ? chRows.find(r => parseInt(r.id) === 103) : null;
+                if (vapidData && vapidData.desc_text) {
+                  try {
+                    this.vapidKeys = JSON.parse(vapidData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse VAPID keys config:", e);
+                  }
+                } else {
+                  // Seed VAPID keys if missing
+                  this.vapidKeys = {
+                    publicKey: 'BCMY-GBNnXZcs1tZSfRNyTbKhCwCeIzecGQe4Zzhdf6ZnmcuuGcN_PHESFDp4_A8N4KOYcplpbSdMlfHFCsik-U',
+                    privateKey: 'xiHYUkuUebIuAlMRagWNgAkBUGpVUTDyO99POr5XE-E'
+                  };
+                  await supabaseClient.from('weekly_challenge').upsert({
+                    id: 103,
+                    title: 'vapid_keys_config',
+                    desc_text: JSON.stringify(this.vapidKeys),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
+                }
+
+                // Find Push Subscriptions Config (ID: 104)
+                let pushData = chRows ? chRows.find(r => parseInt(r.id) === 104) : null;
+                if (pushData && pushData.desc_text) {
+                  try {
+                    this.pushSubscriptions = JSON.parse(pushData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse push subscriptions config:", e);
+                  }
+                } else {
+                  this.pushSubscriptions = [];
+                  await supabaseClient.from('weekly_challenge').upsert({
+                    id: 104,
+                    title: 'push_subscriptions_config',
+                    desc_text: JSON.stringify(this.pushSubscriptions),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
+                }
               }
             } catch (err) {
               console.error("Supabase Error during init (weekly_challenge configs exception):", err);
@@ -3241,6 +3294,13 @@
               setTimeout(() => {
                 this.showNotificationPrompt = true;
               }, 1500);
+            }
+
+            // Trigger push subscription if already granted
+            if (this.isLoggedIn && granted) {
+              setTimeout(() => {
+                this.subscribeToPushNotifications();
+              }, 3000);
             }
 
           } catch (globalErr) {
@@ -4946,6 +5006,7 @@
             this.notificationPermission = permission;
             if (permission === 'granted') {
               this.showToast('تم تفعيل إشعارات الجهاز بنجاح', 'success', 'bell');
+              await this.subscribeToPushNotifications();
             } else {
               this.showToast('تم رفض إشعارات الجهاز', 'neg', 'bell-off');
             }
@@ -4953,6 +5014,71 @@
             this.notificationPermission = 'unsupported';
             this.showToast('المتصفح لا يدعم الإشعارات', 'info');
           }
+        },
+
+        async subscribeToPushNotifications() {
+          try {
+            if (!('serviceWorker' in navigator) || !this.vapidKeys) return;
+            const reg = await navigator.serviceWorker.ready;
+            
+            // Check if subscription already exists
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+              const pubKeyUint8 = this.urlBase64ToUint8Array(this.vapidKeys.publicKey);
+              sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: pubKeyUint8
+              });
+            }
+            
+            // Save subscription to Supabase
+            if (sub && this.isLoggedIn && this.activeId) {
+              const subObj = JSON.parse(JSON.stringify(sub));
+              const entry = {
+                student_id: this.activeId,
+                isAdmin: this.isAdmin,
+                subscription: subObj,
+                updated_at: new Date().toISOString()
+              };
+              
+              // Fetch latest subs from DB to avoid overwriting others
+              const { data } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
+              let subs = [];
+              if (data && data.desc_text) {
+                try { subs = JSON.parse(data.desc_text); } catch(e){}
+              }
+              
+              // Remove old subscription for this device endpoint or student
+              subs = subs.filter(s => s.subscription.endpoint !== subObj.endpoint && s.student_id !== this.activeId);
+              subs.push(entry);
+              this.pushSubscriptions = subs;
+              
+              await supabaseClient.from('weekly_challenge').upsert({
+                id: 104,
+                title: 'push_subscriptions_config',
+                desc_text: JSON.stringify(subs),
+                points: 0,
+                duration: 0,
+                time_left: 0
+              });
+              console.log("Push subscription saved successfully!");
+            }
+          } catch(err) {
+            console.error("Failed to subscribe to push notifications:", err);
+          }
+        },
+
+        urlBase64ToUint8Array(base64String) {
+          const padding = '='.repeat((4 - base64String.length % 4) % 4);
+          const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+          const rawData = window.atob(base64);
+          const outputArray = new Uint8Array(rawData.length);
+          for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+          }
+          return outputArray;
         },
 
         triggerDeviceNotification(title, body) {
@@ -5001,6 +5127,7 @@
           this.notifications.push(newNotif);
 
           if (supabaseClient) {
+            // 1. Save in-app notification to DB
             await supabaseClient.from('weekly_challenge').upsert({
               id: 102,
               title: 'notifications_config',
@@ -5009,6 +5136,36 @@
               duration: 0,
               time_left: 0
             });
+
+            // 2. Fetch subscriptions and send background push via Cloudflare Worker
+            try {
+              const { data: subData } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
+              if (subData && subData.desc_text) {
+                const subs = JSON.parse(subData.desc_text);
+                const subscriptionsToSend = subs.map(s => s.subscription);
+                const workerUrl = localStorage.getItem('seraj_pwa_worker_url') || this.workerUrl;
+                
+                if (workerUrl && subscriptionsToSend.length > 0) {
+                  fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      subscriptions: subscriptionsToSend,
+                      title: title,
+                      message: body,
+                      vapidKeys: this.vapidKeys,
+                      token: "seraj_push_token_2026"
+                    })
+                  }).then(res => {
+                    console.log("Cloudflare push notification request sent, status:", res.status);
+                  }).catch(err => {
+                    console.error("Cloudflare push notification request failed:", err);
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Failed to send background push notifications:", err);
+            }
           } else {
             this.saveState();
           }

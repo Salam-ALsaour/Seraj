@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seraj-cache-v11';
+const CACHE_NAME = 'seraj-cache-v12';
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -49,6 +49,50 @@ self.addEventListener('fetch', (e) => {
       }).catch(() => {
         // Offline fallback can go here if needed
       });
+    })
+  );
+});
+
+self.addEventListener('push', (e) => {
+  try {
+    const data = e.data ? e.data.json() : {};
+    const title = data.title || 'سراج';
+    const body = data.body || '';
+    e.waitUntil(
+      self.registration.showNotification(title, {
+        body: body,
+        icon: 'icon.png',
+        badge: 'icon.png',
+        vibrate: [200, 100, 200],
+        dir: 'rtl'
+      })
+    );
+  } catch (err) {
+    console.error("Push event failed:", err);
+    // Fallback to text
+    const text = e.data ? e.data.text() : 'تنبيه جديد من سراج';
+    e.waitUntil(
+      self.registration.showNotification('سراج', {
+        body: text,
+        icon: 'icon.png',
+        dir: 'rtl'
+      })
+    );
+  }
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
     })
   );
 });
