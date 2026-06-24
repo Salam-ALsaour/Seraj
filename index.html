@@ -652,7 +652,7 @@
               إنشاء حساب جديد
             </button>
             
-            <div style="margin-top: 30px; font-size: 10px; color: var(--txt-faint);">إصدار التطبيق v1.0.8</div>
+            <div style="margin-top: 30px; font-size: 10px; color: var(--txt-faint);">إصدار التطبيق v1.0.9</div>
             
             
           </div>
@@ -2287,6 +2287,60 @@
     </template>
   </div>
 
+  <!-- Notification Permission Prompt Modal Overlay -->
+  <div x-show="showNotificationPrompt" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       style="position:absolute; inset:0; z-index:500; direction:rtl;"
+       class="modal-container">
+    
+    <!-- Backdrop -->
+    <div style="position:absolute; inset:0; background:rgba(12,14,14,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);"
+         @click="showNotificationPrompt = false"></div>
+    
+    <!-- Card Container -->
+    <div class="modal-card" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         style="width:calc(100% - 32px); max-width:340px; padding:24px; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:510; text-align:center;">
+      
+      <!-- Bell Icon Wrapper -->
+      <div style="margin:0 auto 16px; width:64px; height:64px; border-radius:50%; background:rgba(249,115,22,0.1); border:1.5px solid rgba(249,115,22,0.25); display:grid; place-items:center; color:var(--orange); filter:drop-shadow(0 0 10px var(--orange-glow));">
+        <div style="width:32px; height:32px;" x-html="getIconSvg('bell')"></div>
+      </div>
+      
+      <!-- Header -->
+      <h3 style="font-size:18px; font-weight:700; color:var(--txt); margin-bottom:10px;">تفعيل إشعارات سراج 🔔</h3>
+      
+      <!-- Description -->
+      <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:24px; text-align:center;">
+        احصل على تنبيهات فورية عندما يرسل لك المعلم إشعارات جديدة، أو عند إضافة تحديات جديدة، أو جوائز مميزة لتبقى دائماً في الصدارة!
+      </p>
+      
+      <!-- Buttons -->
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button @click="requestNotificationPermission(); showNotificationPrompt = false" 
+                class="btn-redeem" 
+                style="width:100%; padding:12px; font-size:13px; font-weight:700; border-radius:12px; background:linear-gradient(135deg, var(--orange), #ffb27a); border:none; color:#fff; box-shadow:0 0 15px var(--orange-glow); cursor:pointer;">
+          تفعيل الآن
+        </button>
+        <button @click="showNotificationPrompt = false" 
+                style="width:100%; padding:10px; font-size:12px; font-weight:600; background:none; border:none; color:var(--txt-faint); cursor:pointer;">
+          لاحقاً
+        </button>
+      </div>
+      
+    </div>
+  </div>
+
   <!-- Levels Modal Overlay -->
   <div x-show="showLevelsModal" 
        x-transition:enter="transition ease-out duration-300"
@@ -2633,6 +2687,7 @@
         adminMenuOpen: false,
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
+        showNotificationPrompt: false,
 
         // Clicker Game State
         gamePlaying: false,
@@ -3100,6 +3155,13 @@
               this.setupRealtime();
             }
 
+            // Trigger notification prompt modal if user is logged in and hasn't granted permission yet
+            if (this.isLoggedIn && 'Notification' in window && Notification.permission === 'default') {
+              setTimeout(() => {
+                this.showNotificationPrompt = true;
+              }, 1500);
+            }
+
           } catch (globalErr) {
             console.error("Supabase Error during init (global exception):", globalErr);
           } finally {
@@ -3496,6 +3558,13 @@
             this.loginInputPassword = '';
             this.saveState();
             this.$nextTick(() => lucide.createIcons());
+
+            // Trigger notification prompt after successful login if permission is default
+            if ('Notification' in window && Notification.permission === 'default') {
+              setTimeout(() => {
+                this.showNotificationPrompt = true;
+              }, 1500);
+            }
           } else {
             this.loginErrorMsg = 'الرمز السري غير صحيح.';
           }
@@ -4791,7 +4860,7 @@
 
         triggerDeviceNotification(title, body) {
           if ('Notification' in window && Notification.permission === 'granted') {
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            if ('serviceWorker' in navigator) {
               navigator.serviceWorker.ready.then(reg => {
                 reg.showNotification(title, {
                   body: body,
@@ -4800,13 +4869,16 @@
                   vibrate: [200, 100, 200],
                   dir: 'rtl'
                 });
+              }).catch(err => {
+                console.error("SW notification registration failed:", err);
+                try {
+                  new Notification(title, { body: body, icon: 'icon.png', dir: 'rtl' });
+                } catch(e) { console.warn(e); }
               });
             } else {
-              new Notification(title, {
-                body: body,
-                icon: 'icon.png',
-                dir: 'rtl'
-              });
+              try {
+                new Notification(title, { body: body, icon: 'icon.png', dir: 'rtl' });
+              } catch(e) { console.warn(e); }
             }
           }
         },
