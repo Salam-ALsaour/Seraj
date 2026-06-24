@@ -573,7 +573,7 @@
 <body>
 
   <!-- PWA Container -->
-  <div id="app" x-data="serajApp()" x-init="init()">
+  <div id="app" x-data="serajApp()" x-init="startup()">
     
     <!-- Pull-to-refresh spinner (only shows at top of screen without full loading overlay) -->
     <div x-show="isRefreshing" 
@@ -3271,8 +3271,8 @@
         },
         toastTimeout: null,
 
-        // Init
-        async init(silent = false) {
+        // Startup
+        async startup(silent = false) {
           if (!silent) {
             this.isLoading = true;
           } else {
@@ -3612,7 +3612,7 @@
                 if (diffY > 150 && diffY > Math.abs(diffX) * 2) {
                   refreshStartY = 0;
                   try {
-                    await this.init(true);
+                    await this.startup(true);
                     this.showToast('تم تحديث البيانات بنجاح', 'success', 'check');
                   } catch(err) {
                     this.showToast('فشل تحديث البيانات', 'neg', 'alert-circle');
@@ -3753,6 +3753,20 @@
         setupRealtime() {
           try {
             if (!supabaseClient) return;
+
+            // Clean up any existing channel with the same name/topic to avoid duplicate callback error
+            try {
+              if (supabaseClient.getChannels && typeof supabaseClient.getChannels === 'function') {
+                const existingChannels = supabaseClient.getChannels();
+                const oldChan = existingChannels.find(c => c.topic === 'realtime:seraj_realtime_channel' || c.name === 'realtime:seraj_realtime_channel');
+                if (oldChan) {
+                  console.log("Realtime: Removing existing channel from client to prevent duplicate callbacks.");
+                  supabaseClient.removeChannel(oldChan);
+                }
+              }
+            } catch (chanErr) {
+              console.warn("Realtime: Error checking/removing existing channel:", chanErr);
+            }
 
             if (this.realtimeChannel) {
               console.log("Realtime: Channel already active, skipping duplicate registration.");
