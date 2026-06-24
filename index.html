@@ -652,7 +652,7 @@
               إنشاء حساب جديد
             </button>
             
-            <div style="margin-top: 30px; font-size: 10px; color: var(--txt-faint);">إصدار التطبيق v1.0.9</div>
+            <div style="margin-top: 30px; font-size: 10px; color: var(--txt-faint);" x-text="'إصدار التطبيق v' + version"></div>
             
             
           </div>
@@ -1024,12 +1024,20 @@
               </div>
               
               <!-- Enable device notifications button -->
-              <button @click="requestNotificationPermission()" 
-                      class="btn-redeem" 
-                      style="width:auto; padding:6px 12px; font-size:11px; border-radius:10px; margin: 10px auto 0; display:flex; align-items:center; gap:6px; background:rgba(249,115,22,0.1) !important; border:1px solid rgba(249,115,22,0.2) !important; color:#ffb27a !important; cursor:pointer;">
-                <div style="width:12px; height:12px;" x-html="getIconSvg('bell')"></div>
-                تفعيل إشعارات الجهاز
-              </button>
+              <template x-if="notificationPermission !== 'granted'">
+                <button @click="showNotificationPrompt = true" 
+                        class="btn-redeem" 
+                        style="width:auto; padding:6px 12px; font-size:11px; border-radius:10px; margin: 10px auto 0; display:flex; align-items:center; gap:6px; background:rgba(249,115,22,0.1) !important; border:1px solid rgba(249,115,22,0.2) !important; color:#ffb27a !important; cursor:pointer;">
+                  <div style="width:12px; height:12px;" x-html="getIconSvg('bell')"></div>
+                  تفعيل إشعارات الجهاز
+                </button>
+              </template>
+              <template x-if="notificationPermission === 'granted'">
+                <div style="font-size:11px; color:#10b981; margin:10px auto 0; display:flex; align-items:center; gap:6px; justify-content:center;">
+                  <div style="width:12px; height:12px; color:#10b981;" x-html="getIconSvg('check-circle')"></div>
+                  الإشعارات مفعلة على هذا الجهاز
+                </div>
+              </template>
             </div>
 
             <!-- Level / XP progress bar -->
@@ -1599,10 +1607,18 @@
                           style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; margin-top:0; cursor:pointer;">
                     إرسال الإشعار
                   </button>
-                  <button @click="requestNotificationPermission()" 
-                          style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim); cursor:pointer;">
-                    تفعيل الإشعار بالجهاز
-                  </button>
+                  <template x-if="notificationPermission !== 'granted'">
+                    <button @click="showNotificationPrompt = true" 
+                            style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim); cursor:pointer;">
+                      تفعيل الإشعار بالجهاز
+                    </button>
+                  </template>
+                  <template x-if="notificationPermission === 'granted'">
+                    <div style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:#34d399; display:flex; align-items:center; justify-content:center; gap:6px;">
+                      <div style="width:14px; height:14px; color:#34d399;" x-html="getIconSvg('check-circle')"></div>
+                      تنبيهات الجهاز مفعلة
+                    </div>
+                  </template>
                 </div>
               </div>
 
@@ -2317,26 +2333,77 @@
         <div style="width:32px; height:32px;" x-html="getIconSvg('bell')"></div>
       </div>
       
-      <!-- Header -->
-      <h3 style="font-size:18px; font-weight:700; color:var(--txt); margin-bottom:10px;">تفعيل إشعارات سراج 🔔</h3>
-      
-      <!-- Description -->
-      <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:24px; text-align:center;">
-        احصل على تنبيهات فورية عندما يرسل لك المعلم إشعارات جديدة، أو عند إضافة تحديات جديدة، أو جوائز مميزة لتبقى دائماً في الصدارة!
-      </p>
-      
-      <!-- Buttons -->
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <button @click="requestNotificationPermission(); showNotificationPrompt = false" 
-                class="btn-redeem" 
-                style="width:100%; padding:12px; font-size:13px; font-weight:700; border-radius:12px; background:linear-gradient(135deg, var(--orange), #ffb27a); border:none; color:#fff; box-shadow:0 0 15px var(--orange-glow); cursor:pointer;">
-          تفعيل الآن
-        </button>
-        <button @click="showNotificationPrompt = false" 
-                style="width:100%; padding:10px; font-size:12px; font-weight:600; background:none; border:none; color:var(--txt-faint); cursor:pointer;">
-          لاحقاً
-        </button>
-      </div>
+      <!-- 1. Case: NOT supported (e.g. iOS Safari Tab) -->
+      <template x-if="notificationPermission === 'unsupported'">
+        <div>
+          <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:12px;">تفعيل الإشعارات على الآيفون 📲</h3>
+          <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:20px; text-align:right; direction:rtl;">
+            لتلقي تنبيهات اللقاء والجوائز على نظام iOS، يرجى تثبيت التطبيق أولاً:
+            <br/><br/>
+            1. اضغط على زر <strong>المشاركة 📤</strong> في متصفح Safari.
+            <br/>
+            2. اختر <strong>"إضافة إلى الشاشة الرئيسية"</strong>.
+            <br/>
+            3. افتح التطبيق من الشاشة الرئيسية لتفعيل الإشعارات.
+          </p>
+          <button @click="localStorage.setItem('seraj_notif_prompt_dismissed', 'true'); showNotificationPrompt = false" 
+                  class="btn-redeem" 
+                  style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:12px; background:linear-gradient(135deg, var(--orange), #ffb27a); border:none; color:#fff; cursor:pointer;">
+            حسناً، فهمت
+          </button>
+        </div>
+      </template>
+
+      <!-- 2. Case: Supported but BLOCKED/DENIED -->
+      <template x-if="notificationPermission === 'denied'">
+        <div>
+          <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:12px;">الإشعارات محظورة 🚫</h3>
+          <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:20px; text-align:center;">
+            يبدو أن إشعارات التطبيق محظورة في إعدادات متصفحك/هاتفك. يرجى السماح بالإشعارات للموقع من إعدادات المتصفح لتلقي تحديات اللقاء والجوائز.
+          </p>
+          <button @click="localStorage.setItem('seraj_notif_prompt_dismissed', 'true'); showNotificationPrompt = false" 
+                  class="btn-redeem" 
+                  style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:12px; background:linear-gradient(135deg, var(--orange), #ffb27a); border:none; color:#fff; cursor:pointer;">
+            حسناً، فهمت
+          </button>
+        </div>
+      </template>
+
+      <!-- 3. Case: Supported and DEFAULT (Promptable) -->
+      <template x-if="notificationPermission === 'default'">
+        <div>
+          <h3 style="font-size:17px; font-weight:700; color:var(--txt); margin-bottom:10px;">تفعيل إشعارات سراج 🔔</h3>
+          <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:20px; text-align:center;">
+            احصل على تنبيهات فورية عندما يرسل لك المعلم إشعارات جديدة، أو عند إضافة تحديات جديدة، أو جوائز مميزة لتبقى دائماً في الصدارة!
+          </p>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button @click="requestNotificationPermission(); localStorage.setItem('seraj_notif_prompt_dismissed', 'true'); showNotificationPrompt = false" 
+                    class="btn-redeem" 
+                    style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:12px; background:linear-gradient(135deg, var(--orange), #ffb27a); border:none; color:#fff; box-shadow:0 0 15px var(--orange-glow); cursor:pointer;">
+              تفعيل الآن
+            </button>
+            <button @click="showNotificationPrompt = false" 
+                    style="width:100%; padding:8px; font-size:12px; font-weight:600; background:none; border:none; color:var(--txt-faint); cursor:pointer;">
+              لاحقاً
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- 4. Case: Supported and GRANTED -->
+      <template x-if="notificationPermission === 'granted'">
+        <div>
+          <h3 style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:12px;">الإشعارات مفعلة بنجاح 🎉</h3>
+          <p style="font-size:12px; color:var(--txt-dim); line-height:1.6; margin-bottom:20px; text-align:center;">
+            تلقي التنبيهات مفعل بالفعل على متصفحك. ستصلك إشعارات اللقاء والجوائز هنا فور إرسالها!
+          </p>
+          <button @click="showNotificationPrompt = false" 
+                  class="btn-redeem" 
+                  style="width:100%; padding:11px; font-size:13px; font-weight:700; border-radius:12px; background:linear-gradient(135deg, var(--orange), #ffb27a); border:none; color:#fff; cursor:pointer;">
+            رائع
+          </button>
+        </div>
+      </template>
       
     </div>
   </div>
@@ -2687,6 +2754,8 @@
         adminMenuOpen: false,
         tempAvatarIcon: 'user',
         tempAvatarColor: 'orange',
+        version: '1.1.0',
+        notificationPermission: ('Notification' in window ? Notification.permission : 'unsupported'),
         showNotificationPrompt: false,
 
         // Clicker Game State
@@ -3155,8 +3224,20 @@
               this.setupRealtime();
             }
 
-            // Trigger notification prompt modal if user is logged in and hasn't granted permission yet
-            if (this.isLoggedIn && 'Notification' in window && Notification.permission === 'default') {
+            // Sync notification permission state
+            this.notificationPermission = ('Notification' in window ? Notification.permission : 'unsupported');
+
+            // Version check to reset notification dismissal on updates
+            const lastSeenVersion = localStorage.getItem('seraj_pwa_version');
+            if (lastSeenVersion !== this.version) {
+              localStorage.removeItem('seraj_notif_prompt_dismissed');
+              localStorage.setItem('seraj_pwa_version', this.version);
+            }
+
+            // Trigger notification prompt modal if user is logged in and hasn't dismissed/granted yet
+            const dismissed = localStorage.getItem('seraj_notif_prompt_dismissed') === 'true';
+            const granted = (this.notificationPermission === 'granted');
+            if (this.isLoggedIn && !dismissed && !granted) {
               setTimeout(() => {
                 this.showNotificationPrompt = true;
               }, 1500);
@@ -3528,6 +3609,16 @@
               this.currentScreen = 'admin';
               this.saveState();
               this.$nextTick(() => lucide.createIcons());
+
+              // Trigger notification prompt after successful login if not dismissed/granted yet
+              this.notificationPermission = ('Notification' in window ? Notification.permission : 'unsupported');
+              const dismissed = localStorage.getItem('seraj_notif_prompt_dismissed') === 'true';
+              const granted = (this.notificationPermission === 'granted');
+              if (!dismissed && !granted) {
+                setTimeout(() => {
+                  this.showNotificationPrompt = true;
+                }, 1500);
+              }
               return;
             } else {
               this.loginErrorMsg = 'الرمز السري للمشرف غير صحيح.';
@@ -3559,8 +3650,11 @@
             this.saveState();
             this.$nextTick(() => lucide.createIcons());
 
-            // Trigger notification prompt after successful login if permission is default
-            if ('Notification' in window && Notification.permission === 'default') {
+            // Trigger notification prompt after successful login if not dismissed/granted yet
+            this.notificationPermission = ('Notification' in window ? Notification.permission : 'unsupported');
+            const dismissed = localStorage.getItem('seraj_notif_prompt_dismissed') === 'true';
+            const granted = (this.notificationPermission === 'granted');
+            if (!dismissed && !granted) {
               setTimeout(() => {
                 this.showNotificationPrompt = true;
               }, 1500);
@@ -3749,6 +3843,7 @@
         },
 
         logout() {
+          localStorage.removeItem('seraj_notif_prompt_dismissed');
           this.isLoggedIn = false;
           this.isAdmin = false;
           this.adminUnlocked = false;
@@ -4848,18 +4943,20 @@
         async requestNotificationPermission() {
           if ('Notification' in window) {
             const permission = await Notification.requestPermission();
+            this.notificationPermission = permission;
             if (permission === 'granted') {
               this.showToast('تم تفعيل إشعارات الجهاز بنجاح', 'success', 'bell');
             } else {
               this.showToast('تم رفض إشعارات الجهاز', 'neg', 'bell-off');
             }
           } else {
+            this.notificationPermission = 'unsupported';
             this.showToast('المتصفح لا يدعم الإشعارات', 'info');
           }
         },
 
         triggerDeviceNotification(title, body) {
-          if ('Notification' in window && Notification.permission === 'granted') {
+          if (this.notificationPermission === 'granted') {
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.ready.then(reg => {
                 reg.showNotification(title, {
