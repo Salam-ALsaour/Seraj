@@ -5198,24 +5198,26 @@
             
             st.gameScore = this.gameScoreCurrent;
             st.trend = this.gameScoreCurrent;
-            st.total += delta;
-            st.wallet += delta;
+            st.total = (st.total || 0) + delta;
+            st.wallet = (st.wallet || 0) + delta;
+            console.log(`[Game] New high: ${this.gameScoreCurrent}, prev: ${previousHigh}, delta: +${delta}, total: ${st.total}, wallet: ${st.wallet}`);
             this.saveState();
+            this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
             
             if (supabaseClient) {
-              const { error } = await supabaseClient.from('students').update({
-                trend: this.gameScoreCurrent,
-                total: st.total,
-                wallet: st.wallet
-              }).eq('id', st.id);
-              if (error) {
-                console.error("Error saving high score:", error);
-              } else {
-                this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
+              try {
+                const { error } = await supabaseClient.from('students').update({
+                  trend: this.gameScoreCurrent,
+                  total: st.total,
+                  wallet: st.wallet
+                }).eq('id', st.id);
+                if (error) console.error("Error saving game score to DB:", error);
+              } catch(e) {
+                console.error("Exception saving game score:", e);
               }
-            } else {
-              this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
             }
+          } else {
+            this.showToast(`لم تتجاوز رقمك القياسي (${st ? (st.gameScore || 0) : 0})`, 'info', 'flame');
           }
         },
 
