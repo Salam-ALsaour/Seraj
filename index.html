@@ -5193,21 +5193,28 @@
           
           const st = this.getStudentById(this.activeId);
           if (st && this.gameScoreCurrent > (st.gameScore || 0)) {
+            const previousHigh = st.gameScore || 0;
+            const delta = this.gameScoreCurrent - previousHigh;
+            
             st.gameScore = this.gameScoreCurrent;
             st.trend = this.gameScoreCurrent;
+            st.total += delta;
+            st.wallet += delta;
             this.saveState();
             
             if (supabaseClient) {
               const { error } = await supabaseClient.from('students').update({
-                trend: this.gameScoreCurrent
+                trend: this.gameScoreCurrent,
+                total: st.total,
+                wallet: st.wallet
               }).eq('id', st.id);
               if (error) {
                 console.error("Error saving high score:", error);
               } else {
-                this.showToast('رقم قياسي جديد! تم حفظ درجتك 🏆', 'success', 'trophy');
+                this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
               }
             } else {
-              this.showToast('رقم قياسي جديد! تم حفظ درجتك محلياً 🏆', 'success', 'trophy');
+              this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
             }
           }
         },
