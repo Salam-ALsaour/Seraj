@@ -135,6 +135,9 @@ async function sendWebPush(subscription, payload, vapidKeys) {
   const jwt       = await buildVapidJwt(audience, vapidKeys.publicKey, vapidKeys.privateKey);
   const bodyBytes = await encryptPayload(payload, subscription);
 
+  console.log('[Push] endpoint:', endpoint.slice(0, 70));
+  console.log('[Push] payload bytes:', bodyBytes.byteLength);
+
   const resp = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -142,11 +145,15 @@ async function sendWebPush(subscription, payload, vapidKeys) {
       'Content-Type':     'application/octet-stream',
       'Content-Encoding': 'aes128gcm',
       'TTL':              '86400',
+      'Urgency':          'high',
     },
     body: bodyBytes,
   });
 
-  return { status: resp.status, ok: resp.ok, endpoint };
+  const respBody = await resp.text().catch(() => '');
+  console.log('[Push] FCM/APNS status:', resp.status, '| body:', respBody.slice(0, 200));
+
+  return { status: resp.status, ok: resp.ok, endpoint, fcmBody: respBody.slice(0, 200) };
 }
 
 // ─── Crypto helpers ──────────────────────────────────────────────────────────
