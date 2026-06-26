@@ -1390,7 +1390,172 @@
       </div>
 
       <!-- ============================================== -->
-      <!-- 6. ⚙️ ADMIN PANEL VIEW -->
+      <!-- 6. 📅 WEEKLY CHALLENGE VIEW -->
+      <!-- ============================================== -->
+      <div x-show="currentScreen === 'weekly'" class="page">
+        
+        <!-- Header Card -->
+        <div class="glass" style="padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(249,115,22,0.15); background: linear-gradient(160deg, rgba(249,115,22,0.06), transparent);">
+          <div style="width: 40px; height: 40px; margin: 0 auto 10px; color: var(--orange); filter: drop-shadow(0 0 8px var(--orange-glow));" x-html="getIconSvg('calendar')"></div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px;">التحدي الأسبوعي</div>
+          <div style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">8 أسابيع — 8 تحديات مختلفة<br>أكمل التحدي في كل أسبوع واكسب نقاط إضافية!</div>
+        </div>
+
+        <!-- Week Selector Grid -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+          <template x-for="ch in weeklyChallenges" :key="ch.week">
+            <button 
+              @click="ch.unlocked && (activeWeeklyChallenge = ch.week)"
+              :disabled="!ch.unlocked"
+              style="position: relative; padding: 14px 8px; border-radius: 16px; text-align: center; transition: all 0.25s; cursor: pointer; border: 1px solid var(--stroke);"
+              :style="ch.unlocked 
+                ? (activeWeeklyChallenge === ch.week 
+                  ? 'background: linear-gradient(160deg, rgba(249,115,22,0.18), rgba(249,115,22,0.04)); border-color: rgba(249,115,22,0.5); box-shadow: 0 0 20px -4px var(--orange-glow);'
+                  : 'background: var(--glass); cursor: pointer;')
+                : 'background: rgba(255,255,255,0.01); opacity: 0.45; cursor: not-allowed;'">
+              <div style="width: 22px; height: 22px; margin: 0 auto 6px;" 
+                   :style="activeWeeklyChallenge === ch.week && ch.unlocked ? 'color: var(--orange); filter: drop-shadow(0 0 6px var(--orange-glow));' : 'color: var(--txt-dim);'"
+                   x-html="getIconSvg(ch.unlocked ? ch.icon : 'lock')"></div>
+              <div style="font-size: 10px; font-weight: 700;" 
+                   :style="activeWeeklyChallenge === ch.week && ch.unlocked ? 'color: #ffb27a;' : 'color: var(--txt-dim);'"
+                   x-text="'الأسبوع ' + ch.week"></div>
+              <!-- Submitted checkmark -->
+              <template x-if="ch.unlocked && hasWeeklySubmission(ch.week)">
+                <div style="position: absolute; top: -4px; left: -4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(5,150,105,0.9); display: grid; place-items: center; border: 2px solid var(--bg2);">
+                  <div style="width: 10px; height: 10px; color: #fff;" x-html="getIconSvg('check')"></div>
+                </div>
+              </template>
+            </button>
+          </template>
+        </div>
+
+        <!-- Active Challenge Content -->
+        <template x-for="ch in weeklyChallenges.filter(c => c.week === activeWeeklyChallenge && c.unlocked)" :key="ch.week">
+          <div>
+            <!-- Challenge Info Card -->
+            <div class="glass" style="padding: 18px; margin-bottom: 16px; border: 1px solid rgba(249,115,22,0.12);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, rgba(249,115,22,0.15), transparent); border: 1px solid rgba(249,115,22,0.2); display: grid; place-items: center; flex-shrink: 0;">
+                  <div style="width: 20px; height: 20px; color: var(--orange);" x-html="getIconSvg(ch.icon)"></div>
+                </div>
+                <div style="flex: 1; text-align: right;">
+                  <div style="font-size: 14px; font-weight: 700; color: var(--txt);" x-text="ch.title"></div>
+                  <div style="font-size: 10px; color: var(--txt-faint);" x-text="'الأسبوع ' + ch.week + ' من 8'"></div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: var(--txt-dim); line-height: 1.7; text-align: right;" x-text="ch.desc"></div>
+            </div>
+
+            <!-- Already Submitted State -->
+            <template x-if="hasWeeklySubmission(ch.week)">
+              <div>
+                <div class="glass" style="padding: 20px; text-align: center; border: 1px solid rgba(5,150,105,0.2); background: linear-gradient(160deg, rgba(5,150,105,0.06), transparent);">
+                  <div style="width: 44px; height: 44px; margin: 0 auto 12px; color: #34d399; filter: drop-shadow(0 0 8px rgba(5,150,105,0.4));" x-html="getIconSvg('check-circle')"></div>
+                  <div style="font-size: 15px; font-weight: 700; color: #a7f3d0; margin-bottom: 6px;">تم تسليم إجابتك بنجاح!</div>
+                  <div style="font-size: 11px; color: var(--txt-dim);">لا يمكن التسليم مرة أخرى لهذا التحدي</div>
+                </div>
+                
+                <!-- Show submitted answers -->
+                <div style="margin-top: 14px;">
+                  <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
+                    <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('file-text')"></div>
+                    إجاباتك المسلّمة:
+                  </div>
+                  <template x-for="(q, qi) in ch.questions" :key="qi">
+                    <div class="glass" style="padding: 12px 14px; margin-bottom: 8px; border-radius: 12px; text-align: right;">
+                      <div style="font-size: 11px; font-weight: 600; color: var(--orange); margin-bottom: 4px;" x-text="q"></div>
+                      <div style="font-size: 12px; color: var(--txt); line-height: 1.6;" x-text="getWeeklyAnswer(ch.week, qi)"></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <!-- Submission Form (not yet submitted) -->
+            <template x-if="!hasWeeklySubmission(ch.week)">
+              <div>
+                <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
+                  <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('edit-3')"></div>
+                  أجب على الأسئلة التالية:
+                </div>
+                <template x-for="(q, qi) in ch.questions" :key="qi">
+                  <div style="margin-bottom: 14px; text-align: right;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #ffb27a; margin-bottom: 6px;">
+                      <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.2); font-size: 10px; color: var(--orange); margin-left: 6px; vertical-align: middle;" x-text="qi + 1"></span>
+                      <span x-text="q"></span>
+                    </label>
+                    <textarea 
+                      x-model="weeklyFormAnswers[qi]"
+                      :placeholder="'اكتب إجابتك هنا...'"
+                      style="width: 100%; min-height: 70px; padding: 12px 14px; font-size: 12px; font-family: inherit; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff; resize: vertical; line-height: 1.6; transition: border-color 0.2s; box-sizing: border-box;"
+                      onfocus="this.style.borderColor='rgba(249,115,22,0.4)'"
+                      onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
+                    ></textarea>
+                  </div>
+                </template>
+                
+                <button 
+                  @click="submitWeeklyChallenge(ch.week)"
+                  :disabled="weeklySubmitting || weeklyFormAnswers.some(a => !a.trim())"
+                  class="btn-redeem"
+                  style="width: 100%; padding: 13px; font-size: 14px; font-weight: 700; border-radius: 14px; margin-top: 4px;"
+                  :style="weeklyFormAnswers.some(a => !a.trim()) ? 'opacity: 0.4; cursor: not-allowed;' : ''">
+                  <span x-show="!weeklySubmitting">تسليم الإجابات</span>
+                  <span x-show="weeklySubmitting">جاري التسليم...</span>
+                </button>
+              </div>
+            </template>
+
+            <!-- Admin: View All Submissions -->
+            <template x-if="isAdmin">
+              <div style="margin-top: 24px;">
+                <div class="macro-label" style="color: var(--txt-dim); margin-top:0;">
+                  <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('clipboard-list')"></div>
+                  تسليمات الطلاب
+                  <span style="font-size:10px; font-weight:400; color:var(--txt-faint); margin-right:6px;" x-text="'(' + getWeekSubmissionsCount(ch.week) + ' من ' + students.length + ')'"></span>
+                </div>
+                <div class="glass" style="padding: 4px 0; max-height: 400px; overflow-y: auto;">
+                  <template x-for="st in students" :key="st.id">
+                    <template x-if="getStudentWeeklySubmission(st.id, ch.week)">
+                      <div style="padding: 12px 15px; border-bottom: 1px solid var(--stroke);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                          <div style="width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; border: 1px solid var(--stroke); font-size: 13px;"
+                               :style="'color:' + avatarColorLightMap[st.avatarColor || 'orange'] + '; background: linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent);'">
+                            <div style="width: 14px; height: 14px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
+                          </div>
+                          <span style="font-size: 13px; font-weight: 700; color: var(--txt);" x-text="st.name"></span>
+                        </div>
+                        <template x-for="(q, qi) in ch.questions" :key="qi">
+                          <div style="margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.02); text-align: right;">
+                            <div style="font-size: 10px; font-weight: 600; color: var(--orange); margin-bottom: 2px;" x-text="q"></div>
+                            <div style="font-size: 11px; color: var(--txt); line-height: 1.5;" x-text="getStudentWeeklyAnswer(st.id, ch.week, qi)"></div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+                  <template x-if="getWeekSubmissionsCount(ch.week) === 0">
+                    <div class="empty-note">لم يسلّم أي طالب حتى الآن.</div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Locked Challenge Message -->
+        <template x-if="!weeklyChallenges.find(c => c.week === activeWeeklyChallenge && c.unlocked)">
+          <div class="glass" style="padding: 30px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="width: 44px; height: 44px; margin: 0 auto 12px; color: var(--txt-faint); opacity: 0.5;" x-html="getIconSvg('lock')"></div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--txt-dim); margin-bottom: 6px;">هذا التحدي مقفول</div>
+            <div style="font-size: 11px; color: var(--txt-faint);">سيتم فتحه في الأسبوع القادم، ترقّب!</div>
+          </div>
+        </template>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 7. ⚙️ ADMIN PANEL VIEW -->
       <!-- ============================================== -->
       <div x-show="currentScreen === 'admin'" class="page">
         
@@ -2837,7 +3002,7 @@
     <!-- BOTTOM FIXED NAV BAR -->
     <nav id="nav">
       <template x-for="n in navItems" :key="n.id">
-        <button class="nav-btn" x-show="n.id !== 'admin' || isAdmin" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
+        <button class="nav-btn" x-show="(n.id !== 'admin' && n.id !== 'weekly') || isAdmin" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
           <i :data-lucide="n.icon"></i>
           <span x-text="n.label"></span>
         </button>
@@ -3002,6 +3167,24 @@
         editRewardIcon: 'gift',
         manualPoints: '',
         manualReason: '',
+        
+        // Weekly Challenge State
+        weeklyChallenges: [
+          { week: 1, title: 'تحدي تطوير منصة سراج', icon: 'rocket', unlocked: true, 
+            desc: 'شارك بفكرتك لتطوير منصة سراج! أجب على الأسئلة التالية وقدّم رؤيتك الإبداعية.',
+            questions: ['ما اسم الفكرة؟', 'ما هي الفكرة باختصار وما الهدف منها؟', 'ما هي المشكلة التي تحلها الفكرة؟'] },
+          { week: 2, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
+          { week: 3, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
+          { week: 4, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
+          { week: 5, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
+          { week: 6, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
+          { week: 7, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
+          { week: 8, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] }
+        ],
+        activeWeeklyChallenge: 1,
+        weeklySubmissions: {},
+        weeklyFormAnswers: ['', '', ''],
+        weeklySubmitting: false,
         
         // Login State
         isLoggedIn: false,
@@ -3290,6 +3473,7 @@
           { id: 'leaderboard', label: 'الصدارة', icon: 'trophy' },
           { id: 'store', label: 'المتجر', icon: 'gift' },
           { id: 'challenge', label: 'المسابقة', icon: 'dices' },
+          { id: 'weekly', label: 'التحدي', icon: 'calendar' },
           { id: 'admin', label: 'الإدارة', icon: 'settings' }
         ],
 
@@ -3527,6 +3711,27 @@
                     id: 104,
                     title: 'push_subscriptions_config',
                     desc_text: JSON.stringify(this.pushSubscriptions),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
+                }
+
+                // Find Weekly Submissions (ID: 200)
+                let weeklySubData = chRows ? chRows.find(r => parseInt(r.id) === 200) : null;
+                if (weeklySubData && weeklySubData.desc_text) {
+                  try {
+                    this.weeklySubmissions = JSON.parse(weeklySubData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse weekly submissions:", e);
+                    this.weeklySubmissions = {};
+                  }
+                } else {
+                  this.weeklySubmissions = {};
+                  await supabaseClient.from('weekly_challenge').upsert({
+                    id: 200,
+                    title: 'weekly_submissions_config',
+                    desc_text: JSON.stringify(this.weeklySubmissions),
                     points: 0,
                     duration: 0,
                     time_left: 0
@@ -4291,6 +4496,7 @@
             profile: 'الملف الشخصي',
             store: 'المتجر المضيء',
             challenge: 'المسابقة والتحدي',
+            weekly: 'التحدي الأسبوعي',
             admin: 'غرفة الإدارة'
           }[this.currentScreen] || item.label;
         },
@@ -4884,6 +5090,80 @@
               trend: teams[tName].trendSum >= 0 ? 1 : -1
             };
           }).sort((a, b) => b.avgPoints - a.avgPoints);
+        },
+
+        // Weekly Challenge Methods
+        hasWeeklySubmission(week) {
+          if (this.isAdmin) return false;
+          if (!this.currentStudent) return false;
+          const key = this.currentStudent.id + '_w' + week;
+          return !!this.weeklySubmissions[key];
+        },
+
+        getWeeklyAnswer(week, qIndex) {
+          if (!this.currentStudent) return '';
+          const key = this.currentStudent.id + '_w' + week;
+          const sub = this.weeklySubmissions[key];
+          return sub && sub.answers ? (sub.answers[qIndex] || '') : '';
+        },
+
+        getStudentWeeklySubmission(studentId, week) {
+          const key = studentId + '_w' + week;
+          return this.weeklySubmissions[key] || null;
+        },
+
+        getStudentWeeklyAnswer(studentId, week, qIndex) {
+          const key = studentId + '_w' + week;
+          const sub = this.weeklySubmissions[key];
+          return sub && sub.answers ? (sub.answers[qIndex] || '') : '';
+        },
+
+        getWeekSubmissionsCount(week) {
+          let count = 0;
+          for (const key in this.weeklySubmissions) {
+            if (key.endsWith('_w' + week)) count++;
+          }
+          return count;
+        },
+
+        async submitWeeklyChallenge(week) {
+          if (this.weeklySubmitting) return;
+          if (!this.currentStudent) return;
+          if (this.weeklyFormAnswers.some(a => !a.trim())) {
+            this.showToast('يرجى الإجابة على جميع الأسئلة', 'neg', 'alert-circle');
+            return;
+          }
+          this.weeklySubmitting = true;
+          const key = this.currentStudent.id + '_w' + week;
+          const submission = {
+            studentId: this.currentStudent.id,
+            studentName: this.currentStudent.name,
+            week: week,
+            answers: [...this.weeklyFormAnswers],
+            submittedAt: new Date().toLocaleString('ar-SA')
+          };
+          this.weeklySubmissions[key] = submission;
+
+          // Save to Supabase (ID: 200 + week)
+          try {
+            if (supabaseClient) {
+              const configId = 200;
+              await supabaseClient.from('weekly_challenge').upsert({
+                id: configId,
+                title: 'weekly_submissions_config',
+                desc_text: JSON.stringify(this.weeklySubmissions),
+                points: 0,
+                duration: 0,
+                time_left: 0
+              });
+            }
+          } catch (e) {
+            console.error('Failed to save weekly submission:', e);
+          }
+
+          this.weeklyFormAnswers = ['', '', ''];
+          this.weeklySubmitting = false;
+          this.showToast('تم تسليم إجابتك بنجاح!', 'success', 'check-circle');
         },
 
         go(id) {
