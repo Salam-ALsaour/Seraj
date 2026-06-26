@@ -1967,6 +1967,16 @@
                      x-text="lastPushResult.msg"></div>
               </template>
 
+              <!-- Push Debug Check -->
+              <div style="margin-bottom:16px;">
+                <button @click="checkPushLog()"
+                        style="width:100%; padding:10px; font-size:11px; font-weight:700; border-radius:12px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.2); color:var(--orange); cursor:pointer;">
+                  🔍 فحص: هل وصل الـ Push للـ Service Worker؟
+                </button>
+                <div x-show="pushLogResult" x-text="pushLogResult"
+                     style="margin-top:8px; padding:10px 14px; border-radius:10px; font-size:11px; font-weight:600; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt-dim); direction:ltr; text-align:left;"></div>
+              </div>
+
               <!-- Notifications History -->
               <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
                 <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('clock')"></div>
@@ -3329,6 +3339,7 @@
         pushLinkStatusMessage: '',
         sendingNotif: false,
         lastPushResult: null,
+        pushLogResult: '',
         showNotificationPrompt: false,
         realtimeChannel: null,
 
@@ -6348,6 +6359,33 @@
               } catch(e) { console.warn(e); }
             }
           }
+        },
+
+        checkPushLog() {
+          this.pushLogResult = 'جاري الفحص...';
+          try {
+            const req = indexedDB.open('seraj-push-log', 1);
+            req.onsuccess = ev => {
+              const db = ev.target.result;
+              if (!db.objectStoreNames.contains('logs')) {
+                this.pushLogResult = '❌ لا يوجد سجل — لم يصل أي push للـ SW على هذا الجهاز';
+                return;
+              }
+              const tx  = db.transaction('logs', 'readonly');
+              const all = tx.objectStore('logs').getAll();
+              all.onsuccess = () => {
+                const logs = all.result;
+                if (!logs || logs.length === 0) {
+                  this.pushLogResult = '❌ لم يصل أي push للـ SW على هذا الجهاز بعد';
+                } else {
+                  const last = logs[logs.length - 1];
+                  this.pushLogResult = `✅ آخر push وصل للـ SW: ${last.ts} | data: ${last.raw.slice(0,60)}`;
+                }
+              };
+              all.onerror = () => { this.pushLogResult = '⚠️ خطأ في قراءة السجل'; };
+            };
+            req.onerror = () => { this.pushLogResult = '❌ لا يوجد سجل push على هذا الجهاز'; };
+          } catch(e) { this.pushLogResult = '❌ خطأ: ' + e.message; }
         },
 
         _workerUrlSaveTimer: null,

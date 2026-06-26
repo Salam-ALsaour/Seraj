@@ -1,5 +1,5 @@
-// v23 — persistent push status display + sendingNotif state
-const CACHE_NAME = 'seraj-cache-v23';
+// v24 — push debug logging to IndexedDB
+const CACHE_NAME = 'seraj-cache-v24';
 const LOCAL_ASSETS = ['index.html', 'manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -34,21 +34,45 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
+function logPushToIDB(ts, rawData) {
+  return new Promise(resolve => {
+    try {
+      const req = indexedDB.open('seraj-push-log', 1);
+      req.onupgradeneeded = ev => ev.target.result.createObjectStore('logs', { autoIncrement: true });
+      req.onsuccess = ev => {
+        const tx = ev.target.result.transaction('logs', 'readwrite');
+        tx.objectStore('logs').add({ ts, raw: String(rawData).slice(0, 200) });
+        tx.oncomplete = resolve;
+        tx.onerror   = resolve;
+      };
+      req.onerror = resolve;
+    } catch(e) { resolve(); }
+  });
+}
+
 self.addEventListener('push', (e) => {
+  const ts      = new Date().toISOString();
+  const rawText = e.data ? e.data.text() : '';
+
+  let title = 'سراج';
+  let body  = '';
   try {
-    const data = e.data ? e.data.json() : {};
-    const title = data.title || 'سراج';
-    const body  = data.body  || data.message || '';
-    e.waitUntil(
+    const parsed = JSON.parse(rawText);
+    title = parsed.title || 'سراج';
+    body  = parsed.body  || parsed.message || '';
+  } catch(_) {
+    body = rawText || 'تنبيه جديد من سراج';
+  }
+
+  e.waitUntil(
+    Promise.all([
+      logPushToIDB(ts, rawText),
       self.registration.showNotification(title, {
         body, icon: 'icon.png', badge: 'icon.png',
         vibrate: [200, 100, 200], dir: 'rtl'
       })
-    );
-  } catch (err) {
-    const text = e.data ? e.data.text() : 'تنبيه جديد من سراج';
-    e.waitUntil(self.registration.showNotification('سراج', { body: text, icon: 'icon.png', dir: 'rtl' }));
-  }
+    ])
+  );
 });
 
 self.addEventListener('notificationclick', (e) => {
