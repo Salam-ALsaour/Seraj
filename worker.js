@@ -93,7 +93,7 @@ async function buildVapidJwt(audience, publicKeyB64url, privateKeyB64url) {
   return `${sigInput}.${encodeB64url(sigBuf)}`;
 }
 
-// ─── Payload Encryption (RFC 8291 / aes128gcm) ──────────────────────────────
+// ─── Payload Encryption (RFC 8291 / aes128gcm) — native HKDF ────────────────
 
 async function encryptPayload(plaintext, subscription) {
   const receiverPubBytes = decodeB64url(subscription.keys.p256dh);
@@ -110,37 +110,47 @@ async function encryptPayload(plaintext, subscription) {
     'raw', receiverPubBytes, { name: 'ECDH', namedCurve: 'P-256' }, false, [],
   );
 
-  // ECDH shared secret (32 bytes)
+  // ECDH shared secret (32 bytes — X coordinate only)
   const sharedSecret = new Uint8Array(
     await crypto.subtle.deriveBits({ name: 'ECDH', public: receiverPub }, senderPair.privateKey, 256),
   );
 
-  // key_info = "WebPush: info\x00" + receiver_pub + sender_pub
+  // key_info = "WebPush: info\x00" + receiver_pub + sender_pub (RFC 8291 §2.3)
   const keyInfo = cat(te('WebPush: info\x00'), receiverPubBytes, senderPubBytes);
 
-  // PRK_key = HMAC-SHA256(auth_secret, sharedSecret)
-  const prkKey = await hmacSha256(authSecret, sharedSecret);
-  // ikm = HKDF-Expand(prkKey, keyInfo, 32)
-  const ikm = await hkdfExpand(prkKey, keyInfo, 32);
+  // IKM derivation: HKDF(salt=auth, IKM=sharedSecret, info=keyInfo, L=32) — native Web Crypto
+  const ikmSource = await crypto.subtle.importKey('raw', sharedSecret, { name: 'HKDF' }, false, ['deriveBits']);
+  const ikm = new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'HKDF', hash: 'SHA-256', salt: authSecret, info: keyInfo },
+      ikmSource, 256,
+    ),
+  );
 
-  // Random 16-byte salt
+  // Random 16-byte content salt
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
-  // prk = HMAC-SHA256(salt, ikm)
-  const prk = await hmacSha256(salt, ikm);
+  // CEK/Nonce info strings (RFC 8291 §2.3)
+  const cekInfo   = cat(te('Content-Encoding: aes128gcm\x00'), new Uint8Array([1]));
+  const nonceInfo = cat(te('Content-Encoding: nonce\x00'),      new Uint8Array([1]));
 
-  // CEK (16 bytes) and NONCE (12 bytes)
-  const cek   = await hkdfExpand(prk, cat(te('Content-Encoding: aes128gcm\x00'), new Uint8Array([1])), 16);
-  const nonce = await hkdfExpand(prk, cat(te('Content-Encoding: nonce\x00'),      new Uint8Array([1])), 12);
+  // CEK and NONCE via native HKDF(salt=content_salt, IKM=ikm)
+  const ikmKey = await crypto.subtle.importKey('raw', ikm, { name: 'HKDF' }, false, ['deriveBits']);
+  const cek   = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt, info: cekInfo   }, ikmKey, 128,
+  ));
+  const nonce = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt, info: nonceInfo }, ikmKey, 96,
+  ));
 
-  // AES-128-GCM encrypt with 0x02 padding delimiter (single record, RFC 8188)
+  // AES-128-GCM encrypt: plaintext + 0x02 padding delimiter (RFC 8188 §2.5)
   const aesKey = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
   const padded = cat(te(plaintext), new Uint8Array([2]));
   const ciphertext = new Uint8Array(
     await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aesKey, padded),
   );
 
-  // Build aes128gcm content encoding header: salt(16) + rs(4 BE) + idlen(1) + keyid + ciphertext
+  // aes128gcm record: salt(16) + rs(4 BE=4096) + keyid_len(1) + keyid(65) + ciphertext
   const rs = new Uint8Array(4);
   new DataView(rs.buffer).setUint32(0, 4096, false);
   return cat(salt, rs, new Uint8Array([senderPubBytes.length]), senderPubBytes, ciphertext);

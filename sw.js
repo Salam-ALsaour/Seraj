@@ -1,5 +1,5 @@
-// v26 — test empty push (no encryption)
-const CACHE_NAME = 'seraj-cache-v26';
+// v27 — native HKDF encryption in worker
+const CACHE_NAME = 'seraj-cache-v27';
 const LOCAL_ASSETS = ['index.html', 'manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
