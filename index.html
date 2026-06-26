@@ -1392,13 +1392,14 @@
       <!-- ============================================== -->
       <!-- 6. 📅 WEEKLY CHALLENGE VIEW -->
       <!-- ============================================== -->
-      <div x-show="currentScreen === 'weekly' && isAdmin" class="page">
+      <div x-show="currentScreen === 'weekly'" class="page">
         
         <!-- Header Card -->
         <div class="glass" style="padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(249,115,22,0.15); background: linear-gradient(160deg, rgba(249,115,22,0.06), transparent);">
           <div style="width: 40px; height: 40px; margin: 0 auto 10px; color: var(--orange); filter: drop-shadow(0 0 8px var(--orange-glow));" x-html="getIconSvg('calendar')"></div>
-          <div style="font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px;">إدارة التحدي الأسبوعي</div>
-          <div style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">راجع تسليمات الطلاب، احفظ تقييماتك كمسودة، ثم حدد الفائزين.</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px;">التحدي الأسبوعي</div>
+          <div x-show="!isAdmin" style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">8 أسابيع — 8 تحديات مختلفة<br>أكمل التحدي في كل أسبوع واكسب نقاط إضافية!</div>
+          <div x-show="isAdmin" style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">راجع تسليمات الطلاب، احفظ تقييماتك كمسودة، ثم حدد الفائزين.</div>
         </div>
 
         <!-- Week Selector Grid -->
@@ -3536,7 +3537,7 @@
           { id: 'leaderboard', label: 'الصدارة', icon: 'trophy' },
           { id: 'store', label: 'المتجر', icon: 'gift' },
           { id: 'challenge', label: 'المسابقة', icon: 'dices' },
-          { id: 'weekly', label: 'إدارة التحدي', icon: 'calendar' },
+          { id: 'weekly', label: 'التحدي', icon: 'calendar' },
           { id: 'admin', label: 'الإدارة', icon: 'settings' }
         ],
 
@@ -4565,7 +4566,7 @@
             profile: 'الملف الشخصي',
             store: 'المتجر المضيء',
             challenge: 'المسابقة والتحدي',
-            weekly: 'إدارة التحدي الأسبوعي',
+            weekly: 'التحدي الأسبوعي',
             admin: 'غرفة الإدارة'
           }[this.currentScreen] || item.label;
         },
