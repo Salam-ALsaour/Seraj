@@ -3834,20 +3834,46 @@
                   localStorage.setItem('seraj_pwa_worker_url', workerUrlData.desc_text);
                 }
 
-                // Load Weekly Submissions - each submission is stored as a separate row (title: wsub_<key>)
-                this.weeklySubmissions = {};
+                // Load Weekly Submissions - build object first then assign once for Alpine reactivity
+                const _subs = {};
                 const subRows = chRows ? chRows.filter(r => String(r.title || '').startsWith('wsub_')) : [];
                 for (const row of subRows) {
                   const key = row.title.slice(5); // strip "wsub_"
-                  try { this.weeklySubmissions[key] = JSON.parse(row.desc_text); } catch (_) {}
+                  try { _subs[key] = JSON.parse(row.desc_text); } catch (_) {}
                 }
-                // Backwards compat: also load from legacy row 200 if it has data not yet migrated
+                // Also load from legacy row 200 (old format - backwards compat)
                 const legacyRow = chRows ? chRows.find(r => parseInt(r.id) === 200) : null;
                 if (legacyRow && legacyRow.desc_text) {
                   try {
                     const legacy = JSON.parse(legacyRow.desc_text);
                     for (const [k, v] of Object.entries(legacy)) {
-                      if (!this.weeklySubmissions[k]) this.weeklySubmissions[k] = v;
+                      if (!_subs[k]) _subs[k] = v;
+                    }
+                  } catch (_) {}
+                }
+                this.weeklySubmissions = _subs;
+
+                // ترحيل تلقائي: نقل أي تسليم في row 200 إلى row مستقلة وتفريغها
+                if (legacyRow && legacyRow.desc_text) {
+                  try {
+                    const legacy = JSON.parse(legacyRow.desc_text);
+                    const legacyEntries = Object.entries(legacy);
+                    if (legacyEntries.length > 0) {
+                      for (const [k] of legacyEntries) {
+                        const migrTitle = 'wsub_' + k;
+                        const { data: already } = await supabaseClient
+                          .from('weekly_challenge').select('id').eq('title', migrTitle).limit(1);
+                        if (!already || already.length === 0) {
+                          await supabaseClient.from('weekly_challenge').insert({
+                            title: migrTitle,
+                            desc_text: JSON.stringify(legacy[k]),
+                            points: 0, duration: 0, time_left: 0
+                          });
+                        }
+                      }
+                      // تفريغ row 200 بعد الترحيل
+                      await supabaseClient.from('weekly_challenge')
+                        .update({ desc_text: JSON.stringify({}) }).eq('id', 200);
                     }
                   } catch (_) {}
                 }
@@ -5385,7 +5411,21 @@
             `هل تريد حذف إجابة ${sub.studentName || 'هذا الطالب'} من التحدي؟`,
             async () => {
               if (supabaseClient) {
+                // حذف من الـ row المستقلة (التنسيق الجديد)
                 await supabaseClient.from('weekly_challenge').delete().eq('title', 'wsub_' + key);
+                // حذف من row 200 القديمة إذا كانت البيانات هناك
+                const { data: legacyData } = await supabaseClient
+                  .from('weekly_challenge').select('desc_text').eq('id', 200).maybeSingle();
+                if (legacyData && legacyData.desc_text) {
+                  try {
+                    const legacy = JSON.parse(legacyData.desc_text);
+                    if (key in legacy) {
+                      delete legacy[key];
+                      await supabaseClient.from('weekly_challenge')
+                        .update({ desc_text: JSON.stringify(legacy) }).eq('id', 200);
+                    }
+                  } catch (_) {}
+                }
               }
               const updated = { ...this.weeklySubmissions };
               delete updated[key];
