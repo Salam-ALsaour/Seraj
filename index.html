@@ -6363,11 +6363,16 @@
             this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
             return;
           }
-          const result = await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
-          this.newNotifTitle = '';
-          this.newNotifBody = '';
-          if (!result || !result.pushAttempted) {
-            this.showToast('تم حفظ الإشعار داخل التطبيق، ولم يتم إرسال تنبيه للأجهزة', 'info');
+          try {
+            const result = await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
+            this.newNotifTitle = '';
+            this.newNotifBody = '';
+            if (!result || !result.pushAttempted) {
+              this.showToast('تم حفظ الإشعار داخل التطبيق، ولم يتم إرسال تنبيه للأجهزة', 'info');
+            }
+          } catch(e) {
+            console.error('[sendNotification] Error:', e);
+            this.showToast('خطأ غير متوقع: ' + e.message, 'neg');
           }
         },
 
@@ -6404,6 +6409,7 @@
         },
 
         async sendSystemNotification(title, body) {
+          if (!Array.isArray(this.notifications)) this.notifications = [];
           const newNotif = {
             id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
             title: title,
