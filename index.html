@@ -1913,7 +1913,7 @@
                 </div>
                 <div>
                   <label style="font-size:11px; color:var(--txt-faint); display:block; margin-bottom:6px;">رابط خادم الإشعارات (Cloudflare Worker URL) *</label>
-                  <input type="text" x-model="workerUrl" @input="localStorage.setItem('seraj_pwa_worker_url', workerUrl)" placeholder="https://seraj-push.username.workers.dev"
+                  <input type="text" x-model="workerUrl" @input="localStorage.setItem('seraj_pwa_worker_url', workerUrl); debounceSaveWorkerUrl()" placeholder="https://seraj-push.username.workers.dev"
                          style="width:100%; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:12px; direction:ltr;" />
                   <span style="font-size:9px; color:var(--txt-faint); display:block; margin-top:4px; text-align:right;">ألصق رابط الـ Worker بعد نشره في Cloudflare لتفعيل التنبيهات في الخلفية.</span>
                 </div>
@@ -3783,6 +3783,13 @@
                     duration: 0,
                     time_left: 0
                   });
+                }
+
+                // Find Worker URL Config (ID: 105)
+                let workerUrlData = chRows ? chRows.find(r => parseInt(r.id) === 105) : null;
+                if (workerUrlData && workerUrlData.desc_text) {
+                  this.workerUrl = workerUrlData.desc_text;
+                  localStorage.setItem('seraj_pwa_worker_url', workerUrlData.desc_text);
                 }
 
                 // Find Weekly Submissions (ID: 200)
@@ -6321,6 +6328,36 @@
           }
         },
 
+        _workerUrlSaveTimer: null,
+
+        debounceSaveWorkerUrl() {
+          clearTimeout(this._workerUrlSaveTimer);
+          this._workerUrlSaveTimer = setTimeout(() => this.saveWorkerUrl(), 1200);
+        },
+
+        async saveWorkerUrl() {
+          if (!supabaseClient || !this.workerUrl.trim()) return;
+          await supabaseClient.from('weekly_challenge').upsert({
+            id: 105, title: 'worker_url_config',
+            desc_text: this.workerUrl.trim(),
+            points: 0, duration: 0, time_left: 0
+          });
+          this.showToast('تم حفظ رابط الخادم للكل', 'pos', 'check');
+        },
+
+        async removeExpiredSubscriptions(expiredEndpoints) {
+          if (!expiredEndpoints.size) return;
+          const updated = this.pushSubscriptions.filter(s => !expiredEndpoints.has(s.subscription?.endpoint));
+          this.pushSubscriptions = updated;
+          if (supabaseClient) {
+            await supabaseClient.from('weekly_challenge').upsert({
+              id: 104, title: 'push_subscriptions_config',
+              desc_text: JSON.stringify(updated),
+              points: 0, duration: 0, time_left: 0
+            });
+          }
+        },
+
         async sendNotification() {
           if (!this.newNotifTitle.trim() || !this.newNotifBody.trim()) {
             this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
@@ -6388,74 +6425,80 @@
 
             // 2. Fetch subscriptions and send background push via Cloudflare Worker
             try {
+              const workerUrl = this.workerUrl || localStorage.getItem('seraj_pwa_worker_url') || '';
+              if (!workerUrl) {
+                this.showToast('أدخل رابط خادم الإشعارات في إدارة الإشعارات', 'neg');
+                return { saved: true, pushAttempted: false, pushSuccess: false };
+              }
+
               const { data: subData } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
-              if (subData && subData.desc_text) {
-                const subs = JSON.parse(subData.desc_text);
-                const validSubs = Array.isArray(subs)
-                  ? subs.filter(s => s && s.subscription && s.subscription.endpoint && s.isAdmin !== true)
-                  : [];
-                const seenEndpoints = new Set();
-                const subscriptionsToSend = validSubs
-                  .filter(s => {
-                    const endpoint = s.subscription.endpoint;
-                    if (seenEndpoints.has(endpoint)) return false;
-                    seenEndpoints.add(endpoint);
-                    return true;
-                  })
-                  .map(s => s.subscription);
-                const workerUrl = localStorage.getItem('seraj_pwa_worker_url') || this.workerUrl;
-                
-                if (!workerUrl) {
-                  this.showToast('أدخل رابط خادم الإشعارات أولاً', 'neg');
-                  return { saved: true, pushAttempted: false, pushSuccess: false };
-                }
+              const subs = (subData && subData.desc_text) ? JSON.parse(subData.desc_text) : [];
+              const validSubs = Array.isArray(subs)
+                ? subs.filter(s => s && s.subscription && s.subscription.endpoint && s.isAdmin !== true)
+                : [];
+              const seenEndpoints = new Set();
+              const subscriptionsToSend = validSubs
+                .filter(s => {
+                  if (seenEndpoints.has(s.subscription.endpoint)) return false;
+                  seenEndpoints.add(s.subscription.endpoint);
+                  return true;
+                })
+                .map(s => s.subscription);
 
-                if (subscriptionsToSend.length === 0) {
-                  this.showToast('لا توجد أجهزة طلاب مربوطة لاستلام الإشعار', 'info', 'bell');
-                  return { saved: true, pushAttempted: false, pushSuccess: false };
-                }
+              if (subscriptionsToSend.length === 0) {
+                this.showToast('لا توجد أجهزة طلاب مربوطة — يجب تفعيل الإشعارات من الجهاز أولاً', 'info', 'bell');
+                return { saved: true, pushAttempted: false, pushSuccess: false };
+              }
 
-                if (workerUrl && subscriptionsToSend.length > 0) {
-                  const res = await fetch(workerUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      subscriptions: subscriptionsToSend,
-                      title: title,
-                      body: body,
-                      message: body,
-                      vapidKeys: this.vapidKeys,
-                      token: "seraj_push_token_2026"
-                    })
-                  });
-                  const resData = await res.json().catch(() => ({}));
-                  console.log("Cloudflare push notification request completed, status:", res.status, resData);
-                  if (!res.ok) {
-                    this.showToast('فشل إرسال الإشعار: ' + (resData.error || `HTTP ${res.status}`), 'neg');
-                    return { saved: true, pushAttempted: true, pushSuccess: false };
+              const res = await fetch(workerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  subscriptions: subscriptionsToSend,
+                  title,
+                  body,
+                  message: body,
+                  vapidKeys: this.vapidKeys,
+                  token: "seraj_push_token_2026"
+                })
+              });
+              const resData = await res.json().catch(() => ({}));
+              console.log('[Push] Worker response:', res.status, resData);
+
+              if (!res.ok) {
+                this.showToast('خطأ في الخادم: ' + (resData.error || `HTTP ${res.status}`), 'neg');
+                return { saved: true, pushAttempted: true, pushSuccess: false };
+              }
+
+              // Clean up expired subscriptions (410 Gone / 404 Not Found)
+              if (Array.isArray(resData.results)) {
+                const expired = new Set();
+                resData.results.forEach((r, i) => {
+                  if (r.status === 410 || r.status === 404) {
+                    const ep = subscriptionsToSend[i]?.endpoint;
+                    if (ep) expired.add(ep);
                   }
+                });
+                if (expired.size) this.removeExpiredSubscriptions(expired);
+              }
 
-                  if (resData.success) {
-                    const results = Array.isArray(resData.results) ? resData.results : [];
-                    const successes = results.length > 0
-                      ? results.filter(r => r && (r.status === 201 || r.status === 200 || r.success === true || r.ok === true)).length
-                      : subscriptionsToSend.length;
-                    const failures = results.length > 0 ? results.length - successes : 0;
-                    if (failures > 0) {
-                      this.showToast(`تم الإرسال: نجح ${successes} وفشل ${failures}`, 'info');
-                    } else {
-                      this.showToast(`تم إرسال الإشعار إلى ${successes} جهاز بنجاح!`, 'pos', 'bell');
-                    }
-                    return { saved: true, pushAttempted: true, pushSuccess: failures === 0, successes, failures };
-                  } else {
-                    this.showToast('فشل إرسال الإشعار: ' + (resData.error || 'خطأ غير معروف'), 'neg');
-                    return { saved: true, pushAttempted: true, pushSuccess: false };
-                  }
+              if (resData.success) {
+                const results = Array.isArray(resData.results) ? resData.results : [];
+                const successes = resData.successes ?? results.filter(r => r && r.ok).length;
+                const failures  = resData.failures  ?? (results.length - successes);
+                if (failures > 0) {
+                  this.showToast(`تم الإرسال: نجح ${successes} وفشل ${failures}`, 'info');
+                } else {
+                  this.showToast(`تم إرسال الإشعار إلى ${successes} جهاز بنجاح! 🔔`, 'pos', 'bell');
                 }
+                return { saved: true, pushAttempted: true, pushSuccess: failures === 0, successes, failures };
+              } else {
+                this.showToast('فشل إرسال الإشعار: ' + (resData.error || 'خطأ غير معروف'), 'neg');
+                return { saved: true, pushAttempted: true, pushSuccess: false };
               }
             } catch (err) {
-              console.error("Failed to send background push notifications:", err);
-              this.showToast('فشل الاتصال بخادم الإشعارات', 'neg');
+              console.error('[Push] Failed:', err);
+              this.showToast('فشل الاتصال بخادم الإشعارات: ' + err.message, 'neg');
               return { saved: true, pushAttempted: true, pushSuccess: false };
             }
           } else {
