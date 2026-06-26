@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seraj-cache-v12';
+const CACHE_NAME = 'seraj-cache-v13';
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -57,7 +57,7 @@ self.addEventListener('push', (e) => {
   try {
     const data = e.data ? e.data.json() : {};
     const title = data.title || 'سراج';
-    const body = data.body || '';
+    const body = data.body || data.message || '';
     e.waitUntil(
       self.registration.showNotification(title, {
         body: body,

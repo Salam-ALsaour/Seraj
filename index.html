@@ -1057,10 +1057,14 @@
                     <div style="width:12px; height:12px; color:#10b981;" x-html="getIconSvg('check-circle')"></div>
                     <span>الإشعارات مفعلة على هذا الجهاز</span>
                   </div>
-                  <button @click="subscribeToPushNotifications()" 
-                          style="background:none; border:none; color:#ea580c; text-decoration:underline; font-size:10px; font-weight:600; cursor:pointer; padding:2px 6px;">
-                    تحديث ربط الجهاز 🔄
+                  <button @click="subscribeToPushNotifications({ manual: true, forceRefresh: true })"
+                          :disabled="pushLinkBusy"
+                          style="background:none; border:none; color:#ea580c; text-decoration:underline; font-size:10px; font-weight:600; cursor:pointer; padding:2px 6px;"
+                          :style="pushLinkBusy ? 'opacity:0.65; cursor:wait;' : ''">
+                    <span x-text="pushLinkBusy ? 'جاري التحديث...' : 'تحديث ربط الجهاز 🔄'"></span>
                   </button>
+                  <span x-show="pushLinkStatusMessage" x-text="pushLinkStatusMessage"
+                        style="font-size:9px; color:#34d399; font-weight:600;"></span>
                 </div>
               </template>
             </div>
@@ -1672,15 +1676,20 @@
                     </button>
                   </template>
                   <template x-if="notificationPermission === 'granted'">
-                    <div @click="subscribeToPushNotifications()" 
+                    <button type="button"
+                         @click="subscribeToPushNotifications({ manual: true, forceRefresh: true })"
+                         :disabled="pushLinkBusy"
                          style="flex:1; padding:8px 10px; font-size:12px; font-weight:700; border-radius:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:#34d399; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer;"
+                         :style="pushLinkBusy ? 'opacity:0.65; cursor:wait;' : ''"
                          title="اضغط لتحديث ربط الجهاز بالسحابة">
                       <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
                         <div style="width:14px; height:14px; color:#34d399;" x-html="getIconSvg('check-circle')"></div>
                         <span>تنبيهات الجهاز مفعلة</span>
                       </div>
-                      <span style="font-size:9px; text-decoration:underline; color:#ffb27a; font-weight:500;">تحديث ربط الجهاز 🔄</span>
-                    </div>
+                      <span style="font-size:9px; text-decoration:underline; color:#ffb27a; font-weight:500;" x-text="pushLinkBusy ? 'جاري تحديث الربط...' : 'تحديث ربط الجهاز 🔄'"></span>
+                      <span x-show="pushLinkStatusMessage" x-text="pushLinkStatusMessage"
+                            style="font-size:9px; color:#34d399; font-weight:600; text-decoration:none;"></span>
+                    </button>
                   </template>
                 </div>
               </div>
@@ -3020,6 +3029,8 @@
         vapidKeys: null,
         pushSubscriptions: [],
         workerUrl: localStorage.getItem('seraj_pwa_worker_url') || '',
+        pushLinkBusy: false,
+        pushLinkStatusMessage: '',
         showNotificationPrompt: false,
         realtimeChannel: null,
 
@@ -5585,36 +5596,66 @@
           }
         },
 
-        async subscribeToPushNotifications() {
+        async subscribeToPushNotifications(options = {}) {
+          const manual = !!options.manual;
+          const forceRefresh = !!options.forceRefresh;
+          if (this.pushLinkBusy) return false;
+          this.pushLinkBusy = true;
+          this.pushLinkStatusMessage = 'جاري تحديث الربط...';
           try {
             if (!('serviceWorker' in navigator)) {
               this.showToast('المتصفح لا يدعم Service Worker', 'neg');
-              return;
+              this.pushLinkStatusMessage = 'المتصفح لا يدعم الربط';
+              return false;
             }
             if (!this.vapidKeys) {
               this.showToast('مفاتيح الإشعارات غير متوفرة بعد', 'neg');
-              return;
+              this.pushLinkStatusMessage = 'مفاتيح الإشعارات غير متوفرة';
+              return false;
+            }
+            if ('Notification' in window && Notification.permission !== 'granted') {
+              this.notificationPermission = Notification.permission;
+              this.showToast('فعّل إشعارات الجهاز أولاً', 'info', 'bell');
+              this.pushLinkStatusMessage = 'بانتظار تفعيل الإشعارات';
+              return false;
             }
             
-            this.showToast('جاري التحقق من جاهزية خدمة الإشعارات...', 'info');
+            if (manual) this.showToast('جاري تحديث ربط الجهاز...', 'info');
             const reg = await navigator.serviceWorker.ready;
             
-            this.showToast('جاري التحقق من اشتراك المتصفح الحالي...', 'info');
             if (!reg.pushManager) {
               this.showToast('المتصفح لا يدعم PushManager', 'neg');
-              return;
+              this.pushLinkStatusMessage = 'المتصفح لا يدعم Push';
+              return false;
             }
             
             let sub = await reg.pushManager.getSubscription();
             const currentKey = this.vapidKeys.publicKey;
             const registeredKey = localStorage.getItem('seraj_push_registered_vapid');
+            const previousEndpoint = localStorage.getItem('seraj_push_registered_endpoint');
+
+            let latestSubs = Array.isArray(this.pushSubscriptions) ? [...this.pushSubscriptions] : [];
+            if (supabaseClient) {
+              const { data } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
+              if (data && data.desc_text) {
+                try {
+                  const parsed = JSON.parse(data.desc_text);
+                  latestSubs = Array.isArray(parsed) ? parsed : [];
+                } catch(e) {
+                  console.error("Failed to parse latest push subscriptions:", e);
+                }
+              }
+            }
             
             // Check if current subscription endpoint is already in the loaded database list
-            const isSubscribedInDb = sub && (this.pushSubscriptions || []).some(s => s.subscription.endpoint === sub.endpoint && s.student_id === this.activeId);
+            const isSubscribedInDb = sub && latestSubs.some(s => s && s.subscription && s.subscription.endpoint === sub.endpoint && s.student_id === this.activeId);
             
-            if (sub && registeredKey === currentKey && isSubscribedInDb) {
+            if (sub && registeredKey === currentKey && isSubscribedInDb && !forceRefresh) {
               console.log("Push notification subscription is already up-to-date and registered in the database.");
-              return;
+              this.pushSubscriptions = latestSubs;
+              this.pushLinkStatusMessage = 'ربط الجهاز محدث بالفعل';
+              if (manual) this.showToast('ربط الجهاز محدث بالفعل', 'success', 'check');
+              return true;
             }
             
             // If the browser has a valid subscription with correct keys, but it's just missing from the database, reuse it
@@ -5638,48 +5679,74 @@
               });
             }
             
-            this.showToast('جاري ربط جهازك بقاعدة البيانات السحابية...', 'info');
             if (sub && this.isLoggedIn && this.activeId) {
               const subObj = JSON.parse(JSON.stringify(sub));
+              let deviceId = localStorage.getItem('seraj_push_device_id');
+              if (!deviceId) {
+                deviceId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : ('device_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+                localStorage.setItem('seraj_push_device_id', deviceId);
+              }
               const entry = {
+                device_id: deviceId,
                 student_id: this.activeId,
                 isAdmin: this.isAdmin,
                 subscription: subObj,
                 updated_at: new Date().toISOString()
               };
               
-              const { data } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
-              let subs = [];
-              if (data && data.desc_text) {
-                try { subs = JSON.parse(data.desc_text); } catch(e){}
-              }
+              let subs = latestSubs.filter(s => s && s.subscription && s.subscription.endpoint);
               
-              subs = subs.filter(s => s.subscription.endpoint !== subObj.endpoint && s.student_id !== this.activeId);
+              subs = subs.filter(s => {
+                const endpoint = s.subscription.endpoint;
+                return endpoint !== subObj.endpoint && (!previousEndpoint || endpoint !== previousEndpoint);
+              });
               subs.push(entry);
               this.pushSubscriptions = subs;
               
-              const { error: upsertErr } = await supabaseClient.from('weekly_challenge').upsert({
-                id: 104,
-                title: 'push_subscriptions_config',
-                desc_text: JSON.stringify(subs),
-                points: 0,
-                duration: 0,
-                time_left: 0
-              });
+              let upsertErr = null;
+              if (supabaseClient) {
+                const { error } = await supabaseClient.from('weekly_challenge').upsert({
+                  id: 104,
+                  title: 'push_subscriptions_config',
+                  desc_text: JSON.stringify(subs),
+                  points: 0,
+                  duration: 0,
+                  time_left: 0
+                });
+                upsertErr = error;
+              } else {
+                this.saveState();
+              }
               
               if (upsertErr) {
                 this.showToast('فشل الحفظ في قاعدة البيانات: ' + upsertErr.message, 'neg');
+                this.pushLinkStatusMessage = 'فشل تحديث الربط';
+                return false;
               } else {
                 console.log("Push subscription saved successfully!");
                 localStorage.setItem('seraj_push_registered_vapid', currentKey);
-                this.showToast('تم ربط الجهاز بقاعدة البيانات بنجاح!', 'pos');
+                localStorage.setItem('seraj_push_registered_endpoint', subObj.endpoint);
+                this.pushLinkStatusMessage = forceRefresh ? 'تم تحديث الربط الآن' : 'تم ربط الجهاز بنجاح';
+                this.showToast(forceRefresh ? 'تم تحديث ربط الجهاز بنجاح' : 'تم ربط الجهاز بقاعدة البيانات بنجاح!', 'pos', 'check');
+                setTimeout(() => {
+                  if (this.pushLinkStatusMessage === 'تم تحديث الربط الآن' || this.pushLinkStatusMessage === 'تم ربط الجهاز بنجاح') {
+                    this.pushLinkStatusMessage = '';
+                  }
+                }, 3500);
+                return true;
               }
             } else {
               this.showToast('لم يتم الحفظ: activeId غير متوفر أو غير مسجل دخول', 'neg');
+              this.pushLinkStatusMessage = 'سجّل الدخول أولاً';
+              return false;
             }
           } catch(err) {
             console.error("Failed to subscribe to push notifications:", err);
             this.showToast('فشل تفعيل إشعارات الخلفية: ' + err.message, 'neg');
+            this.pushLinkStatusMessage = 'فشل تحديث الربط';
+            return false;
+          } finally {
+            this.pushLinkBusy = false;
           }
         },
 
@@ -5726,10 +5793,12 @@
             this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
             return;
           }
-          await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
+          const result = await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
           this.newNotifTitle = '';
           this.newNotifBody = '';
-          this.showToast('تم إرسال الإشعار بنجاح', 'success');
+          if (!result || !result.pushAttempted) {
+            this.showToast('تم حفظ الإشعار داخل التطبيق، ولم يتم إرسال تنبيه للأجهزة', 'info');
+          }
         },
 
         deleteNotification(notifId) {
@@ -5789,46 +5858,77 @@
               const { data: subData } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
               if (subData && subData.desc_text) {
                 const subs = JSON.parse(subData.desc_text);
-                const subscriptionsToSend = subs.map(s => s.subscription);
+                const validSubs = Array.isArray(subs)
+                  ? subs.filter(s => s && s.subscription && s.subscription.endpoint && s.isAdmin !== true)
+                  : [];
+                const seenEndpoints = new Set();
+                const subscriptionsToSend = validSubs
+                  .filter(s => {
+                    const endpoint = s.subscription.endpoint;
+                    if (seenEndpoints.has(endpoint)) return false;
+                    seenEndpoints.add(endpoint);
+                    return true;
+                  })
+                  .map(s => s.subscription);
                 const workerUrl = localStorage.getItem('seraj_pwa_worker_url') || this.workerUrl;
                 
+                if (!workerUrl) {
+                  this.showToast('أدخل رابط خادم الإشعارات أولاً', 'neg');
+                  return { saved: true, pushAttempted: false, pushSuccess: false };
+                }
+
+                if (subscriptionsToSend.length === 0) {
+                  this.showToast('لا توجد أجهزة طلاب مربوطة لاستلام الإشعار', 'info', 'bell');
+                  return { saved: true, pushAttempted: false, pushSuccess: false };
+                }
+
                 if (workerUrl && subscriptionsToSend.length > 0) {
-                  fetch(workerUrl, {
+                  const res = await fetch(workerUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       subscriptions: subscriptionsToSend,
                       title: title,
+                      body: body,
                       message: body,
                       vapidKeys: this.vapidKeys,
                       token: "seraj_push_token_2026"
                     })
-                  }).then(async res => {
-                    const resData = await res.json().catch(() => ({}));
-                    console.log("Cloudflare push notification request completed, status:", res.status, resData);
-                    if (resData.success) {
-                      const successes = (resData.results || []).filter(r => r.status === 201 || r.status === 200).length;
-                      const failures = (resData.results || []).length - successes;
-                      if (failures > 0) {
-                        this.showToast(`تم الإرسال: نجح ${successes} وفشل ${failures}`, 'info');
-                      } else {
-                        this.showToast('تم إرسال الإشعار لجميع الأجهزة بنجاح!', 'pos');
-                      }
-                    } else {
-                      this.showToast('فشل إرسال الإشعار: ' + (resData.error || 'خطأ غير معروف'), 'neg');
-                    }
-                  }).catch(err => {
-                    console.error("Cloudflare push notification request failed:", err);
-                    this.showToast('فشل الاتصال بخادم الإشعارات', 'neg');
                   });
+                  const resData = await res.json().catch(() => ({}));
+                  console.log("Cloudflare push notification request completed, status:", res.status, resData);
+                  if (!res.ok) {
+                    this.showToast('فشل إرسال الإشعار: ' + (resData.error || `HTTP ${res.status}`), 'neg');
+                    return { saved: true, pushAttempted: true, pushSuccess: false };
+                  }
+
+                  if (resData.success) {
+                    const results = Array.isArray(resData.results) ? resData.results : [];
+                    const successes = results.length > 0
+                      ? results.filter(r => r && (r.status === 201 || r.status === 200 || r.success === true || r.ok === true)).length
+                      : subscriptionsToSend.length;
+                    const failures = results.length > 0 ? results.length - successes : 0;
+                    if (failures > 0) {
+                      this.showToast(`تم الإرسال: نجح ${successes} وفشل ${failures}`, 'info');
+                    } else {
+                      this.showToast(`تم إرسال الإشعار إلى ${successes} جهاز بنجاح!`, 'pos', 'bell');
+                    }
+                    return { saved: true, pushAttempted: true, pushSuccess: failures === 0, successes, failures };
+                  } else {
+                    this.showToast('فشل إرسال الإشعار: ' + (resData.error || 'خطأ غير معروف'), 'neg');
+                    return { saved: true, pushAttempted: true, pushSuccess: false };
+                  }
                 }
               }
             } catch (err) {
               console.error("Failed to send background push notifications:", err);
+              this.showToast('فشل الاتصال بخادم الإشعارات', 'neg');
+              return { saved: true, pushAttempted: true, pushSuccess: false };
             }
           } else {
             this.saveState();
           }
+          return { saved: true, pushAttempted: false, pushSuccess: false };
         },
 
         enterPinDigit(digit) {
