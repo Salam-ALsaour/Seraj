@@ -1570,6 +1570,32 @@
                   </template>
                 </div>
               </div>
+
+              <!-- Admin Activity Log for Selected Student -->
+              <div style="margin-top: 20px;" x-show="adminActiveStudentId">
+                <div class="macro-label" style="color: var(--txt-dim); margin-top:0;">
+                  <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('history')"></div>
+                  سجل العمليات
+                  <span style="font-size:10px; font-weight:400; color:var(--txt-faint); margin-right:6px;" x-text="'(' + getStudentActivities(adminActiveStudentId).length + ')'"></span>
+                </div>
+                <div class="glass" style="padding:4px 0; max-height: 300px; overflow-y: auto;">
+                  <template x-for="l in getStudentActivities(adminActiveStudentId)" :key="l.id">
+                    <div class="log-item">
+                      <div class="log-ic" :class="l.pos ? 'pos' : 'neg'">
+                        <div style="width:14px; height:14px;" x-html="getIconSvg(l.pos ? 'plus' : 'minus')"></div>
+                      </div>
+                      <div class="log-info">
+                        <div class="log-reason" x-text="l.reason"></div>
+                        <div class="log-time" x-text="l.t"></div>
+                      </div>
+                      <div class="log-delta" :class="l.pos ? 'pos' : 'neg'" x-text="(l.delta > 0 ? '+' : '') + l.delta"></div>
+                    </div>
+                  </template>
+                  <template x-if="getStudentActivities(adminActiveStudentId).length === 0">
+                    <div class="empty-note">لا توجد عمليات مسجلة لهذا الطالب.</div>
+                  </template>
+                </div>
+              </div>
             </div>
 
             <!-- Tab 2: Requests Management -->
