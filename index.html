@@ -1918,10 +1918,20 @@
                   <span style="font-size:9px; color:var(--txt-faint); display:block; margin-top:4px; text-align:right;">ألصق رابط الـ Worker بعد نشره في Cloudflare لتفعيل التنبيهات في الخلفية.</span>
                 </div>
                 
+                <!-- Devices Status -->
+                <div style="padding:10px 14px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--stroke); display:flex; align-items:center; justify-content:space-between;">
+                  <span style="font-size:11px; color:var(--txt-dim);">الأجهزة المرتبطة:</span>
+                  <span style="font-size:13px; font-weight:700;"
+                        :style="pushSubscriptions.filter(s=>s&&!s.isAdmin).length > 0 ? 'color:#34d399' : 'color:#ef4444'"
+                        x-text="pushSubscriptions.filter(s=>s&&!s.isAdmin).length + ' جهاز'"></span>
+                </div>
+
                 <!-- Notification Permission & Send Buttons -->
                 <div style="display:flex; gap:10px; margin-top:6px;">
-                  <button @click="sendNotification()" 
-                          class="btn-redeem" 
+                  <button @click="sendNotification()"
+                          class="btn-redeem"
+                          :disabled="pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl"
+                          :style="pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl ? 'opacity:0.4;cursor:not-allowed' : ''"
                           style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; margin-top:0; cursor:pointer;">
                     إرسال الإشعار
                   </button>
@@ -6161,8 +6171,11 @@
             }
             
             if (manual) this.showToast('جاري تحديث ربط الجهاز...', 'info');
-            const reg = await navigator.serviceWorker.ready;
-            
+            const reg = await Promise.race([
+              navigator.serviceWorker.ready,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout - أعد تحميل الصفحة')), 12000))
+            ]);
+
             if (!reg.pushManager) {
               this.showToast('المتصفح لا يدعم PushManager', 'neg');
               this.pushLinkStatusMessage = 'المتصفح لا يدعم Push';
@@ -6367,9 +6380,6 @@
             const result = await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
             this.newNotifTitle = '';
             this.newNotifBody = '';
-            if (!result || !result.pushAttempted) {
-              this.showToast('تم حفظ الإشعار داخل التطبيق، ولم يتم إرسال تنبيه للأجهزة', 'info');
-            }
           } catch(e) {
             console.error('[sendNotification] Error:', e);
             this.showToast('خطأ غير متوقع: ' + e.message, 'neg');

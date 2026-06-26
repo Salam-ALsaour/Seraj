@@ -1,5 +1,5 @@
-// v21 — only cache LOCAL files so install never fails due to CDN errors
-const CACHE_NAME = 'seraj-cache-v21';
+// v22 — only cache LOCAL files so install never fails due to CDN errors
+const CACHE_NAME = 'seraj-cache-v22';
 const LOCAL_ASSETS = ['index.html', 'manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
