@@ -1,4 +1,4 @@
-const CACHE_NAME = 'seraj-cache-v15';
+const CACHE_NAME = 'seraj-cache-v17';
 const ASSETS = [
   'index.html',
   'manifest.json',

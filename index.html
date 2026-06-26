@@ -4044,10 +4044,6 @@
 
           // Watches for local mode
           this.$watch('currentScreen', (screen) => {
-            if (screen === 'weekly' && !this.isAdmin) {
-              this.currentScreen = 'leaderboard';
-              return;
-            }
             this.$nextTick(() => lucide.createIcons());
           });
           this.$watch('lbMode', () => this.$nextTick(() => lucide.createIcons()));
@@ -5388,11 +5384,6 @@
         },
 
         go(id) {
-          if (id === 'weekly' && !this.isAdmin) {
-            this.currentScreen = 'leaderboard';
-            this.showToast('التحدي الأسبوعي متاح للمشرفين حالياً', 'info', 'lock');
-            return;
-          }
           if (id === 'admin' && !this.isAdmin) {
             this.currentScreen = 'leaderboard';
             return;
