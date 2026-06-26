@@ -1066,6 +1066,13 @@
                   </button>
                   <span x-show="pushLinkStatusMessage" x-text="pushLinkStatusMessage"
                         style="font-size:9px; color:#34d399; font-weight:600;"></span>
+                  <!-- Push Debug Check (student can use after testing) -->
+                  <button @click="checkPushLog()"
+                          style="background:none; border:none; color:var(--txt-faint); text-decoration:underline; font-size:9px; cursor:pointer; padding:2px 6px; margin-top:2px;">
+                    🔍 فحص: هل وصل push لهذا الجهاز؟
+                  </button>
+                  <div x-show="pushLogResult" x-text="pushLogResult"
+                       style="font-size:9px; color:var(--txt-dim); text-align:center; max-width:280px; word-break:break-all; direction:ltr;"></div>
                 </div>
               </template>
             </div>

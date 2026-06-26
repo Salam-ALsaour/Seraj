@@ -1,5 +1,5 @@
-// v24 — push debug logging to IndexedDB
-const CACHE_NAME = 'seraj-cache-v24';
+// v25 — push log check button in student profile
+const CACHE_NAME = 'seraj-cache-v25';
 const LOCAL_ASSETS = ['index.html', 'manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
