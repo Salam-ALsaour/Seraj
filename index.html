@@ -1397,8 +1397,8 @@
         <!-- Header Card -->
         <div class="glass" style="padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(249,115,22,0.15); background: linear-gradient(160deg, rgba(249,115,22,0.06), transparent);">
           <div style="width: 40px; height: 40px; margin: 0 auto 10px; color: var(--orange); filter: drop-shadow(0 0 8px var(--orange-glow));" x-html="getIconSvg('calendar')"></div>
-          <div style="font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px;">التحدي الأسبوعي</div>
-          <div style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">8 أسابيع — 8 تحديات مختلفة<br>أكمل التحدي في كل أسبوع واكسب نقاط إضافية!</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px;">إدارة التحدي الأسبوعي</div>
+          <div style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">راجع تسليمات الطلاب، احفظ تقييماتك كمسودة، ثم حدد الفائزين.</div>
         </div>
 
         <!-- Week Selector Grid -->
@@ -1444,6 +1444,14 @@
                 </div>
               </div>
               <div style="font-size: 12px; color: var(--txt-dim); line-height: 1.7; text-align: right;" x-text="ch.desc"></div>
+              <div style="margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); text-align: right;">
+                <div style="font-size: 12px; font-weight: 800; color: #ffb27a; margin-bottom: 6px;">معايير التقييم</div>
+                <div style="display: grid; gap: 5px; font-size: 11px; color: var(--txt-dim); line-height: 1.6;">
+                  <div>1 - الابداع والتميز</div>
+                  <div>2 - الفائدة والأثر</div>
+                  <div>3 - قابلية التنفيذ</div>
+                </div>
+              </div>
             </div>
 
             <!-- Already Submitted State -->
@@ -1472,7 +1480,7 @@
             </template>
 
             <!-- Submission Form (not yet submitted) -->
-            <template x-if="!hasWeeklySubmission(ch.week)">
+            <template x-if="!isAdmin && !hasWeeklySubmission(ch.week)">
               <div>
                 <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
                   <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('edit-3')"></div>
@@ -1510,38 +1518,88 @@
               </div>
             </template>
 
-            <!-- Admin: View All Submissions -->
+            <!-- Admin: Manage Submissions -->
             <template x-if="isAdmin">
               <div style="margin-top: 24px;">
                 <div class="macro-label" style="color: var(--txt-dim); margin-top:0;">
                   <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('clipboard-list')"></div>
-                  تسليمات الطلاب
+                  إدارة تسليمات الطلاب
                   <span style="font-size:10px; font-weight:400; color:var(--txt-faint); margin-right:6px;" x-text="'(' + getWeekSubmissionsCount(ch.week) + ' من ' + students.length + ')'"></span>
                 </div>
-                <div class="glass" style="padding: 4px 0; max-height: 400px; overflow-y: auto;">
-                  <template x-for="st in students" :key="st.id">
-                    <template x-if="getStudentWeeklySubmission(st.id, ch.week)">
-                      <div style="padding: 12px 15px; border-bottom: 1px solid var(--stroke);">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <div class="glass" style="padding: 8px; max-height: 560px; overflow-y: auto;">
+                  <template x-for="sub in getWeeklySubmissionsForWeek(ch.week)" :key="sub.studentId">
+                    <div style="padding: 12px; border-bottom: 1px solid var(--stroke);">
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <template x-if="getStudentById(sub.studentId)">
                           <div style="width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; border: 1px solid var(--stroke); font-size: 13px;"
-                               :style="'color:' + avatarColorLightMap[st.avatarColor || 'orange'] + '; background: linear-gradient(150deg,' + avatarColorGlowMap[st.avatarColor || 'orange'] + ',transparent);'">
-                            <div style="width: 14px; height: 14px;" x-html="getIconSvg(st.avatarIcon || 'user')"></div>
-                          </div>
-                          <span style="font-size: 13px; font-weight: 700; color: var(--txt);" x-text="st.name"></span>
-                        </div>
-                        <template x-for="(q, qi) in ch.questions" :key="qi">
-                          <div style="margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.02); text-align: right;">
-                            <div style="font-size: 10px; font-weight: 600; color: var(--orange); margin-bottom: 2px;" x-text="q"></div>
-                            <div style="font-size: 11px; color: var(--txt); line-height: 1.5;" x-text="getStudentWeeklyAnswer(st.id, ch.week, qi)"></div>
+                               :style="'color:' + avatarColorLightMap[(getStudentById(sub.studentId).avatarColor || 'orange')] + '; background: linear-gradient(150deg,' + avatarColorGlowMap[(getStudentById(sub.studentId).avatarColor || 'orange')] + ',transparent);'">
+                            <div style="width: 14px; height: 14px;" x-html="getIconSvg(getStudentById(sub.studentId).avatarIcon || 'user')"></div>
                           </div>
                         </template>
+                        <div style="flex:1; min-width:0;">
+                          <span style="display:block; font-size: 13px; font-weight: 700; color: var(--txt);" x-text="sub.studentName"></span>
+                          <span style="display:block; font-size: 10px; color: var(--txt-faint);" x-text="sub.submittedAt || 'بدون وقت تسليم'"></span>
+                        </div>
+                        <template x-if="sub.winnerPlace">
+                          <span style="font-size: 10px; font-weight: 800; color:#fef3c7; background: rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35); padding:4px 8px; border-radius: 999px;" x-text="'المركز ' + sub.winnerPlace"></span>
+                        </template>
                       </div>
-                    </template>
+
+                      <template x-for="(q, qi) in ch.questions" :key="qi">
+                        <div style="margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.02); text-align: right;">
+                          <div style="font-size: 10px; font-weight: 600; color: var(--orange); margin-bottom: 2px;" x-text="q"></div>
+                          <div style="font-size: 11px; color: var(--txt); line-height: 1.5; white-space: pre-wrap;" x-text="sub.answers ? (sub.answers[qi] || '') : ''"></div>
+                        </div>
+                      </template>
+
+                      <div style="display:grid; grid-template-columns: 90px 1fr; gap:8px; margin-top:10px;">
+                        <input type="number" min="0" max="100"
+                               :value="getWeeklySubmissionScore(ch.week, sub.studentId)"
+                               @input="setWeeklySubmissionScore(ch.week, sub.studentId, $event.target.value)"
+                               placeholder="الدرجة"
+                               style="width:100%; padding:9px 10px; border-radius:10px; background:rgba(0,0,0,0.22); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:11px;">
+                        <input type="text"
+                               :value="getWeeklySubmissionNote(ch.week, sub.studentId)"
+                               @input="setWeeklySubmissionNote(ch.week, sub.studentId, $event.target.value)"
+                               placeholder="ملاحظة تقييم كمسودة"
+                               style="width:100%; padding:9px 10px; border-radius:10px; background:rgba(0,0,0,0.22); border:1px solid var(--stroke); color:var(--txt); font-family:inherit; font-size:11px;">
+                      </div>
+
+                      <div style="display:flex; flex-wrap:wrap; gap:7px; margin-top:10px;">
+                        <button type="button" @click="saveWeeklyEvaluation(ch.week, sub.studentId)"
+                                style="padding:7px 10px; border-radius:10px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); color:#34d399; font-size:10px; font-weight:800; cursor:pointer;">حفظ المسودة</button>
+                        <button type="button" @click="setWeeklyWinner(ch.week, sub.studentId, 1)"
+                                :style="'padding:7px 10px; border-radius:10px; border:1px solid; font-size:10px; font-weight:800; cursor:pointer;' + (sub.winnerPlace === 1 ? 'background:rgba(245,158,11,0.22); border-color:rgba(245,158,11,0.55); color:#fef3c7;' : 'background:rgba(255,255,255,0.03); border-color:var(--stroke); color:var(--txt-dim);')"
+                                style="padding:7px 10px; border-radius:10px; border:1px solid; font-size:10px; font-weight:800; cursor:pointer;">الأول</button>
+                        <button type="button" @click="setWeeklyWinner(ch.week, sub.studentId, 2)"
+                                :style="'padding:7px 10px; border-radius:10px; border:1px solid; font-size:10px; font-weight:800; cursor:pointer;' + (sub.winnerPlace === 2 ? 'background:rgba(148,163,184,0.22); border-color:rgba(148,163,184,0.55); color:#e2e8f0;' : 'background:rgba(255,255,255,0.03); border-color:var(--stroke); color:var(--txt-dim);')"
+                                style="padding:7px 10px; border-radius:10px; border:1px solid; font-size:10px; font-weight:800; cursor:pointer;">الثاني</button>
+                        <button type="button" @click="setWeeklyWinner(ch.week, sub.studentId, 3)"
+                                :style="'padding:7px 10px; border-radius:10px; border:1px solid; font-size:10px; font-weight:800; cursor:pointer;' + (sub.winnerPlace === 3 ? 'background:rgba(180,83,9,0.22); border-color:rgba(180,83,9,0.55); color:#fed7aa;' : 'background:rgba(255,255,255,0.03); border-color:var(--stroke); color:var(--txt-dim);')"
+                                style="padding:7px 10px; border-radius:10px; border:1px solid; font-size:10px; font-weight:800; cursor:pointer;">الثالث</button>
+                        <button type="button" @click="clearWeeklyWinner(ch.week, sub.studentId)"
+                                style="padding:7px 10px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--stroke); color:var(--txt-faint); font-size:10px; font-weight:800; cursor:pointer;">إلغاء المركز</button>
+                        <button type="button" @click="deleteWeeklySubmission(ch.week, sub.studentId)"
+                                style="margin-right:auto; padding:7px 10px; border-radius:10px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:#fca5a5; font-size:10px; font-weight:800; cursor:pointer;">حذف الإجابة</button>
+                      </div>
+                    </div>
                   </template>
                   <template x-if="getWeekSubmissionsCount(ch.week) === 0">
                     <div class="empty-note">لم يسلّم أي طالب حتى الآن.</div>
                   </template>
                 </div>
+
+                <template x-if="getWeeklyWinners(ch.week).length > 0">
+                  <div class="glass" style="padding:12px; margin-top:12px; border:1px solid rgba(245,158,11,0.16); background:rgba(245,158,11,0.04);">
+                    <div style="font-size:12px; font-weight:800; color:#fef3c7; margin-bottom:8px; text-align:right;">الفائزون المحددون</div>
+                    <template x-for="winner in getWeeklyWinners(ch.week)" :key="winner.winnerPlace">
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-top:1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size:11px; color:var(--txt);" x-text="winner.studentName"></span>
+                        <span style="font-size:11px; color:#ffb27a; font-weight:800;" x-text="'المركز ' + winner.winnerPlace"></span>
+                      </div>
+                    </template>
+                  </div>
+                </template>
               </div>
             </template>
           </div>
@@ -3176,7 +3234,7 @@
         weeklyChallenges: [
           { week: 1, title: 'تحدي تطوير منصة سراج', icon: 'rocket', unlocked: true, 
             desc: 'شارك بفكرتك لتطوير منصة سراج! أجب على الأسئلة التالية وقدّم رؤيتك الإبداعية.',
-            questions: ['ما اسم الفكرة؟', 'ما هي الفكرة باختصار وما الهدف منها؟', 'ما هي المشكلة التي تحلها الفكرة؟'] },
+            questions: ['ما اسم الفكرة؟', 'ما هي الفكرة باختصار وما الهدف منها؟', 'ما هي المشكلة التي تحلها الفكرة أو الميزة التي تضيفها؟'] },
           { week: 2, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
           { week: 3, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
           { week: 4, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
@@ -3478,7 +3536,7 @@
           { id: 'leaderboard', label: 'الصدارة', icon: 'trophy' },
           { id: 'store', label: 'المتجر', icon: 'gift' },
           { id: 'challenge', label: 'المسابقة', icon: 'dices' },
-          { id: 'weekly', label: 'التحدي', icon: 'calendar' },
+          { id: 'weekly', label: 'إدارة التحدي', icon: 'calendar' },
           { id: 'admin', label: 'الإدارة', icon: 'settings' }
         ],
 
@@ -4507,7 +4565,7 @@
             profile: 'الملف الشخصي',
             store: 'المتجر المضيء',
             challenge: 'المسابقة والتحدي',
-            weekly: 'التحدي الأسبوعي',
+            weekly: 'إدارة التحدي الأسبوعي',
             admin: 'غرفة الإدارة'
           }[this.currentScreen] || item.label;
         },
@@ -5151,6 +5209,135 @@
             if (key.endsWith('_w' + week)) count++;
           }
           return count;
+        },
+
+        getWeeklySubmissionKey(studentId, week) {
+          return studentId + '_w' + week;
+        },
+
+        getWeeklySubmissionsForWeek(week) {
+          return Object.values(this.weeklySubmissions || {})
+            .filter(sub => sub && parseInt(sub.week) === parseInt(week))
+            .sort((a, b) => {
+              const aPlace = a.winnerPlace || 99;
+              const bPlace = b.winnerPlace || 99;
+              if (aPlace !== bPlace) return aPlace - bPlace;
+              return (a.studentName || '').localeCompare(b.studentName || '', 'ar');
+            });
+        },
+
+        getWeeklyWinners(week) {
+          return this.getWeeklySubmissionsForWeek(week)
+            .filter(sub => sub.winnerPlace)
+            .sort((a, b) => a.winnerPlace - b.winnerPlace);
+        },
+
+        getWeeklySubmissionScore(week, studentId) {
+          const sub = this.weeklySubmissions[this.getWeeklySubmissionKey(studentId, week)];
+          return sub && sub.evaluation ? (sub.evaluation.score || '') : '';
+        },
+
+        getWeeklySubmissionNote(week, studentId) {
+          const sub = this.weeklySubmissions[this.getWeeklySubmissionKey(studentId, week)];
+          return sub && sub.evaluation ? (sub.evaluation.note || '') : '';
+        },
+
+        setWeeklySubmissionScore(week, studentId, value) {
+          const key = this.getWeeklySubmissionKey(studentId, week);
+          const sub = this.weeklySubmissions[key];
+          if (!sub) return;
+          const cleanValue = value === '' ? '' : Math.max(0, Math.min(100, Number(value) || 0));
+          sub.evaluation = { ...(sub.evaluation || {}), score: cleanValue };
+          this.weeklySubmissions = { ...this.weeklySubmissions, [key]: sub };
+        },
+
+        setWeeklySubmissionNote(week, studentId, value) {
+          const key = this.getWeeklySubmissionKey(studentId, week);
+          const sub = this.weeklySubmissions[key];
+          if (!sub) return;
+          sub.evaluation = { ...(sub.evaluation || {}), note: String(value || '').slice(0, 300) };
+          this.weeklySubmissions = { ...this.weeklySubmissions, [key]: sub };
+        },
+
+        async persistWeeklySubmissions() {
+          if (supabaseClient) {
+            await supabaseClient.from('weekly_challenge').upsert({
+              id: 200,
+              title: 'weekly_submissions_config',
+              desc_text: JSON.stringify(this.weeklySubmissions),
+              points: 0,
+              duration: 0,
+              time_left: 0
+            });
+          } else {
+            this.saveState();
+          }
+        },
+
+        async saveWeeklyEvaluation(week, studentId) {
+          const key = this.getWeeklySubmissionKey(studentId, week);
+          const sub = this.weeklySubmissions[key];
+          if (!sub) return;
+          sub.evaluation = {
+            ...(sub.evaluation || {}),
+            status: 'draft',
+            updatedAt: new Date().toISOString(),
+            updatedBy: this.activeId
+          };
+          this.weeklySubmissions = { ...this.weeklySubmissions, [key]: sub };
+          await this.persistWeeklySubmissions();
+          this.showToast('تم حفظ تقييم المسودة', 'success', 'check');
+        },
+
+        async setWeeklyWinner(week, studentId, place) {
+          const key = this.getWeeklySubmissionKey(studentId, week);
+          if (!this.weeklySubmissions[key]) return;
+          const updated = { ...this.weeklySubmissions };
+          Object.keys(updated).forEach(subKey => {
+            const sub = updated[subKey];
+            if (!sub || parseInt(sub.week) !== parseInt(week)) return;
+            if (sub.winnerPlace === place || sub.studentId === studentId) {
+              updated[subKey] = { ...sub, winnerPlace: null };
+            }
+          });
+          updated[key] = {
+            ...updated[key],
+            winnerPlace: place,
+            winnerSelectedAt: new Date().toISOString(),
+            winnerSelectedBy: this.activeId
+          };
+          this.weeklySubmissions = updated;
+          await this.persistWeeklySubmissions();
+          this.showToast(`تم تحديد المركز ${place}`, 'success', 'trophy');
+        },
+
+        async clearWeeklyWinner(week, studentId) {
+          const key = this.getWeeklySubmissionKey(studentId, week);
+          const sub = this.weeklySubmissions[key];
+          if (!sub || !sub.winnerPlace) return;
+          this.weeklySubmissions = {
+            ...this.weeklySubmissions,
+            [key]: { ...sub, winnerPlace: null }
+          };
+          await this.persistWeeklySubmissions();
+          this.showToast('تم إلغاء المركز', 'info', 'x');
+        },
+
+        deleteWeeklySubmission(week, studentId) {
+          const key = this.getWeeklySubmissionKey(studentId, week);
+          const sub = this.weeklySubmissions[key];
+          if (!sub) return;
+          this.showConfirm(
+            'حذف إجابة الطالب',
+            `هل تريد حذف إجابة ${sub.studentName || 'هذا الطالب'} من التحدي؟`,
+            async () => {
+              const updated = { ...this.weeklySubmissions };
+              delete updated[key];
+              this.weeklySubmissions = updated;
+              await this.persistWeeklySubmissions();
+              this.showToast('تم حذف إجابة الطالب', 'success', 'trash-2');
+            }
+          );
         },
 
         async submitWeeklyChallenge(week) {
