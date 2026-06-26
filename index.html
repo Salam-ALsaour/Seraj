@@ -3834,47 +3834,42 @@
                   localStorage.setItem('seraj_pwa_worker_url', workerUrlData.desc_text);
                 }
 
-                // Load Weekly Submissions - build object first then assign once for Alpine reactivity
-                const _subs = {};
-                const subRows = chRows ? chRows.filter(r => String(r.title || '').startsWith('wsub_')) : [];
-                for (const row of subRows) {
-                  const key = row.title.slice(5); // strip "wsub_"
-                  try { _subs[key] = JSON.parse(row.desc_text); } catch (_) {}
-                }
-                // Also load from legacy row 200 (old format - backwards compat)
-                const legacyRow = chRows ? chRows.find(r => parseInt(r.id) === 200) : null;
-                if (legacyRow && legacyRow.desc_text) {
+                // تحميل التسليمات - المصدر الوحيد هو row 200
+                const _subs200 = {};
+                const row200 = chRows ? chRows.find(r => parseInt(r.id) === 200) : null;
+                if (row200 && row200.desc_text) {
                   try {
-                    const legacy = JSON.parse(legacyRow.desc_text);
-                    for (const [k, v] of Object.entries(legacy)) {
-                      if (!_subs[k]) _subs[k] = v;
+                    const parsed = JSON.parse(row200.desc_text);
+                    if (parsed && typeof parsed === 'object') {
+                      Object.assign(_subs200, parsed);
                     }
                   } catch (_) {}
                 }
-                this.weeklySubmissions = _subs;
-
-                // ترحيل تلقائي: نقل أي تسليم في row 200 إلى row مستقلة وتفريغها
-                if (legacyRow && legacyRow.desc_text) {
+                // دمج أي wsub_ rows قديمة (من محاولات سابقة) مع row 200 وحذفها
+                const oldWsubRows = chRows ? chRows.filter(r => String(r.title || '').startsWith('wsub_')) : [];
+                for (const wrow of oldWsubRows) {
+                  const k = wrow.title.slice(5);
+                  try { if (!_subs200[k]) _subs200[k] = JSON.parse(wrow.desc_text); } catch (_) {}
+                }
+                this.weeklySubmissions = _subs200;
+                // إذا في wsub_ rows قديمة: ادمجها في row 200 واحذفها (تنظيف مرة وحدة)
+                if (oldWsubRows.length > 0) {
                   try {
-                    const legacy = JSON.parse(legacyRow.desc_text);
-                    const legacyEntries = Object.entries(legacy);
-                    if (legacyEntries.length > 0) {
-                      for (const [k] of legacyEntries) {
-                        const migrTitle = 'wsub_' + k;
-                        const { data: already } = await supabaseClient
-                          .from('weekly_challenge').select('id').eq('title', migrTitle).limit(1);
-                        if (!already || already.length === 0) {
-                          await supabaseClient.from('weekly_challenge').insert({
-                            title: migrTitle,
-                            desc_text: JSON.stringify(legacy[k]),
-                            points: 0, duration: 0, time_left: 0
-                          });
-                        }
-                      }
-                      // تفريغ row 200 بعد الترحيل
-                      await supabaseClient.from('weekly_challenge')
-                        .update({ desc_text: JSON.stringify({}) }).eq('id', 200);
+                    await supabaseClient.from('weekly_challenge').upsert({
+                      id: 200, title: 'weekly_submissions_config',
+                      desc_text: JSON.stringify(_subs200), points: 0, duration: 0, time_left: 0
+                    });
+                    for (const wrow of oldWsubRows) {
+                      await supabaseClient.from('weekly_challenge').delete().eq('id', wrow.id);
                     }
+                  } catch (_) {}
+                } else if (!row200) {
+                  // أنشئ row 200 إذا ما كانت موجودة
+                  try {
+                    await supabaseClient.from('weekly_challenge').upsert({
+                      id: 200, title: 'weekly_submissions_config',
+                      desc_text: '{}', points: 0, duration: 0, time_left: 0
+                    });
                   } catch (_) {}
                 }
               }
@@ -5334,23 +5329,11 @@
 
         async persistWeeklySubmissions() {
           if (!supabaseClient) return;
-          // Update each submission's individual row (admin operations: evaluation, winner, etc.)
-          for (const [key, sub] of Object.entries(this.weeklySubmissions)) {
-            const title = 'wsub_' + key;
-            const { data: rows } = await supabaseClient
-              .from('weekly_challenge').select('id').eq('title', title).limit(1);
-            if (rows && rows.length > 0) {
-              await supabaseClient.from('weekly_challenge')
-                .update({ desc_text: JSON.stringify(sub) }).eq('title', title);
-            } else {
-              // Migrate legacy submission (was in row 200) to its own row
-              await supabaseClient.from('weekly_challenge').insert({
-                title,
-                desc_text: JSON.stringify(sub),
-                points: 0, duration: 0, time_left: 0
-              });
-            }
-          }
+          await supabaseClient.from('weekly_challenge').upsert({
+            id: 200, title: 'weekly_submissions_config',
+            desc_text: JSON.stringify(this.weeklySubmissions),
+            points: 0, duration: 0, time_left: 0
+          });
         },
 
         async saveWeeklyEvaluation(week, studentId) {
@@ -5410,25 +5393,18 @@
             'حذف إجابة الطالب',
             `هل تريد حذف إجابة ${sub.studentName || 'هذا الطالب'} من التحدي؟`,
             async () => {
-              if (supabaseClient) {
-                // حذف من الـ row المستقلة (التنسيق الجديد)
-                await supabaseClient.from('weekly_challenge').delete().eq('title', 'wsub_' + key);
-                // حذف من row 200 القديمة إذا كانت البيانات هناك
-                const { data: legacyData } = await supabaseClient
-                  .from('weekly_challenge').select('desc_text').eq('id', 200).maybeSingle();
-                if (legacyData && legacyData.desc_text) {
-                  try {
-                    const legacy = JSON.parse(legacyData.desc_text);
-                    if (key in legacy) {
-                      delete legacy[key];
-                      await supabaseClient.from('weekly_challenge')
-                        .update({ desc_text: JSON.stringify(legacy) }).eq('id', 200);
-                    }
-                  } catch (_) {}
-                }
-              }
               const updated = { ...this.weeklySubmissions };
               delete updated[key];
+              if (supabaseClient) {
+                const { error } = await supabaseClient.from('weekly_challenge').upsert({
+                  id: 200, title: 'weekly_submissions_config',
+                  desc_text: JSON.stringify(updated), points: 0, duration: 0, time_left: 0
+                });
+                if (error) {
+                  this.showToast('فشل الحذف، حاول مجدداً', 'neg', 'alert-circle');
+                  return;
+                }
+              }
               this.weeklySubmissions = updated;
               this.showToast('تم حذف إجابة الطالب', 'success', 'trash-2');
             }
@@ -5467,35 +5443,36 @@
 
           try {
             if (supabaseClient) {
-              // تحقق من DB مباشرة - منع التسليم المكرر حتى بعد التحديث
-              const { data: existingRows } = await supabaseClient
-                .from('weekly_challenge')
-                .select('id')
-                .eq('title', 'wsub_' + key)
-                .limit(1);
+              // اجلب أحدث نسخة من row 200 لتجنب تضارب التسليمات المتزامنة
+              const { data: latest, error: fetchErr } = await supabaseClient
+                .from('weekly_challenge').select('desc_text').eq('id', 200).single();
+              if (fetchErr) throw fetchErr;
 
-              if (existingRows && existingRows.length > 0) {
-                if (!this.weeklySubmissions[key]) this.weeklySubmissions[key] = submission;
+              let latestSubs = {};
+              if (latest && latest.desc_text) {
+                try { latestSubs = JSON.parse(latest.desc_text) || {}; } catch (_) {}
+              }
+
+              // تحقق من أحدث نسخة DB - منع التسليم المكرر حتى بعد التحديث
+              if (latestSubs[key]) {
+                this.weeklySubmissions = { ...this.weeklySubmissions, ...latestSubs };
                 this.weeklySubmitting = false;
                 this.showToast('لقد سلّمت هذا التحدي مسبقاً', 'neg', 'alert-circle');
                 return;
               }
 
-              // كل تسليم في row مستقلة - لا تعارض بين الطلاب
-              const { error: insertError } = await supabaseClient.from('weekly_challenge').insert({
-                title: 'wsub_' + key,
-                desc_text: JSON.stringify(submission),
-                points: 0,
-                duration: 0,
-                time_left: 0
+              // ادمج تسليم الطالب مع أحدث نسخة واحفظ
+              const merged = { ...latestSubs, [key]: submission };
+              const { error: saveErr } = await supabaseClient.from('weekly_challenge').upsert({
+                id: 200, title: 'weekly_submissions_config',
+                desc_text: JSON.stringify(merged), points: 0, duration: 0, time_left: 0
               });
+              if (saveErr) throw saveErr;
 
-              if (insertError) throw insertError;
-
-              // تحديث الحالة المحلية فقط بعد نجاح الحفظ
-              this.weeklySubmissions = { ...this.weeklySubmissions, [key]: submission };
+              // حدّث الحالة المحلية فقط بعد نجاح الحفظ
+              this.weeklySubmissions = merged;
             } else {
-              this.weeklySubmissions[key] = submission;
+              this.weeklySubmissions = { ...this.weeklySubmissions, [key]: submission };
             }
           } catch (e) {
             console.error('Failed to save weekly submission:', e);
