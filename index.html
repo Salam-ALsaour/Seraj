@@ -1942,6 +1942,11 @@
                           style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; margin-top:0; cursor:pointer;">
                     <span x-text="sendingNotif ? 'جاري الإرسال...' : 'إرسال الإشعار'"></span>
                   </button>
+                  <button @click="sendTestEmptyPush()"
+                          :disabled="sendingNotif || pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl"
+                          style="padding:10px; font-size:10px; font-weight:700; border-radius:12px; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc; cursor:pointer; white-space:nowrap;">
+                    🧪 اختبار بدون تشفير
+                  </button>
                   <template x-if="notificationPermission !== 'granted'">
                     <button @click="showNotificationPrompt = true" 
                             style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; background:var(--glass); border:1px solid var(--stroke); color:var(--txt-dim); cursor:pointer;">
@@ -6393,6 +6398,28 @@
             };
             req.onerror = () => { this.pushLogResult = '❌ لا يوجد سجل push على هذا الجهاز'; };
           } catch(e) { this.pushLogResult = '❌ خطأ: ' + e.message; }
+        },
+
+        async sendTestEmptyPush() {
+          this.sendingNotif = true;
+          this.lastPushResult = { ok: false, msg: '⏳ جاري إرسال push بدون تشفير...' };
+          try {
+            const workerUrl = this.workerUrl || localStorage.getItem('seraj_pwa_worker_url') || '';
+            const { data: subData } = await supabaseClient.from('weekly_challenge').select('*').eq('id', 104).single();
+            const subs = subData?.desc_text ? JSON.parse(subData.desc_text) : [];
+            const subscriptionsToSend = subs.filter(s => s?.subscription?.endpoint && !s.isAdmin).map(s => s.subscription);
+            if (!subscriptionsToSend.length) { this.lastPushResult = { ok: false, msg: '❌ لا أجهزة' }; return; }
+            const res = await fetch(workerUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subscriptions: subscriptionsToSend, title: 'test', body: '', vapidKeys: this.vapidKeys, token: 'seraj_push_token_2026', testNoEncrypt: true })
+            });
+            const d = await res.json().catch(() => ({}));
+            const r = d.results?.[0];
+            this.lastPushResult = { ok: d.successes > 0, msg: `🧪 Test Empty: HTTP ${r?.status} | body: ${r?.fcmBody || ''}` };
+          } catch(e) {
+            this.lastPushResult = { ok: false, msg: '❌ ' + e.message };
+          } finally { this.sendingNotif = false; }
         },
 
         _workerUrlSaveTimer: null,

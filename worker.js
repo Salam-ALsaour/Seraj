@@ -29,18 +29,41 @@ export default {
     const text    = notifBody || message || '';
     const payload = JSON.stringify({ title, body: text });
     const subs    = Array.isArray(subscriptions) ? subscriptions : [];
+    const testMode = !!body.testNoEncrypt; // test: send without payload/encryption
 
     const results = await Promise.all(
       subs.map(sub =>
-        sendWebPush(sub, payload, vapidKeys)
+        (testMode ? sendWebPushEmpty(sub, vapidKeys) : sendWebPush(sub, payload, vapidKeys))
           .catch(e => ({ status: 0, ok: false, error: e.message }))
       )
     );
 
     const successes = results.filter(r => r.status >= 200 && r.status < 300).length;
-    return cors(json({ success: true, successes, failures: results.length - successes, results }));
+    return cors(json({ success: true, successes, failures: results.length - successes, results, testMode }));
   },
 };
+
+// ─── Send empty push (no payload, no encryption) for testing ────────────────
+
+async function sendWebPushEmpty(subscription, vapidKeys) {
+  const { endpoint } = subscription;
+  const audience = new URL(endpoint).origin;
+  const jwt      = await buildVapidJwt(audience, vapidKeys.publicKey, vapidKeys.privateKey);
+
+  console.log('[Push-Test] empty push to:', endpoint.slice(0, 70));
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `vapid t=${jwt},k=${vapidKeys.publicKey}`,
+      'TTL':           '86400',
+      'Urgency':       'high',
+      'Content-Length': '0',
+    },
+  });
+  const respBody = await resp.text().catch(() => '');
+  console.log('[Push-Test] status:', resp.status, 'body:', respBody.slice(0, 100));
+  return { status: resp.status, ok: resp.ok, endpoint, fcmBody: respBody.slice(0, 100) };
+}
 
 // ─── VAPID JWT (RFC 8292) ────────────────────────────────────────────────────
 

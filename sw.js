@@ -1,5 +1,5 @@
-// v25 — push log check button in student profile
-const CACHE_NAME = 'seraj-cache-v25';
+// v26 — test empty push (no encryption)
+const CACHE_NAME = 'seraj-cache-v26';
 const LOCAL_ASSETS = ['index.html', 'manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
