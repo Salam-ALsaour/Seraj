@@ -1392,7 +1392,7 @@
       <!-- ============================================== -->
       <!-- 6. 📅 WEEKLY CHALLENGE VIEW -->
       <!-- ============================================== -->
-      <div x-show="currentScreen === 'weekly'" class="page">
+      <div x-show="currentScreen === 'weekly' && isAdmin" class="page">
         
         <!-- Header Card -->
         <div class="glass" style="padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(249,115,22,0.15); background: linear-gradient(160deg, rgba(249,115,22,0.06), transparent);">
@@ -1486,20 +1486,24 @@
                     </label>
                     <textarea 
                       x-model="weeklyFormAnswers[qi]"
+                      :maxlength="getWeeklyAnswerLimit(qi)"
                       :placeholder="'اكتب إجابتك هنا...'"
+                      @input="weeklyFormAnswers[qi] = limitWeeklyAnswer(weeklyFormAnswers[qi], qi)"
                       style="width: 100%; min-height: 70px; padding: 12px 14px; font-size: 12px; font-family: inherit; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff; resize: vertical; line-height: 1.6; transition: border-color 0.2s; box-sizing: border-box;"
                       onfocus="this.style.borderColor='rgba(249,115,22,0.4)'"
                       onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
                     ></textarea>
+                    <div style="font-size: 10px; color: var(--txt-faint); text-align: left; margin-top: 4px; direction: ltr;"
+                         x-text="(weeklyFormAnswers[qi] || '').length + ' / ' + getWeeklyAnswerLimit(qi)"></div>
                   </div>
                 </template>
                 
                 <button 
                   @click="submitWeeklyChallenge(ch.week)"
-                  :disabled="weeklySubmitting || weeklyFormAnswers.some(a => !a.trim())"
+                  :disabled="weeklySubmitting || !weeklyAnswersValid()"
                   class="btn-redeem"
                   style="width: 100%; padding: 13px; font-size: 14px; font-weight: 700; border-radius: 14px; margin-top: 4px;"
-                  :style="weeklyFormAnswers.some(a => !a.trim()) ? 'opacity: 0.4; cursor: not-allowed;' : ''">
+                  :style="!weeklyAnswersValid() ? 'opacity: 0.4; cursor: not-allowed;' : ''">
                   <span x-show="!weeklySubmitting">تسليم الإجابات</span>
                   <span x-show="weeklySubmitting">جاري التسليم...</span>
                 </button>
@@ -3184,6 +3188,7 @@
         activeWeeklyChallenge: 1,
         weeklySubmissions: {},
         weeklyFormAnswers: ['', '', ''],
+        weeklyAnswerLimits: [80, 500, 300],
         weeklySubmitting: false,
         
         // Login State
@@ -3979,7 +3984,13 @@
           }
 
           // Watches for local mode
-          this.$watch('currentScreen', () => this.$nextTick(() => lucide.createIcons()));
+          this.$watch('currentScreen', (screen) => {
+            if (screen === 'weekly' && !this.isAdmin) {
+              this.currentScreen = 'leaderboard';
+              return;
+            }
+            this.$nextTick(() => lucide.createIcons());
+          });
           this.$watch('lbMode', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('adminUnlocked', () => this.$nextTick(() => lucide.createIcons()));
           this.$watch('isLoggedIn', () => this.$nextTick(() => lucide.createIcons()));
@@ -5093,6 +5104,22 @@
         },
 
         // Weekly Challenge Methods
+        getWeeklyAnswerLimit(qIndex) {
+          return this.weeklyAnswerLimits[qIndex] || 300;
+        },
+
+        limitWeeklyAnswer(answer, qIndex) {
+          const limit = this.getWeeklyAnswerLimit(qIndex);
+          return String(answer || '').slice(0, limit);
+        },
+
+        weeklyAnswersValid() {
+          return this.weeklyFormAnswers.every((answer, index) => {
+            const text = String(answer || '').trim();
+            return text.length > 0 && text.length <= this.getWeeklyAnswerLimit(index);
+          });
+        },
+
         hasWeeklySubmission(week) {
           if (this.isAdmin) return false;
           if (!this.currentStudent) return false;
@@ -5129,8 +5156,14 @@
         async submitWeeklyChallenge(week) {
           if (this.weeklySubmitting) return;
           if (!this.currentStudent) return;
+          this.weeklyFormAnswers = this.weeklyFormAnswers.map((answer, index) => this.limitWeeklyAnswer(answer, index));
           if (this.weeklyFormAnswers.some(a => !a.trim())) {
             this.showToast('يرجى الإجابة على جميع الأسئلة', 'neg', 'alert-circle');
+            return;
+          }
+          const tooLongIndex = this.weeklyFormAnswers.findIndex((answer, index) => answer.length > this.getWeeklyAnswerLimit(index));
+          if (tooLongIndex !== -1) {
+            this.showToast(`إجابة السؤال ${tooLongIndex + 1} تجاوزت الحد المسموح`, 'neg', 'alert-circle');
             return;
           }
           this.weeklySubmitting = true;
@@ -5167,6 +5200,15 @@
         },
 
         go(id) {
+          if (id === 'weekly' && !this.isAdmin) {
+            this.currentScreen = 'leaderboard';
+            this.showToast('التحدي الأسبوعي متاح للمشرفين حالياً', 'info', 'lock');
+            return;
+          }
+          if (id === 'admin' && !this.isAdmin) {
+            this.currentScreen = 'leaderboard';
+            return;
+          }
           this.currentScreen = id;
           const scrollEl = document.getElementById('scroll');
           if (scrollEl) {
