@@ -3064,7 +3064,7 @@
     <!-- BOTTOM FIXED NAV BAR -->
     <nav id="nav">
       <template x-for="n in navItems" :key="n.id">
-        <button class="nav-btn" x-show="(n.id !== 'admin' && n.id !== 'weekly') || isAdmin" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
+        <button class="nav-btn" x-show="n.id !== 'admin' || isAdmin" :class="currentScreen === n.id ? 'active' : ''" @click="go(n.id)">
           <i :data-lucide="n.icon"></i>
           <span x-text="n.label"></span>
         </button>
