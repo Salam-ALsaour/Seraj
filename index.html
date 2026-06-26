@@ -1930,10 +1930,10 @@
                 <div style="display:flex; gap:10px; margin-top:6px;">
                   <button @click="sendNotification()"
                           class="btn-redeem"
-                          :disabled="pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl"
-                          :style="pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl ? 'opacity:0.4;cursor:not-allowed' : ''"
+                          :disabled="sendingNotif || pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl"
+                          :style="sendingNotif || pushSubscriptions.filter(s=>s&&!s.isAdmin).length === 0 || !workerUrl ? 'opacity:0.4;cursor:not-allowed' : ''"
                           style="flex:1; padding:10px; font-size:12px; font-weight:700; border-radius:12px; margin-top:0; cursor:pointer;">
-                    إرسال الإشعار
+                    <span x-text="sendingNotif ? 'جاري الإرسال...' : 'إرسال الإشعار'"></span>
                   </button>
                   <template x-if="notificationPermission !== 'granted'">
                     <button @click="showNotificationPrompt = true" 
@@ -1959,6 +1959,13 @@
                   </template>
                 </div>
               </div>
+
+              <!-- Last Send Result (persistent, not a toast) -->
+              <template x-if="lastPushResult">
+                <div style="margin-bottom:16px; padding:12px 16px; border-radius:14px; text-align:center; font-size:12px; font-weight:700;"
+                     :style="lastPushResult.ok ? 'background:rgba(5,150,105,0.12); border:1px solid rgba(5,150,105,0.3); color:#34d399;' : 'background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:#f87171;'"
+                     x-text="lastPushResult.msg"></div>
+              </template>
 
               <!-- Notifications History -->
               <div class="macro-label" style="color: var(--txt-dim); margin-top:22px;">
@@ -3320,6 +3327,8 @@
         workerUrl: localStorage.getItem('seraj_pwa_worker_url') || '',
         pushLinkBusy: false,
         pushLinkStatusMessage: '',
+        sendingNotif: false,
+        lastPushResult: null,
         showNotificationPrompt: false,
         realtimeChannel: null,
 
@@ -6373,16 +6382,20 @@
 
         async sendNotification() {
           if (!this.newNotifTitle.trim() || !this.newNotifBody.trim()) {
-            this.showToast('يرجى ملء جميع الحقول المطلوبة', 'neg');
+            this.lastPushResult = { ok: false, msg: '⚠️ يرجى ملء عنوان الإشعار ومحتواه' };
             return;
           }
+          this.sendingNotif = true;
+          this.lastPushResult = null;
           try {
             const result = await this.sendSystemNotification(this.newNotifTitle.trim(), this.newNotifBody.trim());
             this.newNotifTitle = '';
             this.newNotifBody = '';
           } catch(e) {
             console.error('[sendNotification] Error:', e);
-            this.showToast('خطأ غير متوقع: ' + e.message, 'neg');
+            this.lastPushResult = { ok: false, msg: '❌ خطأ غير متوقع: ' + e.message };
+          } finally {
+            this.sendingNotif = false;
           }
         },
 
@@ -6443,7 +6456,7 @@
             try {
               const workerUrl = this.workerUrl || localStorage.getItem('seraj_pwa_worker_url') || '';
               if (!workerUrl) {
-                this.showToast('أدخل رابط خادم الإشعارات في إدارة الإشعارات', 'neg');
+                this.lastPushResult = { ok: false, msg: '❌ رابط خادم الإشعارات (Worker URL) غير موجود' };
                 return { saved: true, pushAttempted: false, pushSuccess: false };
               }
 
@@ -6462,9 +6475,11 @@
                 .map(s => s.subscription);
 
               if (subscriptionsToSend.length === 0) {
-                this.showToast('لا توجد أجهزة طلاب مربوطة — يجب تفعيل الإشعارات من الجهاز أولاً', 'info', 'bell');
+                this.lastPushResult = { ok: false, msg: '⚠️ 0 أجهزة مرتبطة — اضغط تحديث ربط الجهاز من الملف الشخصي' };
                 return { saved: true, pushAttempted: false, pushSuccess: false };
               }
+
+              this.lastPushResult = { ok: false, msg: `⏳ جاري الإرسال إلى ${subscriptionsToSend.length} جهاز...` };
 
               const res = await fetch(workerUrl, {
                 method: 'POST',
@@ -6482,7 +6497,7 @@
               console.log('[Push] Worker response:', res.status, resData);
 
               if (!res.ok) {
-                this.showToast('خطأ في الخادم: ' + (resData.error || `HTTP ${res.status}`), 'neg');
+                this.lastPushResult = { ok: false, msg: `❌ خطأ Worker HTTP ${res.status}: ${resData.error || ''}` };
                 return { saved: true, pushAttempted: true, pushSuccess: false };
               }
 
@@ -6502,19 +6517,21 @@
                 const results = Array.isArray(resData.results) ? resData.results : [];
                 const successes = resData.successes ?? results.filter(r => r && r.ok).length;
                 const failures  = resData.failures  ?? (results.length - successes);
+                const details = results.map((r,i) => `[${i+1}] HTTP ${r.status}`).join(' | ');
                 if (failures > 0) {
-                  this.showToast(`تم الإرسال: نجح ${successes} وفشل ${failures}`, 'info');
+                  this.lastPushResult = { ok: false, msg: `⚠️ نجح ${successes} وفشل ${failures} — ${details}` };
                 } else {
-                  this.showToast(`تم إرسال الإشعار إلى ${successes} جهاز بنجاح! 🔔`, 'pos', 'bell');
+                  this.lastPushResult = { ok: true, msg: `✅ تم إرسال الإشعار إلى ${successes} جهاز بنجاح` };
                 }
+                this.showToast(this.lastPushResult.msg, this.lastPushResult.ok ? 'pos' : 'info', 'bell');
                 return { saved: true, pushAttempted: true, pushSuccess: failures === 0, successes, failures };
               } else {
-                this.showToast('فشل إرسال الإشعار: ' + (resData.error || 'خطأ غير معروف'), 'neg');
+                this.lastPushResult = { ok: false, msg: '❌ Worker: ' + (resData.error || 'خطأ غير معروف') };
                 return { saved: true, pushAttempted: true, pushSuccess: false };
               }
             } catch (err) {
               console.error('[Push] Failed:', err);
-              this.showToast('فشل الاتصال بخادم الإشعارات: ' + err.message, 'neg');
+              this.lastPushResult = { ok: false, msg: '❌ فشل الاتصال بالخادم: ' + err.message };
               return { saved: true, pushAttempted: true, pushSuccess: false };
             }
           } else {
