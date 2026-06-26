@@ -5405,6 +5405,13 @@
           }
           this.weeklySubmitting = true;
           const key = this.currentStudent.id + '_w' + week;
+
+          if (this.weeklySubmissions[key]) {
+            this.weeklySubmitting = false;
+            this.showToast('لقد سلّمت هذا التحدي مسبقاً', 'neg', 'alert-circle');
+            return;
+          }
+
           const submission = {
             studentId: this.currentStudent.id,
             studentName: this.currentStudent.name,
@@ -5412,23 +5419,51 @@
             answers: [...this.weeklyFormAnswers],
             submittedAt: new Date().toLocaleString('ar-SA')
           };
-          this.weeklySubmissions[key] = submission;
 
-          // Save to Supabase (ID: 200 + week)
           try {
             if (supabaseClient) {
-              const configId = 200;
-              await supabaseClient.from('weekly_challenge').upsert({
-                id: configId,
+              // جلب أحدث نسخة من DB أولاً لتجنب تضارب التسليمات المتزامنة
+              const { data: latestData } = await supabaseClient
+                .from('weekly_challenge')
+                .select('desc_text')
+                .eq('id', 200)
+                .single();
+
+              let latestSubmissions = {};
+              if (latestData && latestData.desc_text) {
+                try { latestSubmissions = JSON.parse(latestData.desc_text); } catch (_) {}
+              }
+
+              // تحقق مجدداً من أحدث نسخة (منع التسليم المكرر)
+              if (latestSubmissions[key]) {
+                this.weeklySubmissions = latestSubmissions;
+                this.weeklySubmitting = false;
+                this.showToast('لقد سلّمت هذا التحدي مسبقاً', 'neg', 'alert-circle');
+                return;
+              }
+
+              const mergedSubmissions = { ...latestSubmissions, [key]: submission };
+              const { error: upsertError } = await supabaseClient.from('weekly_challenge').upsert({
+                id: 200,
                 title: 'weekly_submissions_config',
-                desc_text: JSON.stringify(this.weeklySubmissions),
+                desc_text: JSON.stringify(mergedSubmissions),
                 points: 0,
                 duration: 0,
                 time_left: 0
               });
+
+              if (upsertError) throw upsertError;
+
+              // تحديث الحالة المحلية فقط بعد نجاح الحفظ
+              this.weeklySubmissions = mergedSubmissions;
+            } else {
+              this.weeklySubmissions[key] = submission;
             }
           } catch (e) {
             console.error('Failed to save weekly submission:', e);
+            this.weeklySubmitting = false;
+            this.showToast('فشل التسليم، تحقق من اتصالك وحاول مجدداً', 'neg', 'alert-circle');
+            return;
           }
 
           this.weeklyFormAnswers = ['', '', ''];
