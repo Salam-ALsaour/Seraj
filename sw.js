@@ -1,5 +1,5 @@
-// v28 — network-first for HTML to always get latest code
-const CACHE_NAME = 'seraj-cache-v28';
+// v29 — no caching for external API requests (Supabase)
+const CACHE_NAME = 'seraj-cache-v29';
 const STATIC_ASSETS = ['manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -20,6 +20,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
   const isHTML = e.request.destination === 'document' ||
                  url.pathname.endsWith('.html') ||
                  url.pathname === '/' ||
@@ -38,13 +39,13 @@ self.addEventListener('fetch', (e) => {
         })
         .catch(() => caches.match(e.request))
     );
-  } else {
-    // Cache first للأصول الثابتة (صور، manifest)
+  } else if (isSameOrigin) {
+    // Cache first للأصول المحلية الثابتة فقط (صور، manifest) - نفس الدومين
     e.respondWith(
       caches.match(e.request).then(cached => {
         if (cached) return cached;
         return fetch(e.request).then(response => {
-          if (response && response.status === 200 && response.type !== 'opaque') {
+          if (response && response.status === 200) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
           }
@@ -53,6 +54,7 @@ self.addEventListener('fetch', (e) => {
       })
     );
   }
+  // الطلبات الخارجية (Supabase API, CDN...) ما نتدخل فيها - تروح للشبكة مباشرة
 });
 
 function logPushToIDB(ts, rawData) {
