@@ -5788,11 +5788,12 @@
         },
 
         startGame() {
-          // احسب حجم الشعلة نسبة للمساحة الفعلية - يمنع التلاعب بالتكبير
-          const boardW = window.innerWidth - 40;
-          const boardH = window.innerHeight - 110;
+          // حجم الشعلة = 9% من أصغر بُعد للوحة، بحد أقصى 62px
+          // بدون حد أدنى كبير - تصغر مع الشاشة لتبقى صعوبة اللعبة ثابتة دائماً
+          const boardW = Math.max(80, window.innerWidth - 40);
+          const boardH = Math.max(80, window.innerHeight - 110);
           const minDim = Math.min(boardW, boardH);
-          this.flameBtnSize = Math.max(44, Math.min(62, Math.round(minDim * 0.10)));
+          this.flameBtnSize = Math.min(62, Math.max(14, Math.round(minDim * 0.09)));
 
           this.gamePlaying = true;
           this.gameScoreCurrent = 0;
