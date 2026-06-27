@@ -3158,11 +3158,11 @@
           </div>
 
           <!-- Target Button (The Flame) -->
-          <button @click="clickFlame()" 
+          <button @click="clickFlame()"
                   type="button"
                   class="game-flame-btn"
-                  :style="'top: ' + flamePos.top + '; left: ' + flamePos.left + ';'">
-            <svg viewBox="0 0 24 24" fill="#ffb27a" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;filter:drop-shadow(0 0 8px #f97316) drop-shadow(0 0 16px rgba(249,115,22,0.5));">
+                  :style="'top:' + flamePos.top + '; left:' + flamePos.left + '; width:' + flameBtnSize + 'px; height:' + flameBtnSize + 'px;'">
+            <svg viewBox="0 0 24 24" fill="#ffb27a" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="'width:' + Math.round(flameBtnSize * 0.58) + 'px; height:' + Math.round(flameBtnSize * 0.58) + 'px; filter:drop-shadow(0 0 8px #f97316) drop-shadow(0 0 16px rgba(249,115,22,0.5));'">
               <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
             </svg>
           </button>
@@ -3361,6 +3361,7 @@
         gameTimeLeft: 20,
         gameIntervalId: null,
         flamePos: { top: '50%', left: '50%' },
+        flameBtnSize: 62,
 
         mapStudentFromDB(dbStudent) {
           if (!dbStudent) return null;
@@ -5787,6 +5788,12 @@
         },
 
         startGame() {
+          // احسب حجم الشعلة نسبة للمساحة الفعلية - يمنع التلاعب بالتكبير
+          const boardW = window.innerWidth - 40;
+          const boardH = window.innerHeight - 110;
+          const minDim = Math.min(boardW, boardH);
+          this.flameBtnSize = Math.max(44, Math.min(62, Math.round(minDim * 0.10)));
+
           this.gamePlaying = true;
           this.gameScoreCurrent = 0;
           this.gameTimeLeft = 20;
