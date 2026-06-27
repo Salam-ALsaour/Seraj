@@ -1,11 +1,11 @@
-// v27 — native HKDF encryption in worker
-const CACHE_NAME = 'seraj-cache-v27';
-const LOCAL_ASSETS = ['index.html', 'manifest.json', 'icon.png'];
+// v28 — network-first for HTML to always get latest code
+const CACHE_NAME = 'seraj-cache-v28';
+const STATIC_ASSETS = ['manifest.json', 'icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(LOCAL_ASSETS))
+      .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -19,19 +19,40 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        // Only cache same-origin or successful CORS responses — never opaque responses
-        if (response && response.status === 200 && response.type !== 'opaque') {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
-        }
-        return response;
-      }).catch(() => {});
-    })
-  );
+  const url = new URL(e.request.url);
+  const isHTML = e.request.destination === 'document' ||
+                 url.pathname.endsWith('.html') ||
+                 url.pathname === '/' ||
+                 url.pathname.endsWith('/');
+
+  if (isHTML) {
+    // Network first لـ HTML: دايماً يجيب أحدث كود، يرجع للكاش فقط إذا ما في إنترنت
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    // Cache first للأصول الثابتة (صور، manifest)
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(response => {
+          if (response && response.status === 200 && response.type !== 'opaque') {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
+          }
+          return response;
+        }).catch(() => {});
+      })
+    );
+  }
 });
 
 function logPushToIDB(ts, rawData) {
