@@ -3834,44 +3834,27 @@
                   localStorage.setItem('seraj_pwa_worker_url', workerUrlData.desc_text);
                 }
 
-                // تحميل التسليمات - المصدر الوحيد هو row 200
-                const _subs200 = {};
-                const row200 = chRows ? chRows.find(r => parseInt(r.id) === 200) : null;
-                if (row200 && row200.desc_text) {
-                  try {
-                    const parsed = JSON.parse(row200.desc_text);
-                    if (parsed && typeof parsed === 'object') {
-                      Object.assign(_subs200, parsed);
-                    }
-                  } catch (_) {}
+                // تحميل التسليمات من جدول weekly_submissions المخصص
+                const { data: wsubRows } = await supabaseClient.from('weekly_submissions').select('*');
+                const _subs = {};
+                if (wsubRows) {
+                  for (const row of wsubRows) {
+                    const key = row.student_id + '_w' + row.week;
+                    _subs[key] = {
+                      studentId: row.student_id,
+                      studentName: row.student_name,
+                      week: row.week,
+                      answers: row.answers || [],
+                      submittedAt: row.submitted_at,
+                      ...(row.evaluation ? { evaluation: row.evaluation } : {}),
+                      ...(row.winner_place ? { winnerPlace: row.winner_place } : {}),
+                      ...(row.winner_selected_at ? { winnerSelectedAt: row.winner_selected_at } : {}),
+                      ...(row.winner_selected_by ? { winnerSelectedBy: row.winner_selected_by } : {}),
+                      _dbId: row.id
+                    };
+                  }
                 }
-                // دمج أي wsub_ rows قديمة (من محاولات سابقة) مع row 200 وحذفها
-                const oldWsubRows = chRows ? chRows.filter(r => String(r.title || '').startsWith('wsub_')) : [];
-                for (const wrow of oldWsubRows) {
-                  const k = wrow.title.slice(5);
-                  try { if (!_subs200[k]) _subs200[k] = JSON.parse(wrow.desc_text); } catch (_) {}
-                }
-                this.weeklySubmissions = _subs200;
-                // إذا في wsub_ rows قديمة: ادمجها في row 200 واحذفها (تنظيف مرة وحدة)
-                if (oldWsubRows.length > 0) {
-                  try {
-                    await supabaseClient.from('weekly_challenge').upsert({
-                      id: 200, title: 'weekly_submissions_config',
-                      desc_text: JSON.stringify(_subs200), points: 0, duration: 0, time_left: 0
-                    });
-                    for (const wrow of oldWsubRows) {
-                      await supabaseClient.from('weekly_challenge').delete().eq('id', wrow.id);
-                    }
-                  } catch (_) {}
-                } else if (!row200) {
-                  // أنشئ row 200 إذا ما كانت موجودة
-                  try {
-                    await supabaseClient.from('weekly_challenge').upsert({
-                      id: 200, title: 'weekly_submissions_config',
-                      desc_text: '{}', points: 0, duration: 0, time_left: 0
-                    });
-                  } catch (_) {}
-                }
+                this.weeklySubmissions = _subs;
               }
             } catch (err) {
               console.error("Supabase Error during init (weekly_challenge configs exception):", err);
@@ -5329,11 +5312,16 @@
 
         async persistWeeklySubmissions() {
           if (!supabaseClient) return;
-          await supabaseClient.from('weekly_challenge').upsert({
-            id: 200, title: 'weekly_submissions_config',
-            desc_text: JSON.stringify(this.weeklySubmissions),
-            points: 0, duration: 0, time_left: 0
-          });
+          await Promise.all(
+            Object.values(this.weeklySubmissions)
+              .filter(sub => sub._dbId)
+              .map(sub => supabaseClient.from('weekly_submissions').update({
+                evaluation: sub.evaluation || null,
+                winner_place: sub.winnerPlace || null,
+                winner_selected_at: sub.winnerSelectedAt || null,
+                winner_selected_by: sub.winnerSelectedBy || null
+              }).eq('id', sub._dbId))
+          );
         },
 
         async saveWeeklyEvaluation(week, studentId) {
@@ -5393,18 +5381,15 @@
             'حذف إجابة الطالب',
             `هل تريد حذف إجابة ${sub.studentName || 'هذا الطالب'} من التحدي؟`,
             async () => {
-              const updated = { ...this.weeklySubmissions };
-              delete updated[key];
-              if (supabaseClient) {
-                const { error } = await supabaseClient.from('weekly_challenge').upsert({
-                  id: 200, title: 'weekly_submissions_config',
-                  desc_text: JSON.stringify(updated), points: 0, duration: 0, time_left: 0
-                });
+              if (supabaseClient && sub._dbId) {
+                const { error } = await supabaseClient.from('weekly_submissions').delete().eq('id', sub._dbId);
                 if (error) {
                   this.showToast('فشل الحذف، حاول مجدداً', 'neg', 'alert-circle');
                   return;
                 }
               }
+              const updated = { ...this.weeklySubmissions };
+              delete updated[key];
               this.weeklySubmissions = updated;
               this.showToast('تم حذف إجابة الطالب', 'success', 'trash-2');
             }
@@ -5443,34 +5428,46 @@
 
           try {
             if (supabaseClient) {
-              // اجلب أحدث نسخة من row 200 لتجنب تضارب التسليمات المتزامنة
-              const { data: latest, error: fetchErr } = await supabaseClient
-                .from('weekly_challenge').select('desc_text').eq('id', 200).single();
-              if (fetchErr) throw fetchErr;
+              // تحقق من DB مباشرة (يمنع التسليم المكرر بعد تحديث الصفحة)
+              const { data: existing } = await supabaseClient
+                .from('weekly_submissions')
+                .select('id')
+                .eq('student_id', this.currentStudent.id)
+                .eq('week', week)
+                .maybeSingle();
 
-              let latestSubs = {};
-              if (latest && latest.desc_text) {
-                try { latestSubs = JSON.parse(latest.desc_text) || {}; } catch (_) {}
-              }
-
-              // تحقق من أحدث نسخة DB - منع التسليم المكرر حتى بعد التحديث
-              if (latestSubs[key]) {
-                this.weeklySubmissions = { ...this.weeklySubmissions, ...latestSubs };
+              if (existing) {
+                if (!this.weeklySubmissions[key]) {
+                  this.weeklySubmissions = { ...this.weeklySubmissions, [key]: { ...submission, _dbId: existing.id } };
+                }
                 this.weeklySubmitting = false;
                 this.showToast('لقد سلّمت هذا التحدي مسبقاً', 'neg', 'alert-circle');
                 return;
               }
 
-              // ادمج تسليم الطالب مع أحدث نسخة واحفظ
-              const merged = { ...latestSubs, [key]: submission };
-              const { error: saveErr } = await supabaseClient.from('weekly_challenge').upsert({
-                id: 200, title: 'weekly_submissions_config',
-                desc_text: JSON.stringify(merged), points: 0, duration: 0, time_left: 0
-              });
-              if (saveErr) throw saveErr;
+              // INSERT - الـ UNIQUE constraint يمنع التكرار على مستوى DB
+              const { data: newRow, error: insertErr } = await supabaseClient
+                .from('weekly_submissions')
+                .insert({
+                  student_id: this.currentStudent.id,
+                  week: week,
+                  student_name: this.currentStudent.name,
+                  answers: [...this.weeklyFormAnswers],
+                  submitted_at: new Date().toLocaleString('ar-SA')
+                })
+                .select('id')
+                .single();
 
-              // حدّث الحالة المحلية فقط بعد نجاح الحفظ
-              this.weeklySubmissions = merged;
+              if (insertErr) {
+                if (insertErr.code === '23505') {
+                  this.weeklySubmitting = false;
+                  this.showToast('لقد سلّمت هذا التحدي مسبقاً', 'neg', 'alert-circle');
+                  return;
+                }
+                throw insertErr;
+              }
+
+              this.weeklySubmissions = { ...this.weeklySubmissions, [key]: { ...submission, _dbId: newRow.id } };
             } else {
               this.weeklySubmissions = { ...this.weeklySubmissions, [key]: submission };
             }
