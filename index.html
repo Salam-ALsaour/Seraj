@@ -5799,7 +5799,23 @@
           this.gameScoreCurrent = 0;
           this.gameTimeLeft = 20;
           this.moveFlame();
-          
+
+          // منع التكبير خلال اللعبة (Ctrl+Scroll وCtrl+Plus/Minus/0)
+          this._gameNoZoomWheel = (e) => { if (e.ctrlKey || e.metaKey) e.preventDefault(); };
+          this._gameNoZoomKey   = (e) => {
+            if ((e.ctrlKey || e.metaKey) && ['=','+','-','_','0'].includes(e.key)) e.preventDefault();
+          };
+          window.addEventListener('wheel',   this._gameNoZoomWheel, { passive: false });
+          window.addEventListener('keydown', this._gameNoZoomKey);
+
+          // إذا تغيّر حجم الـ viewport رغماً (مثل pinch على بعض الأجهزة) → أعد حساب الشعلة
+          this._gameViewportResize = () => {
+            const bW = Math.max(80, window.innerWidth  - 40);
+            const bH = Math.max(80, window.innerHeight - 110);
+            this.flameBtnSize = Math.min(62, Math.max(14, Math.round(Math.min(bW, bH) * 0.09)));
+          };
+          if (window.visualViewport) window.visualViewport.addEventListener('resize', this._gameViewportResize);
+
           if (this.gameIntervalId) clearInterval(this.gameIntervalId);
           this.gameIntervalId = setInterval(() => {
             this.gameTimeLeft--;
@@ -5831,6 +5847,15 @@
             clearInterval(this.gameIntervalId);
             this.gameIntervalId = null;
           }
+
+          // أعد السماح بالتكبير بعد انتهاء اللعبة
+          if (this._gameNoZoomWheel) { window.removeEventListener('wheel',   this._gameNoZoomWheel); this._gameNoZoomWheel = null; }
+          if (this._gameNoZoomKey)   { window.removeEventListener('keydown', this._gameNoZoomKey);   this._gameNoZoomKey   = null; }
+          if (this._gameViewportResize && window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', this._gameViewportResize);
+            this._gameViewportResize = null;
+          }
+
           this.playGameEndSound();
           this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
           
