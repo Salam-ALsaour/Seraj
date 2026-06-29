@@ -107,6 +107,65 @@
 
     .page{animation:fade .35s ease;}
     @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+    /* ===== Weekly Challenge Carousel ===== */
+    .wc{margin-bottom:14px;}
+    .wc-stage{position:relative;}
+    .wc-viewport{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;
+      scroll-behavior:smooth;padding:6px 11%;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;overscroll-behavior-x:contain;scroll-padding:0 11%;}
+    .wc-viewport::-webkit-scrollbar{display:none;}
+    .wc-slide{flex:0 0 78%;scroll-snap-align:center;cursor:pointer;
+      transform:scale(.9);opacity:.5;transition:transform .35s ease,opacity .35s ease;}
+    .wc-slide.is-active{transform:scale(1);opacity:1;cursor:default;}
+    .wc-card{position:relative;height:100%;box-sizing:border-box;background:var(--glass);
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      border:1px solid rgba(249,115,22,0.12);border-radius:22px;padding:18px;
+      box-shadow:0 18px 40px -22px rgba(0,0,0,.8);}
+    .wc-slide.is-active .wc-card{border-color:rgba(249,115,22,0.45);
+      box-shadow:0 0 26px -6px var(--orange-glow);}
+    .wc-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+    .wc-icon{width:36px;height:36px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;
+      background:linear-gradient(135deg,rgba(249,115,22,0.15),transparent);
+      border:1px solid rgba(249,115,22,0.2);color:var(--orange);}
+    .wc-icon svg{width:20px;height:20px;}
+    .wc-title{font-size:14px;font-weight:700;color:var(--txt);}
+    .wc-sub{font-size:10px;color:var(--txt-faint);margin-top:2px;}
+    .wc-desc{font-size:12px;color:var(--txt-dim);line-height:1.7;text-align:right;}
+    .wc-criteria{margin-top:12px;padding:12px;border-radius:12px;text-align:right;
+      background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);}
+    .wc-criteria-title{font-size:12px;font-weight:800;color:#ffb27a;margin-bottom:6px;}
+    .wc-criteria-list{display:grid;gap:5px;font-size:11px;color:var(--txt-dim);line-height:1.6;}
+    .wc-badge{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px;
+      padding:8px;border-radius:12px;font-size:11px;font-weight:700;color:#a7f3d0;
+      background:rgba(5,150,105,0.12);border:1px solid rgba(5,150,105,0.25);}
+    .wc-badge svg{width:14px;height:14px;}
+    /* locked card */
+    .wc-card.wc-locked{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;gap:6px;min-height:170px;border-color:rgba(255,255,255,0.06);
+      background:rgba(255,255,255,0.015);}
+    .wc-lock-ic{width:40px;height:40px;color:var(--txt-faint);opacity:.55;}
+    .wc-lock-ic svg{width:100%;height:100%;}
+    .wc-lock-week{font-size:13px;font-weight:700;color:var(--txt-dim);}
+    .wc-lock-title{font-size:12px;font-weight:700;color:var(--txt-faint);}
+    .wc-lock-sub{font-size:10px;color:var(--txt-faint);opacity:.8;}
+    /* arrows */
+    .wc-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;
+      width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+      background:rgba(18,20,20,0.85);border:1px solid var(--stroke2);color:var(--txt);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;
+      box-shadow:0 6px 16px rgba(0,0,0,.5);transition:opacity .2s,transform .15s;}
+    .wc-arrow:active{transform:translateY(-50%) scale(.9);}
+    .wc-arrow-prev{right:2px;}
+    .wc-arrow-next{left:2px;}
+    .wc-arrow:disabled{opacity:.25;cursor:not-allowed;}
+    .wc-arrow svg{width:20px;height:20px;}
+    /* dots */
+    .wc-dots{display:flex;justify-content:center;gap:7px;margin-top:12px;}
+    .wc-dot{width:7px;height:7px;border-radius:50%;background:var(--stroke2);
+      border:none;padding:0;cursor:pointer;transition:all .25s;}
+    .wc-dot.is-active{width:20px;border-radius:4px;background:var(--orange);
+      box-shadow:0 0 8px var(--orange-glow);}
     .animate-spin{animation:spin 1s linear infinite;}
     @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 
@@ -1421,67 +1480,75 @@
       <!-- ============================================== -->
       <div x-show="currentScreen === 'weekly'" class="page">
         
-        <!-- Header Card -->
-        <div class="glass" style="padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(249,115,22,0.15); background: linear-gradient(160deg, rgba(249,115,22,0.06), transparent);">
-          <div style="width: 40px; height: 40px; margin: 0 auto 10px; color: var(--orange); filter: drop-shadow(0 0 8px var(--orange-glow));" x-html="getIconSvg('calendar')"></div>
-          <div style="font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px;">التحدي الأسبوعي</div>
-          <div x-show="!isAdmin" style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">8 أسابيع — 8 تحديات مختلفة<br>أكمل التحدي في كل أسبوع واكسب نقاط إضافية!</div>
-          <div x-show="isAdmin" style="font-size: 11px; color: var(--txt-dim); line-height: 1.6;">راجع تسليمات الطلاب، احفظ تقييماتك كمسودة، ثم حدد الفائزين.</div>
-        </div>
+        <!-- Weekly Challenges Carousel -->
+        <div class="wc" x-init="$nextTick(() => scrollWeeklyToActive(false))">
+          <div class="wc-stage">
+          <div class="wc-viewport" x-ref="wcViewport" @scroll.passive.debounce.120ms="syncWeeklyActive()">
+            <template x-for="ch in weeklyChallenges" :key="ch.week">
+              <div class="wc-slide" :data-week="ch.week"
+                   :class="activeWeeklyChallenge === ch.week ? 'is-active' : ''"
+                   @click="goToWeek(ch.week)">
+                <!-- Unlocked challenge card -->
+                <template x-if="ch.unlocked">
+                  <div class="wc-card">
+                    <div class="wc-card-head">
+                      <div class="wc-icon"><div style="width:20px;height:20px;" x-html="getIconSvg(ch.icon)"></div></div>
+                      <div style="flex:1; text-align:right;">
+                        <div class="wc-title" x-text="ch.title"></div>
+                        <div class="wc-sub" x-text="'الأسبوع ' + ch.week + ' من 8'"></div>
+                      </div>
+                    </div>
+                    <div class="wc-desc" x-text="ch.desc"></div>
+                    <div class="wc-criteria">
+                      <div class="wc-criteria-title">معايير التقييم</div>
+                      <div class="wc-criteria-list">
+                        <div>1 - الابداع والتميز</div>
+                        <div>2 - الفائدة والأثر</div>
+                        <div>3 - قابلية التنفيذ</div>
+                      </div>
+                    </div>
+                    <template x-if="hasWeeklySubmission(ch.week)">
+                      <div class="wc-badge">
+                        <div style="width:14px;height:14px;" x-html="getIconSvg('check-circle')"></div>
+                        <span>تم تسليم إجابتك</span>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <!-- Locked challenge card -->
+                <template x-if="!ch.unlocked">
+                  <div class="wc-card wc-locked">
+                    <div class="wc-lock-ic" x-html="getIconSvg('lock')"></div>
+                    <div class="wc-lock-week" x-text="'الأسبوع ' + ch.week"></div>
+                    <div class="wc-lock-title">مقفول</div>
+                    <div class="wc-lock-sub">سيتم فتحه قريباً، ترقّب!</div>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
 
-        <!-- Week Selector Grid -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
-          <template x-for="ch in weeklyChallenges" :key="ch.week">
-            <button 
-              @click="ch.unlocked && (activeWeeklyChallenge = ch.week)"
-              :disabled="!ch.unlocked"
-              style="position: relative; padding: 14px 8px; border-radius: 16px; text-align: center; transition: all 0.25s; cursor: pointer; border: 1px solid var(--stroke);"
-              :style="ch.unlocked 
-                ? (activeWeeklyChallenge === ch.week 
-                  ? 'background: linear-gradient(160deg, rgba(249,115,22,0.18), rgba(249,115,22,0.04)); border-color: rgba(249,115,22,0.5); box-shadow: 0 0 20px -4px var(--orange-glow);'
-                  : 'background: var(--glass); cursor: pointer;')
-                : 'background: rgba(255,255,255,0.01); opacity: 0.45; cursor: not-allowed;'">
-              <div style="width: 22px; height: 22px; margin: 0 auto 6px;" 
-                   :style="activeWeeklyChallenge === ch.week && ch.unlocked ? 'color: var(--orange); filter: drop-shadow(0 0 6px var(--orange-glow));' : 'color: var(--txt-dim);'"
-                   x-html="getIconSvg(ch.unlocked ? ch.icon : 'lock')"></div>
-              <div style="font-size: 10px; font-weight: 700;" 
-                   :style="activeWeeklyChallenge === ch.week && ch.unlocked ? 'color: #ffb27a;' : 'color: var(--txt-dim);'"
-                   x-text="'الأسبوع ' + ch.week"></div>
-              <!-- Submitted checkmark -->
-              <template x-if="ch.unlocked && hasWeeklySubmission(ch.week)">
-                <div style="position: absolute; top: -4px; left: -4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(5,150,105,0.9); display: grid; place-items: center; border: 2px solid var(--bg2);">
-                  <div style="width: 10px; height: 10px; color: #fff;" x-html="getIconSvg('check')"></div>
-                </div>
-              </template>
-            </button>
-          </template>
+          <!-- Navigation Arrows -->
+          <button class="wc-arrow wc-arrow-prev" @click="weeklyNav(-1)" :disabled="activeWeeklyChallenge <= 1" aria-label="السابق">
+            <div style="width:20px;height:20px;" x-html="getIconSvg('chevron-right')"></div>
+          </button>
+          <button class="wc-arrow wc-arrow-next" @click="weeklyNav(1)" :disabled="activeWeeklyChallenge >= weeklyChallenges.length" aria-label="التالي">
+            <div style="width:20px;height:20px;" x-html="getIconSvg('chevron-left')"></div>
+          </button>
+          </div>
+
+          <!-- Dots -->
+          <div class="wc-dots">
+            <template x-for="ch in weeklyChallenges" :key="ch.week">
+              <button class="wc-dot" :class="activeWeeklyChallenge === ch.week ? 'is-active' : ''"
+                      @click="goToWeek(ch.week)" :aria-label="'الأسبوع ' + ch.week"></button>
+            </template>
+          </div>
         </div>
 
         <!-- Active Challenge Content -->
         <template x-for="ch in weeklyChallenges.filter(c => c.week === activeWeeklyChallenge && c.unlocked)" :key="ch.week">
-          <div>
-            <!-- Challenge Info Card -->
-            <div class="glass" style="padding: 18px; margin-bottom: 16px; border: 1px solid rgba(249,115,22,0.12);">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                <div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, rgba(249,115,22,0.15), transparent); border: 1px solid rgba(249,115,22,0.2); display: grid; place-items: center; flex-shrink: 0;">
-                  <div style="width: 20px; height: 20px; color: var(--orange);" x-html="getIconSvg(ch.icon)"></div>
-                </div>
-                <div style="flex: 1; text-align: right;">
-                  <div style="font-size: 14px; font-weight: 700; color: var(--txt);" x-text="ch.title"></div>
-                  <div style="font-size: 10px; color: var(--txt-faint);" x-text="'الأسبوع ' + ch.week + ' من 8'"></div>
-                </div>
-              </div>
-              <div style="font-size: 12px; color: var(--txt-dim); line-height: 1.7; text-align: right;" x-text="ch.desc"></div>
-              <div style="margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); text-align: right;">
-                <div style="font-size: 12px; font-weight: 800; color: #ffb27a; margin-bottom: 6px;">معايير التقييم</div>
-                <div style="display: grid; gap: 5px; font-size: 11px; color: var(--txt-dim); line-height: 1.6;">
-                  <div>1 - الابداع والتميز</div>
-                  <div>2 - الفائدة والأثر</div>
-                  <div>3 - قابلية التنفيذ</div>
-                </div>
-              </div>
-            </div>
-
+          <div style="margin-top: 4px;">
             <!-- Already Submitted State -->
             <template x-if="hasWeeklySubmission(ch.week)">
               <div>
@@ -1630,15 +1697,6 @@
                 </template>
               </div>
             </template>
-          </div>
-        </template>
-
-        <!-- Locked Challenge Message -->
-        <template x-if="!weeklyChallenges.find(c => c.week === activeWeeklyChallenge && c.unlocked)">
-          <div class="glass" style="padding: 30px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-            <div style="width: 44px; height: 44px; margin: 0 auto 12px; color: var(--txt-faint); opacity: 0.5;" x-html="getIconSvg('lock')"></div>
-            <div style="font-size: 15px; font-weight: 700; color: var(--txt-dim); margin-bottom: 6px;">هذا التحدي مقفول</div>
-            <div style="font-size: 11px; color: var(--txt-faint);">سيتم فتحه في الأسبوع القادم، ترقّب!</div>
           </div>
         </template>
 
@@ -5270,6 +5328,49 @@
           return String(answer || '').slice(0, limit);
         },
 
+        goToWeek(week) {
+          if (week < 1) week = 1;
+          if (week > this.weeklyChallenges.length) week = this.weeklyChallenges.length;
+          this.activeWeeklyChallenge = week;
+          this.scrollWeeklyToActive(true);
+        },
+
+        weeklyNav(dir) {
+          this.goToWeek(this.activeWeeklyChallenge + dir);
+        },
+
+        scrollWeeklyToActive(smooth) {
+          this.$nextTick(() => {
+            const vp = this.$refs.wcViewport;
+            if (!vp) return;
+            const el = vp.querySelector('.wc-slide[data-week="' + this.activeWeeklyChallenge + '"]');
+            if (!el) return;
+            // Center the active slide via a physical-pixel delta (reliable in RTL,
+            // unlike scrollIntoView which does not honor inline-center here).
+            const vr = vp.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            const delta = (er.left + er.width / 2) - (vr.left + vr.width / 2);
+            vp.scrollBy({ left: delta, behavior: smooth ? 'smooth' : 'auto' });
+          });
+        },
+
+        // Sync the active challenge with the carousel position after a finger swipe
+        syncWeeklyActive() {
+          const vp = this.$refs.wcViewport;
+          if (!vp) return;
+          const vpRect = vp.getBoundingClientRect();
+          const vpCenter = vpRect.left + vpRect.width / 2;
+          let bestWeek = null, bestDist = Infinity;
+          vp.querySelectorAll('.wc-slide').forEach(el => {
+            const r = el.getBoundingClientRect();
+            const dist = Math.abs((r.left + r.width / 2) - vpCenter);
+            if (dist < bestDist) { bestDist = dist; bestWeek = parseInt(el.dataset.week, 10); }
+          });
+          if (bestWeek && bestWeek !== this.activeWeeklyChallenge) {
+            this.activeWeeklyChallenge = bestWeek;
+          }
+        },
+
         weeklyAnswersValid() {
           return this.weeklyFormAnswers.every((answer, index) => {
             const text = String(answer || '').trim();
@@ -6862,7 +6963,8 @@
             'x': '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
             'help-circle': '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line>',
             'info': '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>',
-            'chevron-left': '<polyline points="15 18 9 12 15 6"></polyline>'
+            'chevron-left': '<polyline points="15 18 9 12 15 6"></polyline>',
+            'chevron-right': '<polyline points="9 18 15 12 9 6"></polyline>'
           };
           const path = dict[iconName] || dict['user'];
           return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;">${path}</svg>`;
