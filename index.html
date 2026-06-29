@@ -111,12 +111,12 @@
     /* ===== Weekly Challenge Carousel ===== */
     .wc{margin-bottom:14px;}
     .wc-stage{position:relative;}
-    .wc-viewport{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;
-      scroll-behavior:smooth;padding:6px 11%;-webkit-overflow-scrolling:touch;
-      scrollbar-width:none;overscroll-behavior-x:contain;scroll-padding:0 11%;}
+    .wc-viewport{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
+      padding:6px 4%;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;overscroll-behavior-x:contain;scroll-padding:0 4%;}
     .wc-viewport::-webkit-scrollbar{display:none;}
-    .wc-slide{flex:0 0 78%;scroll-snap-align:center;cursor:pointer;
-      transform:scale(.9);opacity:.5;transition:transform .35s ease,opacity .35s ease;}
+    .wc-slide{flex:0 0 92%;scroll-snap-align:center;cursor:pointer;
+      transform:scale(.94);opacity:.55;transition:transform .35s ease,opacity .35s ease;}
     .wc-slide.is-active{transform:scale(1);opacity:1;cursor:default;}
     .wc-card{position:relative;height:100%;box-sizing:border-box;background:var(--glass);
       backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -156,8 +156,8 @@
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;
       box-shadow:0 6px 16px rgba(0,0,0,.5);transition:opacity .2s,transform .15s;}
     .wc-arrow:active{transform:translateY(-50%) scale(.9);}
-    .wc-arrow-prev{right:2px;}
-    .wc-arrow-next{left:2px;}
+    .wc-arrow-prev{right:6px;}
+    .wc-arrow-next{left:6px;}
     .wc-arrow:disabled{opacity:.25;cursor:not-allowed;}
     .wc-arrow svg{width:20px;height:20px;}
     /* dots */
@@ -4085,11 +4085,12 @@
                 const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
                 const targetTag = e.target.tagName.toLowerCase();
                 if (
-                  ignoreTags.includes(targetTag) || 
-                  e.target.closest('.badge-strip') || 
-                  e.target.closest('.admin-bar') || 
-                  e.target.closest('.modal-card') || 
-                  e.target.closest('.stage-toggle')
+                  ignoreTags.includes(targetTag) ||
+                  e.target.closest('.badge-strip') ||
+                  e.target.closest('.admin-bar') ||
+                  e.target.closest('.modal-card') ||
+                  e.target.closest('.stage-toggle') ||
+                  e.target.closest('.wc')
                 ) {
                   return;
                 }
@@ -4101,11 +4102,12 @@
                 const ignoreTags = ['input', 'textarea', 'select', 'button', 'a'];
                 const targetTag = e.target.tagName.toLowerCase();
                 if (
-                  ignoreTags.includes(targetTag) || 
-                  e.target.closest('.badge-strip') || 
-                  e.target.closest('.admin-bar') || 
-                  e.target.closest('.modal-card') || 
-                  e.target.closest('.stage-toggle')
+                  ignoreTags.includes(targetTag) ||
+                  e.target.closest('.badge-strip') ||
+                  e.target.closest('.admin-bar') ||
+                  e.target.closest('.modal-card') ||
+                  e.target.closest('.stage-toggle') ||
+                  e.target.closest('.wc')
                 ) {
                   return;
                 }
