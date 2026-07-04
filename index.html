@@ -1676,6 +1676,52 @@
         <template x-for="ch in weeklyChallenges.filter(c => c.week === activeWeeklyChallenge && c.unlocked)" :key="ch.week">
           <div style="margin-top: 4px;">
 
+            <!-- Challenge Details for Week 2 (Visible to all: Students and Admin) -->
+            <template x-if="ch.week === 2">
+              <div style="text-align: right; margin-bottom: 20px;">
+                
+                <!-- Premium Challenge Card Info -->
+                <div class="glass" style="padding: 16px; margin-bottom: 16px; border: 1px solid rgba(249,115,22,0.2); background: linear-gradient(165deg, rgba(249,115,22,0.04), transparent); border-radius: 18px;">
+                  <div style="font-size: 15px; font-weight: 800; color: #ffb27a; margin-bottom: 12px;">معايير التقييم:</div>
+                  <ul style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 13px; color: var(--txt-dim); line-height: 1.8;">
+                    <li style="margin-bottom: 6px;">• <strong>وضوح الهدف وأهميته:</strong> هل الهدف المحدد واضح وهام لشخصيتك؟</li>
+                    <li style="margin-bottom: 6px;">• <strong>القابلية للإنجاز:</strong> هل الخطة واقعية ويمكن تحقيقها هذا الصيف؟</li>
+                    <li style="margin-bottom: 8px;">• <strong>القابلية للقياس:</strong> هل هناك مؤشرات واضحة لقياس مدى تقدمك؟</li>
+                  </ul>
+                  
+                  <div style="font-size: 14px; font-weight: 800; color: #ffb27a; margin-bottom: 6px;">طريقة المشاركة:</div>
+                  <div style="font-size: 12.5px; color: var(--txt-dim); line-height: 1.6; margin-bottom: 14px;">
+                    يتم تعبئة النموذج المرفق أدناه والذي تم توزيع نسخ ورقية منه في اللقاء.
+                  </div>
+
+                  <div style="font-size: 13px; font-weight: 700; color: #fca5a5; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+                    <div style="width:14px; height:14px; color:#ef4444;" x-html="getIconSvg('clock')"></div>
+                    <span>آخر موعد لتسليم المشاركات: <strong>يوم الأربعاء</strong></span>
+                  </div>
+
+                  <!-- Google Forms submission link -->
+                  <a href="https://forms.gle/LcysiMCiGYkq7zyA7" target="_blank" 
+                     style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; border-radius: 12px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; box-shadow: 0 4px 15px rgba(124,58,237,0.3); transition: all 0.2s;"
+                     onmouseover="this.style.transform='translateY(-2px)'"
+                     onmouseout="this.style.transform='translateY(0)'">
+                    <div style="width:16px; height:16px;" x-html="getIconSvg('external-link')"></div>
+                    <span>رابط تسليم المشاركة (Google Forms)</span>
+                  </a>
+                </div>
+
+                <!-- Image Display -->
+                <div style="margin-bottom: 20px; text-align: center;">
+                  <div style="font-size: 11px; color: var(--txt-faint); margin-bottom: 6px; text-align: right;">انقر على الصورة لفتحها بحجم كامل:</div>
+                  <a href="summer_plan.png" target="_blank">
+                    <img src="summer_plan.png" alt="نموذج خطتي الصيفية" 
+                         style="width: 100%; border-radius: 16px; border: 1.5px solid var(--stroke); box-shadow: 0 8px 30px rgba(0,0,0,0.4); transition: transform 0.25s ease;"
+                         onmouseover="this.style.transform='scale(1.02)'"
+                         onmouseout="this.style.transform='scale(1)'" />
+                  </a>
+                </div>
+              </div>
+            </template>
+
             <!-- ============ STUDENT VIEW ============ -->
             <template x-if="!isAdmin">
               <div>
@@ -1706,18 +1752,20 @@
                           </div>
                         </template>
 
-                        <div style="margin-top: 14px;">
-                          <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
-                            <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('file-text')"></div>
-                            إجاباتك المسلّمة:
-                          </div>
-                          <template x-for="(q, qi) in ch.questions" :key="qi">
-                            <div class="glass" style="padding: 12px 14px; margin-bottom: 8px; border-radius: 12px; text-align: right;">
-                              <div style="font-size: 11px; font-weight: 600; color: var(--orange); margin-bottom: 4px;" x-text="q"></div>
-                              <div style="font-size: 12px; color: var(--txt); line-height: 1.6;" x-text="getWeeklyAnswer(ch.week, qi)"></div>
+                        <template x-if="ch.questions && ch.questions.length > 0">
+                          <div style="margin-top: 14px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
+                              <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('file-text')"></div>
+                              إجاباتك المسلّمة:
                             </div>
-                          </template>
-                        </div>
+                            <template x-for="(q, qi) in ch.questions" :key="qi">
+                              <div class="glass" style="padding: 12px 14px; margin-bottom: 8px; border-radius: 12px; text-align: right;">
+                                <div style="font-size: 11px; font-weight: 600; color: var(--orange); margin-bottom: 4px;" x-text="q"></div>
+                                <div style="font-size: 12px; color: var(--txt); line-height: 1.6;" x-text="getWeeklyAnswer(ch.week, qi)"></div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
                       </div>
                     </template>
 
@@ -1742,52 +1790,69 @@
                           <div style="font-size: 15px; font-weight: 700; color: #a7f3d0; margin-bottom: 6px;">تم تسليم إجابتك بنجاح!</div>
                           <div style="font-size: 11px; color: var(--txt-dim);">لا يمكن التسليم مرة أخرى لهذا التحدي</div>
                         </div>
-                        <div style="margin-top: 14px;">
-                          <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
-                            <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('file-text')"></div>
-                            إجاباتك المسلّمة:
-                          </div>
-                          <template x-for="(q, qi) in ch.questions" :key="qi">
-                            <div class="glass" style="padding: 12px 14px; margin-bottom: 8px; border-radius: 12px; text-align: right;">
-                              <div style="font-size: 11px; font-weight: 600; color: var(--orange); margin-bottom: 4px;" x-text="q"></div>
-                              <div style="font-size: 12px; color: var(--txt); line-height: 1.6;" x-text="getWeeklyAnswer(ch.week, qi)"></div>
+                        <template x-if="ch.questions && ch.questions.length > 0">
+                          <div style="margin-top: 14px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
+                              <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('file-text')"></div>
+                              إجاباتك المسلّمة:
                             </div>
-                          </template>
-                        </div>
+                            <template x-for="(q, qi) in ch.questions" :key="qi">
+                              <div class="glass" style="padding: 12px 14px; margin-bottom: 8px; border-radius: 12px; text-align: right;">
+                                <div style="font-size: 11px; font-weight: 600; color: var(--orange); margin-bottom: 4px;" x-text="q"></div>
+                                <div style="font-size: 12px; color: var(--txt); line-height: 1.6;" x-text="getWeeklyAnswer(ch.week, qi)"></div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
                       </div>
                     </template>
                     <template x-if="!hasWeeklySubmission(ch.week)">
                       <div>
-                        <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
-                          <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('edit-3')"></div>
-                          أجب على الأسئلة التالية:
-                        </div>
-                        <template x-for="(q, qi) in ch.questions" :key="qi">
-                          <div style="margin-bottom: 14px; text-align: right;">
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #ffb27a; margin-bottom: 6px;">
-                              <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.2); font-size: 10px; color: var(--orange); margin-left: 6px; vertical-align: middle;" x-text="qi + 1"></span>
-                              <span x-text="q"></span>
-                            </label>
-                            <textarea
-                              x-model="weeklyFormAnswers[qi]"
-                              :maxlength="getWeeklyAnswerLimit(qi)"
-                              :placeholder="'اكتب إجابتك هنا...'"
-                              @input="weeklyFormAnswers[qi] = limitWeeklyAnswer(weeklyFormAnswers[qi], qi)"
-                              style="width: 100%; min-height: 70px; padding: 12px 14px; font-size: 12px; font-family: inherit; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff; resize: vertical; line-height: 1.6; transition: border-color 0.2s; box-sizing: border-box;"
-                              onfocus="this.style.borderColor='rgba(249,115,22,0.4)'"
-                              onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
-                            ></textarea>
-                            <div style="font-size: 10px; color: var(--txt-faint); text-align: left; margin-top: 4px; direction: ltr;"
-                                 x-text="(weeklyFormAnswers[qi] || '').length + ' / ' + getWeeklyAnswerLimit(qi)"></div>
+                        <!-- Questionnaire for challenges with questions (like Week 1) -->
+                        <template x-if="ch.questions && ch.questions.length > 0">
+                          <div>
+                            <div style="font-size: 12px; font-weight: 600; color: var(--txt-dim); margin-bottom: 10px; text-align: right;">
+                              <div style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('edit-3')"></div>
+                              أجب على الأسئلة التالية:
+                            </div>
+                            <template x-for="(q, qi) in ch.questions" :key="qi">
+                              <div style="margin-bottom: 14px; text-align: right;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #ffb27a; margin-bottom: 6px;">
+                                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.2); font-size: 10px; color: var(--orange); margin-left: 6px; vertical-align: middle;" x-text="qi + 1"></span>
+                                  <span x-text="q"></span>
+                                </label>
+                                <textarea
+                                  x-model="weeklyFormAnswers[qi]"
+                                  :maxlength="getWeeklyAnswerLimit(qi)"
+                                  :placeholder="'اكتب إجابتك هنا...'"
+                                  @input="weeklyFormAnswers[qi] = limitWeeklyAnswer(weeklyFormAnswers[qi], qi)"
+                                  style="width: 100%; min-height: 70px; padding: 12px 14px; font-size: 12px; font-family: inherit; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff; resize: vertical; line-height: 1.6; transition: border-color 0.2s; box-sizing: border-box;"
+                                  onfocus="this.style.borderColor='rgba(249,115,22,0.4)'"
+                                  onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
+                                ></textarea>
+                                <div style="font-size: 10px; color: var(--txt-faint); text-align: left; margin-top: 4px; direction: ltr;"
+                                     x-text="(weeklyFormAnswers[qi] || '').length + ' / ' + getWeeklyAnswerLimit(qi)"></div>
+                              </div>
+                            </template>
                           </div>
                         </template>
+
+                        <!-- Information notice for confirmation-only challenges (like Week 2) -->
+                        <template x-if="!ch.questions || ch.questions.length === 0">
+                          <div style="text-align: right; margin-bottom: 15px;">
+                            <div class="glass" style="padding: 14px; border: 1px solid rgba(5,150,105,0.2); background: rgba(5,150,105,0.02); border-radius: 12px; font-size: 12.5px; color: var(--txt-dim); line-height: 1.6;">
+                              بعد قيامك بتعبئة وتسليم النموذج الورقي أو تعبئة النموذج الإلكتروني عبر الرابط أعلاه، يرجى النقر على الزر أدناه لتأكيد تسليم مشاركتك في التطبيق لتسجيل اسمك وتلقي التقييم والدرجات من المشرفين.
+                            </div>
+                          </div>
+                        </template>
+
                         <button
                           @click="submitWeeklyChallenge(ch.week)"
                           :disabled="weeklySubmitting || !weeklyAnswersValid()"
                           class="btn-redeem"
                           style="width: 100%; padding: 13px; font-size: 14px; font-weight: 700; border-radius: 14px; margin-top: 4px;"
                           :style="!weeklyAnswersValid() ? 'opacity: 0.4; cursor: not-allowed;' : ''">
-                          <span x-show="!weeklySubmitting">تسليم الإجابات</span>
+                          <span x-show="!weeklySubmitting" x-text="ch.questions && ch.questions.length > 0 ? 'تسليم الإجابات' : 'تأكيد تسليم المشاركة'"></span>
                           <span x-show="weeklySubmitting">جاري التسليم...</span>
                         </button>
                       </div>
@@ -3648,13 +3713,15 @@
           { week: 1, title: 'تحدي تطوير منصة سراج', icon: 'rocket', unlocked: true, ended: true,
             desc: 'شارك بفكرتك لتطوير منصة سراج! أجب على الأسئلة التالية وقدّم رؤيتك الإبداعية.',
             questions: ['ما اسم الفكرة؟', 'ما هي الفكرة باختصار وما الهدف منها؟', 'ما هي المشكلة التي تحلها الفكرة أو الميزة التي تضيفها؟'] },
-          { week: 2, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
-          { week: 3, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
-          { week: 4, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
-          { week: 5, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
-          { week: 6, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
-          { week: 7, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] },
-          { week: 8, title: '???', icon: 'help-circle', unlocked: false, desc: '', questions: [] }
+          { week: 2, title: 'تحدي الأسبوع الثاني من رحلة سراج', icon: 'target', unlocked: true, ended: false,
+            desc: 'تحدي صياغة خطتك وأهدافك الصيفية وفق معايير واضحة وقابلة للقياس والإنجاز.',
+            questions: [] },
+          { week: 3, title: 'تحدي الأسبوع الثالث', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 4, title: 'تحدي الأسبوع الرابع', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 5, title: 'تحدي الأسبوع الخامس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 6, title: 'تحدي الأسبوع السادس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 7, title: 'تحدي الأسبوع السابع', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 8, title: 'تحدي الأسبوع الثامن', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] }
         ],
         activeWeeklyChallenge: 1,
         weeklySubmissions: {},
@@ -5751,6 +5818,10 @@
         },
 
         weeklyAnswersValid() {
+          const chObj = this.weeklyChallenges.find(c => c.week === this.activeWeeklyChallenge);
+          if (chObj && chObj.questions && chObj.questions.length === 0) {
+            return true;
+          }
           return this.weeklyFormAnswers.every((answer, index) => {
             const text = String(answer || '').trim();
             return text.length > 0 && text.length <= this.getWeeklyAnswerLimit(index);
@@ -5987,16 +6058,24 @@
         async submitWeeklyChallenge(week) {
           if (this.weeklySubmitting) return;
           if (!this.currentStudent) return;
-          this.weeklyFormAnswers = this.weeklyFormAnswers.map((answer, index) => this.limitWeeklyAnswer(answer, index));
-          if (this.weeklyFormAnswers.some(a => !a.trim())) {
-            this.showToast('يرجى الإجابة على جميع الأسئلة', 'neg', 'alert-circle');
-            return;
+          
+          const chObj = this.weeklyChallenges.find(c => c.week === week);
+          let answersToSave = [];
+          
+          if (chObj && chObj.questions && chObj.questions.length > 0) {
+            this.weeklyFormAnswers = this.weeklyFormAnswers.map((answer, index) => this.limitWeeklyAnswer(answer, index));
+            if (this.weeklyFormAnswers.some(a => !a.trim())) {
+              this.showToast('يرجى الإجابة على جميع الأسئلة', 'neg', 'alert-circle');
+              return;
+            }
+            const tooLongIndex = this.weeklyFormAnswers.findIndex((answer, index) => answer.length > this.getWeeklyAnswerLimit(index));
+            if (tooLongIndex !== -1) {
+              this.showToast(`إجابة السؤال ${tooLongIndex + 1} تجاوزت الحد المسموح`, 'neg', 'alert-circle');
+              return;
+            }
+            answersToSave = [...this.weeklyFormAnswers];
           }
-          const tooLongIndex = this.weeklyFormAnswers.findIndex((answer, index) => answer.length > this.getWeeklyAnswerLimit(index));
-          if (tooLongIndex !== -1) {
-            this.showToast(`إجابة السؤال ${tooLongIndex + 1} تجاوزت الحد المسموح`, 'neg', 'alert-circle');
-            return;
-          }
+
           this.weeklySubmitting = true;
           const key = this.currentStudent.id + '_w' + week;
 
@@ -6010,7 +6089,7 @@
             studentId: this.currentStudent.id,
             studentName: this.currentStudent.name,
             week: week,
-            answers: [...this.weeklyFormAnswers],
+            answers: answersToSave,
             submittedAt: new Date().toLocaleString('ar-SA')
           };
 
@@ -6040,7 +6119,7 @@
                   student_id: this.currentStudent.id,
                   week: week,
                   student_name: this.currentStudent.name,
-                  answers: [...this.weeklyFormAnswers],
+                  answers: answersToSave,
                   submitted_at: new Date().toLocaleString('ar-SA')
                 })
                 .select('id')
@@ -6068,7 +6147,7 @@
 
           this.weeklyFormAnswers = ['', '', ''];
           this.weeklySubmitting = false;
-          this.showToast('تم تسليم إجابتك بنجاح!', 'success', 'check-circle');
+          this.showToast('تم تسليم مشاركتك بنجاح!', 'success', 'check-circle');
         },
 
         go(id) {
