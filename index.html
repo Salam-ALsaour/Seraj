@@ -1430,11 +1430,29 @@
                 </div>
               </template>
               
-              <button @click="startGame()" 
-                      class="btn-redeem" 
-                      style="width: 100%; max-width: 200px; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px; display: block; margin: 0 auto;">
-                بدء اللعب
-              </button>
+              <!-- Play Button (Only shown if challenge is not ended, or if user is admin) -->
+              <template x-if="!gameChallengeEnded || isAdmin">
+                <button @click="startGame()" 
+                        class="btn-redeem" 
+                        style="width: 100%; max-width: 200px; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px; display: block; margin: 0 auto;">
+                  بدء اللعب
+                </button>
+              </template>
+
+              <!-- Ended Notice -->
+              <template x-if="gameChallengeEnded">
+                <div style="margin-top: 10px;">
+                  <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 16px; border-radius: 12px; color: #ef4444; margin: 0 auto; direction: rtl;">
+                    <div style="width: 16px; height: 16px;" x-html="getIconSvg('clock')"></div>
+                    <span style="font-size: 13px; font-weight: 600;">انتهت مدة المسابقة (التحدي مغلق)</span>
+                  </div>
+                  <template x-if="isAdmin">
+                    <div style="font-size: 10px; color: var(--txt-dim); margin-top: 6px;">
+                      (بصفتك مسؤولاً، لا يزال بإمكانك بدء اللعب للتجربة)
+                    </div>
+                  </template>
+                </div>
+              </template>
             </div>
           </template>
         </div>
@@ -3584,6 +3602,7 @@
         gameIntervalId: null,
         flamePos: { top: '50%', left: '50%' },
         flameBtnSize: 62,
+        gameChallengeEnded: true, // انتهت مدة المسابقة (التحدي مغلق)
 
         mapStudentFromDB(dbStudent) {
           if (!dbStudent) return null;
@@ -6152,6 +6171,10 @@
         },
 
         startGame() {
+          if (this.gameChallengeEnded && !this.isAdmin) {
+            this.showToast('انتهت مدة المسابقة والتحدي مغلق حالياً!', 'neg', 'alert-circle');
+            return;
+          }
           // حجم الشعلة = 9% من أصغر بُعد للوحة، بحد أقصى 62px
           // بدون حد أدنى كبير - تصغر مع الشاشة لتبقى صعوبة اللعبة ثابتة دائماً
           const boardW = Math.max(80, window.innerWidth - 40);
