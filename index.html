@@ -3441,37 +3441,64 @@
         <!-- Big Game Board - uses absolute positioning with calc instead of flex -->
         <div style="position: absolute; top: calc(env(safe-area-inset-top, 0px) + 90px); left: 20px; right: 20px; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); z-index: 10; border-radius: 28px; border: 1.5px solid rgba(249,115,22,0.25); background: radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-image: radial-gradient(rgba(249,115,22,0.04) 1.5px, transparent 0), radial-gradient(circle at center, rgba(249,115,22,0.02), rgba(0,0,0,0.85)); background-size: 24px 24px, 100% 100%; box-shadow: inset 0 0 40px rgba(0,0,0,0.95); overflow: hidden;">
           
-          <!-- Instructions overlay -->
-          <div x-show="gameScoreCurrent === 0" 
-               style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-align: center; color: var(--txt-dim); font-size: 13px; z-index: 5; width: 80%; max-width: 280px;">
-            <div style="width: 48px; height: 48px; margin: 0 auto 12px; color: rgba(249,115,22,0.4); animation: pulse 1.5s infinite;" 
-                 x-html="activeGameId === 2 ? getIconSvg('bomb') : getIconSvg('flame')"
-                 :style="activeGameId === 2 ? 'color: #f87171;' : ''"></div>
-            <span x-text="activeGameId === 2 ? 'صِد الشعلات وتجنّب القنابل! نقرة القنبلة تخصم 3 نقاط!' : 'اضغط على الشعلة الطائرة بأقصى سرعة!'"></span>
-          </div>
+          <!-- GAME 1: CLICKER GAME (تحدي صيد الشعلة) -->
+          <template x-if="activeGameId === 1">
+            <div style="width: 100%; height: 100%; position: relative;">
+              <!-- Instructions overlay -->
+              <div x-show="gameScoreCurrent === 0" 
+                   style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-align: center; color: var(--txt-dim); font-size: 13px; z-index: 5; width: 80%; max-width: 280px;">
+                <div style="width: 48px; height: 48px; margin: 0 auto 12px; color: rgba(249,115,22,0.4); animation: pulse 1.5s infinite;" x-html="getIconSvg('flame')"></div>
+                اضغط على الشعلة الطائرة بأقصى سرعة!
+              </div>
 
-          <!-- Target Button (The Flame / Bomb) -->
-          <button @click="clickTarget()"
-                  type="button"
-                  class="game-flame-btn"
-                  :style="'top:' + flamePos.top + '; left:' + flamePos.left + '; width:' + flameBtnSize + 'px; height:' + flameBtnSize + 'px; border-radius: 50%; display: grid; place-items: center; border: none; outline: none; cursor: pointer; transition: transform 0.1s;'"
-                  :class="gameTargetType === 'bomb' ? 'game-bomb-btn' : 'game-flame-btn-style'">
-            
-            <!-- If target is a flame -->
-            <template x-if="gameTargetType === 'flame'">
-              <svg viewBox="0 0 24 24" fill="#ffb27a" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="'width:' + Math.round(flameBtnSize * 0.58) + 'px; height:' + Math.round(flameBtnSize * 0.58) + 'px; filter:drop-shadow(0 0 8px #f97316) drop-shadow(0 0 16px rgba(249,115,22,0.5));'">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
-              </svg>
-            </template>
+              <!-- Target Button (The Flame) -->
+              <button @click="clickTarget()"
+                      type="button"
+                      class="game-flame-btn"
+                      :style="'top:' + flamePos.top + '; left:' + flamePos.left + '; width:' + flameBtnSize + 'px; height:' + flameBtnSize + 'px; border-radius: 50%; display: grid; place-items: center; border: none; outline: none; cursor: pointer; transition: transform 0.1s;'"
+                      class="game-flame-btn-style">
+                <svg viewBox="0 0 24 24" fill="#ffb27a" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="'width:' + Math.round(flameBtnSize * 0.58) + 'px; height:' + Math.round(flameBtnSize * 0.58) + 'px; filter:drop-shadow(0 0 8px #f97316) drop-shadow(0 0 16px rgba(249,115,22,0.5));'">
+                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                </svg>
+              </button>
+            </div>
+          </template>
 
-            <!-- If target is a bomb -->
-            <template x-if="gameTargetType === 'bomb'">
-              <svg viewBox="0 0 24 24" fill="#ef4444" stroke="#b91c1c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="'width:' + Math.round(flameBtnSize * 0.65) + 'px; height:' + Math.round(flameBtnSize * 0.65) + 'px; filter:drop-shadow(0 0 8px #ef4444) drop-shadow(0 0 16px rgba(239,68,68,0.5));'">
-                <circle cx="11" cy="13" r="8"></circle>
-                <path d="M16.5 7.5L19 5M19 5l2 1M19 5l-1-2M15 2h-4"></path>
-              </svg>
-            </template>
-          </button>
+          <!-- GAME 2: TYPE RACER (تحدي فارس الحروف) -->
+          <template x-if="activeGameId === 2">
+            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; position: relative; z-index: 10;">
+              
+              <!-- Instructions -->
+              <div x-show="gameScoreCurrent === 0" 
+                   style="margin-bottom: 20px; font-size: 13px; color: var(--txt-dim); max-width: 300px; line-height: 1.6;">
+                <div style="width: 42px; height: 42px; margin: 0 auto 10px; color: var(--orange); animation: pulse 1.5s infinite;" x-html="getIconSvg('feather')"></div>
+                اكتب الكلمة التي تظهر أمامك بدقة وسرعة لكسب الشعلات!
+              </div>
+
+              <!-- Target Word Display -->
+              <div style="font-size: 42px; font-weight: 900; color: #ffb27a; text-shadow: 0 0 20px rgba(249,115,22,0.5); letter-spacing: 1px; margin-bottom: 24px; font-family: 'Cairo', sans-serif;" 
+                   x-text="typeTargetWord"></div>
+
+              <!-- Input Box -->
+              <input type="text" 
+                     x-model="typeInputWord" 
+                     x-ref="typeInput"
+                     @input="checkTypeWord()"
+                     placeholder="اكتب الكلمة هنا..." 
+                     style="width: 100%; max-width: 280px; padding: 14px 20px; font-size: 18px; font-weight: 700; text-align: center; border-radius: 16px; border: 1.5px solid var(--stroke); background: rgba(0,0,0,0.4); color: #fff; outline: none; transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.3); font-family: 'Cairo', sans-serif;"
+                     :style="typeInputWord.trim() !== '' && !typeTargetWord.startsWith(typeInputWord.trim()) ? 'border-color: #ef4444; background: rgba(239,68,68,0.05);' : 'focus:border-color: var(--orange); focus:box-shadow: 0 0 15px rgba(249,115,22,0.25);'" />
+              
+              <!-- Indicator for correctness -->
+              <div style="height: 20px; margin-top: 10px; font-size: 11px;">
+                <template x-if="typeInputWord.trim() !== '' && !typeTargetWord.startsWith(typeInputWord.trim())">
+                  <span style="color: #f87171; font-weight: 600;">الكتابة غير صحيحة! أعد المحاولة</span>
+                </template>
+                <template x-if="typeInputWord.trim() !== '' && typeTargetWord.startsWith(typeInputWord.trim())">
+                  <span style="color: #34d399; font-weight: 600;">رائع، أكمل الكتابة...</span>
+                </template>
+              </div>
+            </div>
+          </template>
         </div>
 
       </div>
@@ -3684,10 +3711,13 @@
         flamePos: { top: '50%', left: '50%' },
         flameBtnSize: 62,
         activeGameId: 2,
-        gameTargetType: 'flame', // 'flame' or 'bomb'
+        gameTargetType: 'flame', 
+        typeTargetWord: '',
+        typeInputWord: '',
+        typeWordList: ['سراج', 'معرفة', 'أخلاق', 'إيمان', 'عزيمة', 'همة', 'نجاح', 'تفوق', 'قرآن', 'حديث', 'حكمة', 'إحسان', 'تعاون', 'تسامح', 'مثابرة', 'إخلاص', 'يقين', 'صدق', 'أمانة', 'وفاء', 'صبر', 'مروءة', 'إيجابية', 'عطاء', 'طموح', 'إبداع'],
         games: [
-          { id: 1, title: 'تحدي صيد الشعلة (الجولة الأولى)', icon: 'flame', unlocked: true, ended: true, desc: 'الجولة الأولى من تحدي صيد الشعلة. لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
-          { id: 2, title: 'تحدي صيد الشعلة وتجنّب القنابل', icon: 'bomb', unlocked: true, ended: false, desc: 'الجولة الثانية هي تحدي صيد الشعلة وتجنّب القنابل! صِد الشعلات وتفادَ القنابل الحمراء، فكل نقرة قنبلة تخصم 3 نقاط في 20 ثانية.' },
+          { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
+          { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة.' },
           { id: 3, title: 'تحدي صيد الشعلة (الجولة الثالثة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
@@ -6298,17 +6328,26 @@
             this.showToast('انتهت مدة هذه اللعبة والتحدي مغلق حالياً!', 'neg', 'alert-circle');
             return;
           }
-          // حجم الشعلة = 9% من أصغر بُعد للوحة، بحد أقصى 62px
-          // بدون حد أدنى كبير - تصغر مع الشاشة لتبقى صعوبة اللعبة ثابتة دائماً
-          const boardW = Math.max(80, window.innerWidth - 40);
-          const boardH = Math.max(80, window.innerHeight - 110);
-          const minDim = Math.min(boardW, boardH);
-          this.flameBtnSize = Math.min(62, Math.max(14, Math.round(minDim * 0.09)));
-
+          
           this.gamePlaying = true;
           this.gameScoreCurrent = 0;
           this.gameTimeLeft = 20;
-          this.moveFlame();
+
+          if (this.activeGameId === 1) {
+            const boardW = Math.max(80, window.innerWidth - 40);
+            const boardH = Math.max(80, window.innerHeight - 110);
+            const minDim = Math.min(boardW, boardH);
+            this.flameBtnSize = Math.min(62, Math.max(14, Math.round(minDim * 0.09)));
+            this.moveFlame();
+          } else if (this.activeGameId === 2) {
+            this.typeTargetWord = this.getRandomWord();
+            this.typeInputWord = '';
+            this.$nextTick(() => {
+              if (this.$refs.typeInput) {
+                this.$refs.typeInput.focus();
+              }
+            });
+          }
 
           // منع التكبير خلال اللعبة (Ctrl+Scroll وCtrl+Plus/Minus/0)
           this._gameNoZoomWheel = (e) => { if (e.ctrlKey || e.metaKey) e.preventDefault(); };
@@ -6320,9 +6359,11 @@
 
           // إذا تغيّر حجم الـ viewport رغماً (مثل pinch على بعض الأجهزة) → أعد حساب الشعلة
           this._gameViewportResize = () => {
-            const bW = Math.max(80, window.innerWidth  - 40);
-            const bH = Math.max(80, window.innerHeight - 110);
-            this.flameBtnSize = Math.min(62, Math.max(14, Math.round(Math.min(bW, bH) * 0.09)));
+            if (this.activeGameId === 1) {
+              const bW = Math.max(80, window.innerWidth  - 40);
+              const bH = Math.max(80, window.innerHeight - 110);
+              this.flameBtnSize = Math.min(62, Math.max(14, Math.round(Math.min(bW, bH) * 0.09)));
+            }
           };
           if (window.visualViewport) window.visualViewport.addEventListener('resize', this._gameViewportResize);
 
@@ -6342,22 +6383,11 @@
             top: `${topVal}%`,
             left: `${leftVal}%`
           };
-          if (this.activeGameId === 2) {
-            this.gameTargetType = Math.random() < 0.28 ? 'bomb' : 'flame';
-          } else {
-            this.gameTargetType = 'flame';
-          }
+          this.gameTargetType = 'flame';
         },
 
         clickTarget() {
           if (!this.gamePlaying) return;
-          if (this.activeGameId === 2 && this.gameTargetType === 'bomb') {
-            this.gameScoreCurrent = Math.max(0, this.gameScoreCurrent - 3);
-            this.playBombExplosionSound();
-            this.showToast('💥 قنبلة! تم خصم 3 نقاط', 'neg', 'bomb');
-            this.moveFlame();
-            return;
-          }
           this.gameScoreCurrent++;
           this.playGameClickSound();
           this.moveFlame();
@@ -6367,21 +6397,24 @@
           this.clickTarget();
         },
 
-        playBombExplosionSound() {
-          try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(45, audioCtx.currentTime + 0.35);
-            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.45);
-          } catch(e) {}
+        getRandomWord() {
+          const list = this.typeWordList;
+          let newWord = list[Math.floor(Math.random() * list.length)];
+          while (newWord === this.typeTargetWord && list.length > 1) {
+            newWord = list[Math.floor(Math.random() * list.length)];
+          }
+          return newWord;
+        },
+
+        checkTypeWord() {
+          if (!this.gamePlaying) return;
+          const typed = this.typeInputWord.trim();
+          if (typed === this.typeTargetWord) {
+            this.gameScoreCurrent++;
+            this.playGameClickSound();
+            this.typeTargetWord = this.getRandomWord();
+            this.typeInputWord = '';
+          }
         },
 
         async endGame() {
