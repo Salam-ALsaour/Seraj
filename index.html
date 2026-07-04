@@ -1476,7 +1476,7 @@
                       <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.15); padding: 8px 16px; border-radius: 12px; margin-bottom: 16px;">
                         <div style="width: 16px; height: 16px; color: var(--orange);" x-html="getIconSvg('trophy')"></div>
                         <span style="font-size: 12px; color: var(--txt-dim);">أعلى نتيجة لك:</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #ffb27a;" x-text="(currentStudent.gameScore || 0) + ' نقطة'"></span>
+                        <span style="font-size: 14px; font-weight: 700; color: #ffb27a;" x-text="getStudentGameScore(currentStudent.id, g.id) + ' نقطة'"></span>
                       </div>
                     </template>
 
@@ -1517,7 +1517,7 @@
         <div class="sect-title" style="margin-top:20px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
           <div style="display: flex; align-items: center;">
             <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:6px; color:var(--orange);" x-html="getIconSvg('trophy')"></div>
-            <span>ترتيب صدارة اللعبة الفردية</span>
+            <span x-text="'ترتيب صدارة: ' + (games.find(g => g.id === activeGameId)?.title || '')"></span>
           </div>
           <!-- Reset button for Admin -->
           <template x-if="isAdmin">
@@ -1529,7 +1529,7 @@
           </template>
         </div>
         <div class="glass" style="padding:8px;">
-          <template x-for="(st, index) in [...students].sort((a,b) => (b.gameScore || 0) - (a.gameScore || 0))" :key="st.id">
+          <template x-for="(st, index) in [...students].sort((a,b) => getStudentGameScore(b.id, activeGameId) - getStudentGameScore(a.id, activeGameId))" :key="st.id">
             <div class="lb-row glass" 
                  style="border-radius:16px;margin-bottom:8px;cursor:pointer;"
                  @click="viewOnlyStudentId = st.id"
@@ -1563,7 +1563,7 @@
               </div>
               <div class="lb-pts">
                 <div class="lb-pts-val">
-                  <span x-text="st.gameScore || 0"></span>
+                  <span x-text="getStudentGameScore(st.id, activeGameId)"></span>
                 </div>
                 <div class="lb-pts-lbl">نقاط</div>
               </div>
@@ -3715,6 +3715,7 @@
         typeTargetWord: '',
         typeInputWord: '',
         typeWordList: ['سراج', 'معرفة', 'أخلاق', 'إيمان', 'عزيمة', 'همة', 'نجاح', 'تفوق', 'قرآن', 'حديث', 'حكمة', 'إحسان', 'تعاون', 'تسامح', 'مثابرة', 'إخلاص', 'يقين', 'صدق', 'أمانة', 'وفاء', 'صبر', 'مروءة', 'إيجابية', 'عطاء', 'طموح', 'إبداع'],
+        gamesScores: {},
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
           { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة.' },
@@ -3734,6 +3735,17 @@
             avatarColor: dbStudent.avatar_color || 'orange',
             gameScore: dbStudent.trend || 0
           };
+        },
+
+        getStudentGameScore(studentId, gameId) {
+          if (this.gamesScores && this.gamesScores[studentId] && this.gamesScores[studentId][gameId] !== undefined) {
+            return this.gamesScores[studentId][gameId];
+          }
+          if (gameId === 1) {
+            const st = this.getStudentById(studentId);
+            return st ? (st.gameScore || 0) : 0;
+          }
+          return 0;
         },
 
         getBadgesByGroup(groupIndex) {
@@ -4206,6 +4218,19 @@
                   localStorage.setItem('seraj_pwa_worker_url', workerUrlData.desc_text);
                 }
 
+                // Find Games Scores Config (ID: 300)
+                let scoresData = chRows ? chRows.find(r => parseInt(r.id) === 300) : null;
+                if (scoresData && scoresData.desc_text) {
+                  try {
+                    this.gamesScores = JSON.parse(scoresData.desc_text);
+                  } catch (e) {
+                    console.error("Failed to parse games scores config:", e);
+                    this.gamesScores = {};
+                  }
+                } else {
+                  this.gamesScores = {};
+                }
+
                 // تحميل التسليمات من جدول weekly_submissions المخصص
                 const { data: wsubRows } = await supabaseClient.from('weekly_submissions').select('*');
                 const _subs = {};
@@ -4466,6 +4491,16 @@
               this.weeklyChallenge.timeLeft = parsed.timeLeft || this.weeklyChallenge.duration;
             } catch(e) {}
           }
+          const gScores = localStorage.getItem('seraj_pwa_games_scores');
+          if (gScores) {
+            try {
+              this.gamesScores = JSON.parse(gScores);
+            } catch(e) {
+              this.gamesScores = {};
+            }
+          } else {
+            this.gamesScores = {};
+          }
 
           // Watches for local mode
           this.$watch('currentScreen', (screen) => {
@@ -4613,6 +4648,14 @@
                         console.error("Realtime failed to parse notifications JSON:", e);
                       }
                     }
+                  } else if (id === 300) {
+                    if (payload.new.desc_text) {
+                      try {
+                        this.gamesScores = JSON.parse(payload.new.desc_text);
+                      } catch (e) {
+                        console.error("Realtime failed to parse gamesScores JSON:", e);
+                      }
+                    }
                   }
                 }
               })
@@ -4680,6 +4723,7 @@
           localStorage.setItem('seraj_pwa_challenge', JSON.stringify({
             timeLeft: this.weeklyChallenge.timeLeft
           }));
+          localStorage.setItem('seraj_pwa_games_scores', JSON.stringify(this.gamesScores));
         },
 
         // Auth
@@ -6293,24 +6337,49 @@
         },
 
         async resetAllGameScores() {
-          if (!confirm("هل أنت متأكد من تصفير جميع نتائج اللعبة الفردية للطلاب لبدء تحدٍ جديد؟")) return;
+          const gameId = this.activeGameId;
+          const gameName = this.games.find(g => g.id === gameId)?.title || `اللعبة ${gameId}`;
+          if (!confirm(`هل أنت متأكد من تصفير جميع نتائج (${gameName}) للطلاب لبدء تحدٍ جديد؟`)) return;
+          
           this.students.forEach(st => {
-            st.gameScore = 0;
-            st.trend = 0;
+            if (gameId === 1) {
+              st.gameScore = 0;
+              st.trend = 0;
+            }
+            if (!this.gamesScores) this.gamesScores = {};
+            if (!this.gamesScores[st.id]) {
+              this.gamesScores[st.id] = {};
+            }
+            this.gamesScores[st.id][gameId] = 0;
           });
+          
           this.showToast("جاري تصفير نتائج اللعبة...", "info");
           if (supabaseClient) {
             try {
-              const { data, error } = await supabaseClient.from('students').select('id');
-              if (!error && data) {
-                const promises = data.map(s => 
-                  supabaseClient.from('students').update({ trend: 0 }).eq('id', s.id)
-                );
-                await Promise.all(promises);
-                this.showToast("تم تصفير جميع نتائج اللعبة بنجاح في قاعدة البيانات!", "success");
-              } else {
-                console.error("Error fetching students to reset:", error);
+              if (gameId === 1) {
+                const { data, error } = await supabaseClient.from('students').select('id');
+                if (!error && data) {
+                  const promises = data.map(s => 
+                    supabaseClient.from('students').update({ trend: 0 }).eq('id', s.id)
+                  );
+                  await Promise.all(promises);
+                }
+              }
+              
+              const { error: scoresErr } = await supabaseClient.from('weekly_challenge').upsert({
+                id: 300,
+                title: 'games_scores',
+                desc_text: JSON.stringify(this.gamesScores),
+                points: 0,
+                duration: 0,
+                time_left: 0
+              });
+              
+              if (scoresErr) {
+                console.error("Error resetting games scores config in DB:", scoresErr);
                 this.showToast("فشل تصفير النقاط في قاعدة البيانات", "neg");
+              } else {
+                this.showToast(`تم تصفير نتائج (${gameName}) بنجاح!`, "success");
               }
             } catch(e) {
               console.error(e);
@@ -6318,7 +6387,7 @@
             }
           } else {
             this.saveState();
-            this.showToast("تم تصفير نتائج اللعبة محلياً بنجاح!", "success");
+            this.showToast(`تم تصفير نتائج (${gameName}) محلياً بنجاح!`, "success");
           }
         },
 
@@ -6441,32 +6510,59 @@
           }
           
           const st = this.getStudentById(this.activeId);
-          if (st && this.gameScoreCurrent > (st.gameScore || 0)) {
-            const previousHigh = st.gameScore || 0;
-            const delta = this.gameScoreCurrent - previousHigh;
+          if (st) {
+            const gameId = this.activeGameId;
+            const previousHigh = this.getStudentGameScore(st.id, gameId);
             
-            st.gameScore = this.gameScoreCurrent;
-            st.trend = this.gameScoreCurrent;
-            st.total = (st.total || 0) + delta;
-            st.wallet = (st.wallet || 0) + delta;
-            console.log(`[Game] New high: ${this.gameScoreCurrent}, prev: ${previousHigh}, delta: +${delta}, total: ${st.total}, wallet: ${st.wallet}`);
-            this.saveState();
-            this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
-            
-            if (supabaseClient) {
-              try {
-                const { error } = await supabaseClient.from('students').update({
-                  trend: this.gameScoreCurrent,
-                  total: st.total,
-                  wallet: st.wallet
-                }).eq('id', st.id);
-                if (error) console.error("Error saving game score to DB:", error);
-              } catch(e) {
-                console.error("Exception saving game score:", e);
+            if (this.gameScoreCurrent > previousHigh) {
+              const delta = this.gameScoreCurrent - previousHigh;
+              
+              st.total = (st.total || 0) + delta;
+              st.wallet = (st.wallet || 0) + delta;
+              
+              if (gameId === 1) {
+                st.gameScore = this.gameScoreCurrent;
+                st.trend = this.gameScoreCurrent;
               }
+              
+              if (!this.gamesScores) this.gamesScores = {};
+              if (!this.gamesScores[st.id]) {
+                this.gamesScores[st.id] = {};
+              }
+              this.gamesScores[st.id][gameId] = this.gameScoreCurrent;
+              
+              console.log(`[Game] New high for Game ${gameId}: ${this.gameScoreCurrent}, prev: ${previousHigh}, delta: +${delta}, total: ${st.total}, wallet: ${st.wallet}`);
+              this.saveState();
+              this.showToast(`رقم قياسي جديد! +${delta} شعلة 🏆`, 'success', 'trophy');
+              
+              if (supabaseClient) {
+                try {
+                  const studentUpdate = {
+                    total: st.total,
+                    wallet: st.wallet
+                  };
+                  if (gameId === 1) {
+                    studentUpdate.trend = this.gameScoreCurrent;
+                  }
+                  const { error: studentErr } = await supabaseClient.from('students').update(studentUpdate).eq('id', st.id);
+                  if (studentErr) console.error("Error saving student points:", studentErr);
+                  
+                  const { error: scoresErr } = await supabaseClient.from('weekly_challenge').upsert({
+                    id: 300,
+                    title: 'games_scores',
+                    desc_text: JSON.stringify(this.gamesScores),
+                    points: 0,
+                    duration: 0,
+                    time_left: 0
+                  });
+                  if (scoresErr) console.error("Error saving games scores config:", scoresErr);
+                } catch(e) {
+                  console.error("Exception saving game score:", e);
+                }
+              }
+            } else {
+              this.showToast(`لم تتجاوز رقمك القياسي (${previousHigh})`, 'info', 'flame');
             }
-          } else {
-            this.showToast(`لم تتجاوز رقمك القياسي (${st ? (st.gameScore || 0) : 0})`, 'info', 'flame');
           }
         },
 
