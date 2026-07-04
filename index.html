@@ -3498,15 +3498,17 @@
                 اكتب الكلمات المتتالية بدقة واضغط (مسافة) بعد كل كلمة لكسب الشعلات!
               </div>
 
-              <!-- Paragraph Display (Monkeytype-style) -->
+              <!-- Paragraph Display (Monkeytype-style, Line-by-Line) -->
               <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.25); margin-bottom: 26px; direction: rtl; max-width: 480px; line-height: 1.8; font-family: 'Cairo', sans-serif; padding: 15px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 20px; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);">
                 <template x-for="(w, idx) in typeWordList" :key="idx">
-                  <span :style="idx === currentWordIndex 
-                                ? 'color: #ffb27a; text-shadow: 0 0 10px rgba(249,115,22,0.4); border-bottom: 2.5px solid #f97316; padding-bottom: 1px;' 
-                                : (idx < currentWordIndex 
-                                   ? (wordStatus[idx] === 'correct' ? 'color: #34d399;' : 'color: #f87171; text-decoration: line-through;') 
-                                   : 'color: rgba(255,255,255,0.35);')"
-                        x-text="w"></span>
+                  <template x-if="Math.floor(idx / 5) === Math.floor(currentWordIndex / 5)">
+                    <span :style="idx === currentWordIndex 
+                                  ? 'color: #ffb27a; text-shadow: 0 0 10px rgba(249,115,22,0.4); border-bottom: 2.5px solid #f97316; padding-bottom: 1px;' 
+                                  : (idx < currentWordIndex 
+                                     ? (wordStatus[idx] === 'correct' ? 'color: #34d399;' : 'color: #f87171; text-decoration: line-through;') 
+                                     : 'color: rgba(255,255,255,0.35);')"
+                          x-text="w"></span>
+                  </template>
                 </template>
               </div>
 
