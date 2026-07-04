@@ -3471,29 +3471,45 @@
               <!-- Instructions -->
               <div x-show="gameScoreCurrent === 0" 
                    style="margin-bottom: 20px; font-size: 13px; color: var(--txt-dim); max-width: 300px; line-height: 1.6;">
-                <div style="width: 42px; height: 42px; margin: 0 auto 10px; color: var(--orange); animation: pulse 1.5s infinite;" x-html="getIconSvg('feather')"></div>
-                اكتب الكلمة التي تظهر أمامك بدقة وسرعة لكسب الشعلات!
+                <div style="width: 38px; height: 38px; margin: 0 auto 8px; color: var(--orange); animation: pulse 1.5s infinite;" x-html="getIconSvg('feather')"></div>
+                اكتب الكلمات المتتالية بدقة واضغط (مسافة) بعد كل كلمة لكسب الشعلات!
               </div>
 
-              <!-- Target Word Display -->
-              <div style="font-size: 42px; font-weight: 900; color: #ffb27a; text-shadow: 0 0 20px rgba(249,115,22,0.5); letter-spacing: 1px; margin-bottom: 24px; font-family: 'Cairo', sans-serif;" 
-                   x-text="typeTargetWord"></div>
+              <!-- Paragraph Display (Monkeytype-style) -->
+              <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.25); margin-bottom: 26px; direction: rtl; max-width: 480px; line-height: 1.8; font-family: 'Cairo', sans-serif; padding: 15px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 20px; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);">
+                <template x-for="(w, idx) in typeWordList" :key="idx">
+                  <span :style="idx === currentWordIndex 
+                                ? 'color: #ffb27a; text-shadow: 0 0 10px rgba(249,115,22,0.4); border-bottom: 2.5px solid #f97316; padding-bottom: 1px;' 
+                                : (idx < currentWordIndex 
+                                   ? (wordStatus[idx] === 'correct' ? 'color: #34d399;' : 'color: #f87171; text-decoration: line-through;') 
+                                   : 'color: rgba(255,255,255,0.35);')"
+                        x-text="w"></span>
+                </template>
+              </div>
 
               <!-- Input Box -->
               <input type="text" 
                      x-model="typeInputWord" 
                      x-ref="typeInput"
                      @input="checkTypeWord()"
-                     placeholder="اكتب الكلمة هنا..." 
-                     style="width: 100%; max-width: 280px; padding: 14px 20px; font-size: 18px; font-weight: 700; text-align: center; border-radius: 16px; border: 1.5px solid var(--stroke); background: rgba(0,0,0,0.4); color: #fff; outline: none; transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.3); font-family: 'Cairo', sans-serif;"
-                     :style="typeInputWord.trim() !== '' && !typeTargetWord.startsWith(typeInputWord.trim()) ? 'border-color: #ef4444; background: rgba(239,68,68,0.05);' : 'focus:border-color: var(--orange); focus:box-shadow: 0 0 15px rgba(249,115,22,0.25);'" />
+                     autocomplete="off"
+                     autocorrect="off"
+                     autocapitalize="off"
+                     spellcheck="false"
+                     placeholder="اكتب الكلمة النشطة ثم اضغط مسافة..." 
+                     style="width: 100%; max-width: 320px; padding: 14px 20px; font-size: 18px; font-weight: 700; text-align: center; border-radius: 16px; border: 2px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.4); color: #fff; outline: none; transition: all 0.25s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 4px 20px rgba(0,0,0,0.25); font-family: 'Cairo', sans-serif;"
+                     :style="typeInputWord.trim() !== '' && typeWordList[currentWordIndex] && !typeWordList[currentWordIndex].startsWith(typeInputWord.trim()) 
+                             ? 'border-color: rgba(239,68,68,0.65) !important; background: rgba(239,68,68,0.08) !important; box-shadow: 0 0 15px rgba(239,68,68,0.25) !important;' 
+                             : (typeInputWord.trim() !== '' 
+                                ? 'border-color: rgba(52,211,153,0.65) !important; background: rgba(52,211,153,0.08) !important; box-shadow: 0 0 15px rgba(52,211,153,0.25) !important;' 
+                                : 'focus:border-color: var(--orange) !important; focus:box-shadow: 0 0 15px rgba(249,115,22,0.3) !important;')" />
               
               <!-- Indicator for correctness -->
               <div style="height: 20px; margin-top: 10px; font-size: 11px;">
-                <template x-if="typeInputWord.trim() !== '' && !typeTargetWord.startsWith(typeInputWord.trim())">
+                <template x-if="typeInputWord.trim() !== '' && typeWordList[currentWordIndex] && !typeWordList[currentWordIndex].startsWith(typeInputWord.trim())">
                   <span style="color: #f87171; font-weight: 600;">الكتابة غير صحيحة! أعد المحاولة</span>
                 </template>
-                <template x-if="typeInputWord.trim() !== '' && typeTargetWord.startsWith(typeInputWord.trim())">
+                <template x-if="typeInputWord.trim() !== '' && typeWordList[currentWordIndex] && typeWordList[currentWordIndex].startsWith(typeInputWord.trim())">
                   <span style="color: #34d399; font-weight: 600;">رائع، أكمل الكتابة...</span>
                 </template>
               </div>
@@ -3712,9 +3728,10 @@
         flameBtnSize: 62,
         activeGameId: 2,
         gameTargetType: 'flame', 
-        typeTargetWord: '',
         typeInputWord: '',
-        typeWordList: ['سراج', 'معرفة', 'أخلاق', 'إيمان', 'عزيمة', 'همة', 'نجاح', 'تفوق', 'قرآن', 'حديث', 'حكمة', 'إحسان', 'تعاون', 'تسامح', 'مثابرة', 'إخلاص', 'يقين', 'صدق', 'أمانة', 'وفاء', 'صبر', 'مروءة', 'إيجابية', 'عطاء', 'طموح', 'إبداع'],
+        typeWordList: [],
+        currentWordIndex: 0,
+        wordStatus: [],
         gamesScores: {},
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
@@ -6409,8 +6426,7 @@
             this.flameBtnSize = Math.min(62, Math.max(14, Math.round(minDim * 0.09)));
             this.moveFlame();
           } else if (this.activeGameId === 2) {
-            this.typeTargetWord = this.getRandomWord();
-            this.typeInputWord = '';
+            this.resetParagraph();
             this.$nextTick(() => {
               if (this.$refs.typeInput) {
                 this.$refs.typeInput.focus();
@@ -6466,23 +6482,49 @@
           this.clickTarget();
         },
 
-        getRandomWord() {
-          const list = this.typeWordList;
-          let newWord = list[Math.floor(Math.random() * list.length)];
-          while (newWord === this.typeTargetWord && list.length > 1) {
-            newWord = list[Math.floor(Math.random() * list.length)];
-          }
-          return newWord;
+        resetParagraph() {
+          this.currentWordIndex = 0;
+          this.wordStatus = [];
+          this.typeInputWord = '';
+          const paragraphs = [
+            "هوية المسلم تتمثل في التزامه بالقيم النبيلة والتمسك بالعقيدة الصافية ونشر السلام والمحبة والصدق والأمانة والتعاون وإعمار الأرض بالخير والتعلم المستمر لرفعة الأمة والمجتمع.",
+            "المسلم يتميز بأخلاقه الرفيعة وحبه للخير واحترامه للآخرين وسعيه الدائم لنفع الناس وتقديم المساعدة لمن يحتاجها مقتديا بنبينا محمد صلى الله عليه وسلم في كل شؤون حياته.",
+            "بناء الشخصية الإسلامية القوية يبدأ من غرس الإيمان والاعتزاز بالهوية الإسلامية والحفاظ على شعائر الدين والتفوق العلمي والعملي للمساهمة في نهضة الوطن وخدمة الإنسانية."
+          ];
+          const selected = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+          this.typeWordList = selected.split(' ');
         },
 
         checkTypeWord() {
           if (!this.gamePlaying) return;
-          const typed = this.typeInputWord.trim();
-          if (typed === this.typeTargetWord) {
+          const typedValue = this.typeInputWord;
+          const targetWord = this.typeWordList[this.currentWordIndex];
+          if (!targetWord) return;
+
+          // If the typed value matches the target word and is followed by space
+          if (typedValue.endsWith(' ')) {
+            const typedWord = typedValue.trim();
+            if (typedWord === targetWord) {
+              this.wordStatus[this.currentWordIndex] = 'correct';
+              this.gameScoreCurrent++;
+              this.playGameClickSound();
+            } else {
+              this.wordStatus[this.currentWordIndex] = 'incorrect';
+            }
+            this.currentWordIndex++;
+            this.typeInputWord = '';
+            if (this.currentWordIndex >= this.typeWordList.length) {
+              this.resetParagraph();
+            }
+            return;
+          }
+
+          // If it's the last word and they typed it exactly correct without a space yet
+          if (this.currentWordIndex === this.typeWordList.length - 1 && typedValue.trim() === targetWord) {
+            this.wordStatus[this.currentWordIndex] = 'correct';
             this.gameScoreCurrent++;
             this.playGameClickSound();
-            this.typeTargetWord = this.getRandomWord();
-            this.typeInputWord = '';
+            this.resetParagraph();
           }
         },
 
