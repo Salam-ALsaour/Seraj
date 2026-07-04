@@ -1408,59 +1408,125 @@
       <!-- 5. 🎲 WEEKLY CHALLENGE VIEW -->
       <!-- ============================================== -->
       <div x-show="currentScreen === 'challenge'" class="page">
-        <!-- Game Card -->
-        <div class="glass chal-card" style="padding: 20px; text-align: center; position: relative;">
-          <div class="chal-eyebrow"><i data-lucide="zap"></i>تحدي اللقاء الحالي</div>
-          
-          <!-- When Not Playing -->
-          <template x-if="!gamePlaying">
-            <div style="width: 100%;">
-              <div style="font-size: 20px; font-weight: 700; color: var(--txt); margin: 15px 0 8px;">تحدي صيد الشعلة</div>
-              <p style="font-size: 12px; color: var(--txt-dim); margin-bottom: 20px; line-height: 1.6;">
-                لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.
-                إذا حققت رقماً قياسياً جديداً، سيتم حفظه تلقائياً في قائمة الصدارة الفردية!
-              </p>
-              
-              <!-- Personal High Score Display (only for students) -->
-              <template x-if="!isAdmin && currentStudent">
-                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.2); padding: 8px 16px; border-radius: 12px; margin-bottom: 20px;">
-                  <div style="width: 16px; height: 16px; color: var(--orange);" x-html="getIconSvg('trophy')"></div>
-                  <span style="font-size: 13px; color: var(--txt-dim);">أعلى نتيجة لك:</span>
-                  <span style="font-size: 15px; font-weight: 700; color: #ffb27a;" x-text="(currentStudent.gameScore || 0) + ' نقطة'"></span>
-                </div>
-              </template>
-              
-              <!-- Play Button (Only shown if challenge is not ended, or if user is admin) -->
-              <template x-if="!gameChallengeEnded || isAdmin">
-                <button @click="startGame()" 
-                        class="btn-redeem" 
-                        style="width: 100%; max-width: 200px; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px; display: block; margin: 0 auto;">
-                  بدء اللعب
-                </button>
-              </template>
+        <!-- When Not Playing: Games List -->
+        <template x-if="!gamePlaying">
+          <div>
+            <div class="sect-title" style="margin-bottom:12px;">
+              <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:6px; color:var(--orange);" x-html="getIconSvg('dices')"></div>
+              ألعاب اللقاءات
+            </div>
 
-              <!-- Ended Notice -->
-              <template x-if="gameChallengeEnded">
-                <div style="margin-top: 10px;">
-                  <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 16px; border-radius: 12px; color: #ef4444; margin: 0 auto; direction: rtl;">
-                    <div style="width: 16px; height: 16px;" x-html="getIconSvg('clock')"></div>
-                    <span style="font-size: 13px; font-weight: 600;">انتهت مدة المسابقة (التحدي مغلق)</span>
-                  </div>
-                  <template x-if="isAdmin">
-                    <div style="font-size: 10px; color: var(--txt-dim); margin-top: 6px;">
-                      (بصفتك مسؤولاً، لا يزال بإمكانك بدء اللعب للتجربة)
+            <!-- vertical list of games ("الألعاب فوق بعض") -->
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+              <template x-for="g in games" :key="g.id">
+                <div class="glass" 
+                     style="padding: 16px; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; text-align: right; border: 1px solid var(--stroke);"
+                     :style="activeGameId === g.id 
+                             ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(255,255,255,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.15);' 
+                             : (!g.unlocked ? 'opacity: 0.6; cursor: not-allowed;' : 'hover:border-color: rgba(255,255,255,0.15);')"
+                     @click="if (g.unlocked) { activeGameId = g.id; $nextTick(() => lucide.createIcons()); } else { showToast('هذا التحدي مغلق حالياً، انتظر افتتاحه!', 'info', 'lock'); }">
+                  
+                  <!-- Card Header -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--stroke); display: grid; place-items: center; color: var(--orange);"
+                           :style="activeGameId === g.id ? 'color: var(--orange); border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.05);' : ''">
+                        <div style="width: 16px; height: 16px;" x-html="getIconSvg(g.unlocked ? g.icon : 'lock')"></div>
+                      </div>
+                      <div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--txt);" x-text="g.title"></div>
+                        <div style="font-size: 10px; color: var(--txt-dim);" x-text="'تحدي اللقاء ' + g.id + ' من 8'"></div>
+                      </div>
                     </div>
-                  </template>
+
+                    <!-- Status Badges -->
+                    <div>
+                      <!-- Locked -->
+                      <template x-if="!g.unlocked">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--txt-faint); background: rgba(255,255,255,0.05); border: 1px solid var(--stroke); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                          <span style="width: 10px; height: 10px;" x-html="getIconSvg('lock')"></span>
+                          مغلق
+                        </span>
+                      </template>
+                      <!-- Active / Open -->
+                      <template x-if="g.unlocked && !g.ended">
+                        <span style="font-size: 10px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16,185,129,0.15);">
+                          <span style="width: 10px; height: 10px;" x-html="getIconSvg('zap')"></span>
+                          نشط حالياً
+                        </span>
+                      </template>
+                      <!-- Ended -->
+                      <template x-if="g.unlocked && g.ended">
+                        <span style="font-size: 10px; font-weight: 700; color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                          <span style="width: 10px; height: 10px;" x-html="getIconSvg('clock')"></span>
+                          منتهي
+                        </span>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Expanded Details for Selected Game -->
+                  <div x-show="activeGameId === g.id" 
+                       style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--stroke); text-align: center;">
+                    
+                    <p style="font-size: 12px; color: var(--txt-dim); margin-bottom: 16px; line-height: 1.6; text-align: right;" x-text="g.desc"></p>
+
+                    <!-- Personal High Score Display (only for students) -->
+                    <template x-if="!isAdmin && currentStudent && g.unlocked">
+                      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.15); padding: 8px 16px; border-radius: 12px; margin-bottom: 16px;">
+                        <div style="width: 16px; height: 16px; color: var(--orange);" x-html="getIconSvg('trophy')"></div>
+                        <span style="font-size: 12px; color: var(--txt-dim);">أعلى نتيجة لك:</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #ffb27a;" x-text="(currentStudent.gameScore || 0) + ' نقطة'"></span>
+                      </div>
+                    </template>
+
+                    <!-- Action Button or Notice -->
+                    <div style="width: 100%;">
+                      <!-- Play button if not ended or if admin -->
+                      <template x-if="!g.ended || isAdmin">
+                        <div>
+                          <button @click.stop="startGame()" 
+                                  class="btn-redeem" 
+                                  style="width: 100%; max-width: 200px; padding: 10px; font-size: 13px; font-weight: 700; border-radius: 10px; display: block; margin: 0 auto;">
+                            بدء اللعب
+                          </button>
+                          <template x-if="g.ended && isAdmin">
+                            <div style="font-size: 10px; color: var(--txt-dim); margin-top: 6px;">
+                              (التحدي منتهي، لكن يمكنك اللعب للتجربة بصفتك مسؤولاً)
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+
+                      <!-- Ended Notice -->
+                      <template x-if="g.ended && !isAdmin">
+                        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); padding: 8px 14px; border-radius: 10px; color: #f87171;">
+                          <div style="width: 14px; height: 14px;" x-html="getIconSvg('clock')"></div>
+                          <span style="font-size: 12px; font-weight: 600;">انتهت مدة هذا التحدي ولا يمكن اللعب الآن</span>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
                 </div>
               </template>
             </div>
           </template>
-        </div>
 
         <!-- Individual Game Leaderboard Standings -->
-        <div class="sect-title" style="margin-top:20px;">
-          <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:6px; color:var(--orange);" x-html="getIconSvg('trophy')"></div>
-          ترتيب صدارة اللعبة الفردية
+        <div class="sect-title" style="margin-top:20px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div style="display: flex; align-items: center;">
+            <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:6px; color:var(--orange);" x-html="getIconSvg('trophy')"></div>
+            <span>ترتيب صدارة اللعبة الفردية</span>
+          </div>
+          <!-- Reset button for Admin -->
+          <template x-if="isAdmin">
+            <button @click="resetAllGameScores()" 
+                    class="btn-redeem" 
+                    style="margin: 0; padding: 4px 10px; font-size: 11px; border-radius: 8px; background: rgba(239,68,68,0.1) !important; border: 1px solid rgba(239,68,68,0.2) !important; color: #f87171 !important;">
+              تصفير النقاط 🔄
+            </button>
+          </template>
         </div>
         <div class="glass" style="padding:8px;">
           <template x-for="(st, index) in [...students].sort((a,b) => (b.gameScore || 0) - (a.gameScore || 0))" :key="st.id">
@@ -3602,7 +3668,17 @@
         gameIntervalId: null,
         flamePos: { top: '50%', left: '50%' },
         flameBtnSize: 62,
-        gameChallengeEnded: true, // انتهت مدة المسابقة (التحدي مغلق)
+        activeGameId: 2,
+        games: [
+          { id: 1, title: 'تحدي صيد الشعلة (الجولة الأولى)', icon: 'flame', unlocked: true, ended: true, desc: 'الجولة الأولى من تحدي صيد الشعلة. لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
+          { id: 2, title: 'تحدي صيد الشعلة (الجولة الثانية)', icon: 'zap', unlocked: true, ended: false, desc: 'الجولة الثانية من تحدي صيد الشعلة! أثبت مهارتك وحقق رقماً قياسياً جديداً في 20 ثانية.' },
+          { id: 3, title: 'تحدي صيد الشعلة (الجولة الثالثة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 7, title: 'تحدي صيد الشعلة (الجولة السابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 8, title: 'تحدي صيد الشعلة (الجولة الثامنة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' }
+        ],
 
         mapStudentFromDB(dbStudent) {
           if (!dbStudent) return null;
@@ -6170,9 +6246,40 @@
           }
         },
 
+        async resetAllGameScores() {
+          if (!confirm("هل أنت متأكد من تصفير جميع نتائج اللعبة الفردية للطلاب لبدء تحدٍ جديد؟")) return;
+          this.students.forEach(st => {
+            st.gameScore = 0;
+            st.trend = 0;
+          });
+          this.showToast("جاري تصفير نتائج اللعبة...", "info");
+          if (supabaseClient) {
+            try {
+              const { data, error } = await supabaseClient.from('students').select('id');
+              if (!error && data) {
+                const promises = data.map(s => 
+                  supabaseClient.from('students').update({ trend: 0 }).eq('id', s.id)
+                );
+                await Promise.all(promises);
+                this.showToast("تم تصفير جميع نتائج اللعبة بنجاح في قاعدة البيانات!", "success");
+              } else {
+                console.error("Error fetching students to reset:", error);
+                this.showToast("فشل تصفير النقاط في قاعدة البيانات", "neg");
+              }
+            } catch(e) {
+              console.error(e);
+              this.showToast("حدث خطأ أثناء تصفير النقاط", "neg");
+            }
+          } else {
+            this.saveState();
+            this.showToast("تم تصفير نتائج اللعبة محلياً بنجاح!", "success");
+          }
+        },
+
         startGame() {
-          if (this.gameChallengeEnded && !this.isAdmin) {
-            this.showToast('انتهت مدة المسابقة والتحدي مغلق حالياً!', 'neg', 'alert-circle');
+          const activeGame = this.games.find(g => g.id === this.activeGameId);
+          if (activeGame && activeGame.ended && !this.isAdmin) {
+            this.showToast('انتهت مدة هذه اللعبة والتحدي مغلق حالياً!', 'neg', 'alert-circle');
             return;
           }
           // حجم الشعلة = 9% من أصغر بُعد للوحة، بحد أقصى 62px
