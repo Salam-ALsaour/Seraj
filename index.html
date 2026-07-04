@@ -1787,8 +1787,8 @@
                       <div>
                         <div class="glass" style="padding: 20px; text-align: center; border: 1px solid rgba(5,150,105,0.2); background: linear-gradient(160deg, rgba(5,150,105,0.06), transparent);">
                           <div style="width: 44px; height: 44px; margin: 0 auto 12px; color: #34d399; filter: drop-shadow(0 0 8px rgba(5,150,105,0.4));" x-html="getIconSvg('check-circle')"></div>
-                          <div style="font-size: 15px; font-weight: 700; color: #a7f3d0; margin-bottom: 6px;">تم تسليم إجابتك بنجاح!</div>
-                          <div style="font-size: 11px; color: var(--txt-dim);">لا يمكن التسليم مرة أخرى لهذا التحدي</div>
+                          <div style="font-size: 15px; font-weight: 700; color: #a7f3d0; margin-bottom: 6px;" x-text="ch.questions && ch.questions.length > 0 ? 'تم تسليم إجابتك بنجاح!' : 'تم تسليم مشاركتك بنجاح!'"></div>
+                          <div style="font-size: 11px; color: var(--txt-dim);" x-text="ch.questions && ch.questions.length > 0 ? 'لا يمكن التسليم مرة أخرى لهذا التحدي' : 'تم تسجيل تسليمك من قبل المشرفين'"></div>
                         </div>
                         <template x-if="ch.questions && ch.questions.length > 0">
                           <div style="margin-top: 14px;">
@@ -1834,27 +1834,28 @@
                                      x-text="(weeklyFormAnswers[qi] || '').length + ' / ' + getWeeklyAnswerLimit(qi)"></div>
                               </div>
                             </template>
+                            <button
+                              @click="submitWeeklyChallenge(ch.week)"
+                              :disabled="weeklySubmitting || !weeklyAnswersValid()"
+                              class="btn-redeem"
+                              style="width: 100%; padding: 13px; font-size: 14px; font-weight: 700; border-radius: 14px; margin-top: 4px;"
+                              :style="!weeklyAnswersValid() ? 'opacity: 0.4; cursor: not-allowed;' : ''">
+                              <span x-show="!weeklySubmitting">تسليم الإجابات</span>
+                              <span x-show="weeklySubmitting">جاري التسليم...</span>
+                            </button>
                           </div>
                         </template>
 
-                        <!-- Information notice for confirmation-only challenges (like Week 2) -->
+                        <!-- Notice for confirmation-only challenges (like Week 2) when not submitted yet -->
                         <template x-if="!ch.questions || ch.questions.length === 0">
-                          <div style="text-align: right; margin-bottom: 15px;">
-                            <div class="glass" style="padding: 14px; border: 1px solid rgba(5,150,105,0.2); background: rgba(5,150,105,0.02); border-radius: 12px; font-size: 12.5px; color: var(--txt-dim); line-height: 1.6;">
-                              بعد قيامك بتعبئة وتسليم النموذج الورقي أو تعبئة النموذج الإلكتروني عبر الرابط أعلاه، يرجى النقر على الزر أدناه لتأكيد تسليم مشاركتك في التطبيق لتسجيل اسمك وتلقي التقييم والدرجات من المشرفين.
+                          <div class="glass" style="padding: 22px 20px; text-align: center; border: 1.5px solid rgba(239,68,68,0.2); background: linear-gradient(160deg, rgba(239,68,68,0.04), transparent); border-radius: 18px;">
+                            <div style="width: 44px; height: 44px; margin: 0 auto 10px; color: #f87171; filter: drop-shadow(0 0 8px rgba(239,68,68,0.3));" x-html="getIconSvg('alert-circle')"></div>
+                            <div style="font-size: 16px; font-weight: 800; color: #fca5a5; margin-bottom: 6px;">لم تقم بتسليم المشاركة بعد</div>
+                            <div style="font-size: 12px; color: var(--txt-dim); line-height: 1.6;">
+                              يرجى تسليم النموذج الورقي أو النموذج الإلكتروني ليقوم المشرف بتسجيل اسمك وتحديث حالتك.
                             </div>
                           </div>
                         </template>
-
-                        <button
-                          @click="submitWeeklyChallenge(ch.week)"
-                          :disabled="weeklySubmitting || !weeklyAnswersValid()"
-                          class="btn-redeem"
-                          style="width: 100%; padding: 13px; font-size: 14px; font-weight: 700; border-radius: 14px; margin-top: 4px;"
-                          :style="!weeklyAnswersValid() ? 'opacity: 0.4; cursor: not-allowed;' : ''">
-                          <span x-show="!weeklySubmitting" x-text="ch.questions && ch.questions.length > 0 ? 'تسليم الإجابات' : 'تأكيد تسليم المشاركة'"></span>
-                          <span x-show="weeklySubmitting">جاري التسليم...</span>
-                        </button>
                       </div>
                     </template>
                   </div>
@@ -1865,6 +1866,31 @@
             <!-- ============ ADMIN VIEW ============ -->
             <template x-if="isAdmin">
               <div style="margin-top: 4px;">
+
+                <!-- Add Student Submission Section (Only for challenges with no questions) -->
+                <template x-if="ch.questions && ch.questions.length === 0 && !isWeekPublished(ch.week)">
+                  <div class="glass" style="padding: 14px; margin-bottom: 16px; border: 1.5px solid rgba(249,115,22,0.15); text-align: right;">
+                    <div style="font-size: 13px; font-weight: 700; color: #ffb27a; margin-bottom: 10px;">
+                      تسجيل تسليم يدوي لطالب:
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <select x-model="adminSelectedStudentId" 
+                              style="flex: 1; padding: 10px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--stroke); color: #fff; font-family: inherit; font-size: 12px; outline: none;">
+                        <option value="" style="background: var(--bg);">اختر الطالب...</option>
+                        <template x-for="st in students.filter(s => !weeklySubmissions[s.id + '_w' + ch.week])" :key="st.id">
+                          <option :value="st.id" style="background: var(--bg);" x-text="st.name"></option>
+                        </template>
+                      </select>
+                      <button @click="addWeeklySubmissionByAdmin(ch.week, adminSelectedStudentId); adminSelectedStudentId = '';"
+                              :disabled="!adminSelectedStudentId"
+                              class="btn-redeem" 
+                              style="padding: 10px 18px; font-size: 12px; font-weight: 700; border-radius: 12px; margin-top: 0; white-space: nowrap;"
+                              :style="!adminSelectedStudentId ? 'opacity: 0.4; cursor: not-allowed;' : ''">
+                        إضافة تسليم
+                      </button>
+                    </div>
+                  </div>
+                </template>
                 <div class="macro-label" style="color: var(--txt-dim); margin-top:0;">
                   <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:4px;" x-html="getIconSvg('clipboard-list')"></div>
                   تسليمات الطلاب وتقييمها
@@ -3728,6 +3754,7 @@
         weeklyFormAnswers: ['', '', ''],
         weeklyAnswerLimits: [80, 500, 300],
         weeklySubmitting: false,
+        adminSelectedStudentId: '',
         
         // Login State
         isLoggedIn: false,
@@ -6148,6 +6175,57 @@
           this.weeklyFormAnswers = ['', '', ''];
           this.weeklySubmitting = false;
           this.showToast('تم تسليم مشاركتك بنجاح!', 'success', 'check-circle');
+        },
+
+        async addWeeklySubmissionByAdmin(week, studentId) {
+          if (!studentId) return;
+          const student = this.getStudentById(studentId);
+          if (!student) return;
+          
+          const key = studentId + '_w' + week;
+          const submission = {
+            studentId: studentId,
+            studentName: student.name,
+            week: week,
+            answers: [],
+            submittedAt: new Date().toLocaleString('ar-SA'),
+            evaluation: { status: 'draft', flames: 0, note: '' }
+          };
+
+          this.showToast('جاري تسجيل تسليم الطالب...', 'info');
+
+          try {
+            if (supabaseClient) {
+              const { data: newRow, error } = await supabaseClient
+                .from('weekly_submissions')
+                .insert({
+                  student_id: studentId,
+                  week: week,
+                  student_name: student.name,
+                  answers: [],
+                  submitted_at: new Date().toLocaleString('ar-SA'),
+                  evaluation: { status: 'draft', flames: 0, note: '' }
+                })
+                .select('id')
+                .single();
+
+              if (error) throw error;
+              
+              this.weeklySubmissions = {
+                ...this.weeklySubmissions,
+                [key]: { ...submission, _dbId: newRow.id }
+              };
+            } else {
+              this.weeklySubmissions = {
+                ...this.weeklySubmissions,
+                [key]: submission
+              };
+            }
+            this.showToast(`تم تسجيل تسليم الطالب (${student.name}) بنجاح!`, 'success', 'check-circle');
+          } catch(e) {
+            console.error('Failed to add weekly submission by admin:', e);
+            this.showToast('فشل إضافة تسليم الطالب في قاعدة البيانات', 'neg');
+          }
         },
 
         go(id) {
