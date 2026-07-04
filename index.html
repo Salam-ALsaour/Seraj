@@ -3740,7 +3740,7 @@
         // Clicker Game State
         gamePlaying: false,
         gameScoreCurrent: 0,
-        gameTimeLeft: 20,
+        gameTimeLeft: 30,
         gameIntervalId: null,
         flamePos: { top: '50%', left: '50%' },
         flameBtnSize: 62,
@@ -3750,10 +3750,11 @@
         typeWordList: [],
         currentWordIndex: 0,
         wordStatus: [],
+        gameTimerStarted: false,
         gamesScores: {},
         games: [
-          { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 20 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
-          { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة.' },
+          { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
+          { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
           { id: 3, title: 'تحدي صيد الشعلة (الجولة الثالثة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
@@ -6435,7 +6436,8 @@
           
           this.gamePlaying = true;
           this.gameScoreCurrent = 0;
-          this.gameTimeLeft = 20;
+          this.gameTimeLeft = 30;
+          this.gameTimerStarted = false;
 
           if (this.activeGameId === 1) {
             const boardW = Math.max(80, window.innerWidth - 40);
@@ -6443,6 +6445,10 @@
             const minDim = Math.min(boardW, boardH);
             this.flameBtnSize = Math.min(62, Math.max(14, Math.round(minDim * 0.09)));
             this.moveFlame();
+            
+            // Start timer immediately for Game 1
+            this.gameTimerStarted = true;
+            this.startTimerInterval();
           } else if (this.activeGameId === 2) {
             this.resetParagraph();
             this.$nextTick(() => {
@@ -6469,12 +6475,16 @@
             }
           };
           if (window.visualViewport) window.visualViewport.addEventListener('resize', this._gameViewportResize);
+        },
 
+        startTimerInterval() {
           if (this.gameIntervalId) clearInterval(this.gameIntervalId);
           this.gameIntervalId = setInterval(() => {
-            this.gameTimeLeft--;
-            if (this.gameTimeLeft <= 0) {
-              this.endGame();
+            if (this.gamePlaying && this.gameTimerStarted) {
+              this.gameTimeLeft--;
+              if (this.gameTimeLeft <= 0) {
+                this.endGame();
+              }
             }
           }, 1000);
         },
@@ -6515,6 +6525,13 @@
 
         checkTypeWord() {
           if (!this.gamePlaying) return;
+
+          // Start the timer on the first typed character for Game 2
+          if (!this.gameTimerStarted && this.typeInputWord.length > 0) {
+            this.gameTimerStarted = true;
+            this.startTimerInterval();
+          }
+
           const typedValue = this.typeInputWord;
           const targetWord = this.typeWordList[this.currentWordIndex];
           if (!targetWord) return;
