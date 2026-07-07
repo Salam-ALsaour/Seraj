@@ -1676,8 +1676,8 @@
         <template x-for="ch in weeklyChallenges.filter(c => c.week === activeWeeklyChallenge && c.unlocked)" :key="ch.week">
           <div style="margin-top: 4px;">
 
-            <!-- Challenge Details for Week 2 (Visible to all: Students and Admin) -->
-            <template x-if="ch.week === 2">
+            <!-- Challenge Details for Week 2 (Visible to all: Students and Admin, only while open) -->
+            <template x-if="ch.week === 2 && !ch.ended">
               <div style="text-align: right; margin-bottom: 20px;">
                 
                 <!-- Premium Challenge Card Info -->
@@ -3739,7 +3739,7 @@
           { week: 1, title: 'تحدي تطوير منصة سراج', icon: 'rocket', unlocked: true, ended: true,
             desc: 'شارك بفكرتك لتطوير منصة سراج! أجب على الأسئلة التالية وقدّم رؤيتك الإبداعية.',
             questions: ['ما اسم الفكرة؟', 'ما هي الفكرة باختصار وما الهدف منها؟', 'ما هي المشكلة التي تحلها الفكرة أو الميزة التي تضيفها؟'] },
-          { week: 2, title: 'تحدي الأسبوع الثاني من رحلة سراج', icon: 'target', unlocked: true, ended: false,
+          { week: 2, title: 'تحدي الأسبوع الثاني من رحلة سراج', icon: 'target', unlocked: true, ended: true,
             desc: 'تحدي صياغة خطتك وأهدافك الصيفية وفق معايير واضحة وقابلة للقياس والإنجاز.',
             questions: [] },
           { week: 3, title: 'تحدي الأسبوع الثالث', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
