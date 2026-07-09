@@ -1442,8 +1442,8 @@
             <!-- vertical list of games ("الألعاب فوق بعض") -->
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
               <template x-for="g in games" :key="g.id">
-                <div class="glass" 
-                     style="padding: 16px; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; text-align: right; border: 1px solid var(--stroke);"
+                <div class="glass"
+                     style="padding: 18px 20px; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; text-align: right; border: 1px solid var(--stroke);"
                      :style="activeGameId === g.id 
                              ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(255,255,255,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.15);' 
                              : (!g.unlocked ? 'opacity: 0.6; cursor: not-allowed;' : 'hover:border-color: rgba(255,255,255,0.15);')"
