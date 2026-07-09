@@ -92,7 +92,7 @@
     .dropdown-card{background:rgba(18,20,20,0.98);border:1px solid var(--stroke2);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.9);color:var(--txt);}
 
     /* game challenge card (ألعاب اللقاءات list) */
-    .game-card{padding:18px 20px;border-radius:16px;cursor:pointer;transition:border-color .3s ease,box-shadow .3s ease,background .3s ease;position:relative;text-align:right;border:1px solid var(--stroke);}
+    .game-card{padding:18px 20px;border-radius:24px;cursor:pointer;transition:border-color .3s ease,box-shadow .3s ease,background .3s ease;position:relative;text-align:right;border:1px solid var(--stroke);}
     .game-card.is-locked{opacity:.6;cursor:not-allowed;}
     .game-card.is-active{border-color:rgba(249,115,22,0.6);background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(255,255,255,0.02));box-shadow:0 0 15px rgba(249,115,22,0.15);}
 
@@ -281,7 +281,8 @@
     .admin-main-toggle button i, .admin-main-toggle button svg{width:16px;height:16px;}
 
     /* leaderboard rows */
-    .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:9px;}
+    .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:8px;border-radius:16px;cursor:pointer;transition:border-color .3s ease,box-shadow .3s ease,background .3s ease;}
+    .lb-row.is-active{border-color:rgba(249,115,22,0.6);background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(249,115,22,0.02));box-shadow:0 0 15px rgba(249,115,22,0.2);}
     .lb-rank{width:26px;text-align:center;font-size:16px;font-weight:700;color:var(--txt-faint);flex-shrink:0;}
     .lb-av{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:16px;
       flex-shrink:0;background:linear-gradient(150deg,var(--glass2),transparent);border:1px solid var(--stroke);color:var(--txt);}
@@ -1043,12 +1044,9 @@
         <div class="glass" style="padding:8px;">
           <div>
             <template x-for="(st, index) in getSortedStudents().slice(3)" :key="st.id">
-              <div class="lb-row glass" 
-                   @click="viewOnlyStudentId = st.id" 
-                   style="border-radius:16px;margin-bottom:8px;cursor:pointer;"
-                   :style="st.id === activeId 
-                           ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;' 
-                           : ''">
+              <div class="lb-row glass"
+                   :class="{ 'is-active': st.id === activeId }"
+                   @click="viewOnlyStudentId = st.id">
                 <div class="lb-rank" x-text="index + 4"></div>
                 <div class="lb-av" 
                      style="position:relative;"
@@ -1555,12 +1553,9 @@
         </div>
         <div class="glass" style="padding:8px;">
           <template x-for="(st, index) in [...students].sort((a,b) => getStudentGameScore(b.id, activeGameId) - getStudentGameScore(a.id, activeGameId))" :key="st.id">
-            <div class="lb-row glass" 
-                 style="border-radius:16px;margin-bottom:8px;cursor:pointer;"
-                 @click="viewOnlyStudentId = st.id"
-                 :style="st.id === activeId 
-                         ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;' 
-                         : ''">
+            <div class="lb-row glass"
+                 :class="{ 'is-active': st.id === activeId }"
+                 @click="viewOnlyStudentId = st.id">
               <div class="lb-rank" x-text="index + 1"></div>
               <div class="lb-av" 
                    style="position:relative;"
