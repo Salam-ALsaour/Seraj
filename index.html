@@ -3626,6 +3626,43 @@
               </div>
             </div>
           </template>
+
+          <!-- GAME 3: MEMORY SEQUENCE (تحدي تسلسل الذاكرة) -->
+          <template x-if="activeGameId === 3">
+            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; position: relative; z-index: 10;">
+
+              <!-- Instructions -->
+              <div x-show="gameScoreCurrent === 0 && memSequence.length <= 1"
+                   style="margin-bottom: 18px; font-size: 13px; color: var(--txt-dim); max-width: 280px; line-height: 1.6;">
+                <div style="width: 38px; height: 38px; margin: 0 auto 8px; color: var(--orange); animation: pulse 1.5s infinite;" x-html="getIconSvg('brain')"></div>
+                راقب تسلسل الإضاءة ثم كرره بنفس الترتيب لتكسب الشعلات!
+              </div>
+
+              <!-- Status line -->
+              <div style="margin-bottom: 18px; font-size: 12px; font-weight: 700; height: 16px;">
+                <span x-show="memShowingSequence" style="color: var(--txt-dim);">راقب التسلسل...</span>
+                <span x-show="!memShowingSequence" style="color: #ffb27a;">دورك! كرر التسلسل</span>
+              </div>
+
+              <!-- 2x2 Tile Grid -->
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; max-width: 260px;">
+                <template x-for="(tile, idx) in memTiles" :key="idx">
+                  <button @click="tapMemoryTile(idx)"
+                          type="button"
+                          :disabled="memShowingSequence"
+                          :style="getMemoryTileStyle(idx)">
+                    <div :style="'width:28px;height:28px;color:' + (memActiveTile === idx ? '#fff' : tile.color) + ';'" x-html="getIconSvg(tile.icon)"></div>
+                  </button>
+                </template>
+              </div>
+
+              <!-- Sequence length indicator -->
+              <div style="margin-top: 18px; font-size: 11px; color: var(--txt-faint);">
+                <span>طول التسلسل الحالي: </span>
+                <span style="color: #ffb27a; font-weight: 700;" x-text="memSequence.length"></span>
+              </div>
+            </div>
+          </template>
         </div>
 
       </div>
@@ -3848,10 +3885,22 @@
         wordStatus: [],
         gameTimerStarted: false,
         gamesScores: {},
+
+        // Memory Sequence Game State (Game 3)
+        memSequence: [],
+        memPlayerStep: 0,
+        memShowingSequence: false,
+        memActiveTile: null,
+        memTiles: [
+          { color: '#f97316', icon: 'flame' },
+          { color: '#10b981', icon: 'sparkles' },
+          { color: '#3b82f6', icon: 'zap' },
+          { color: '#eab308', icon: 'star' }
+        ],
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
           { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
-          { id: 3, title: 'تحدي صيد الشعلة (الجولة الثالثة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، ولديك 30 ثانية لتجمع أكبر عدد من التسلسلات الصحيحة.' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
@@ -6615,6 +6664,16 @@
                 this.$refs.typeInput.focus();
               }
             });
+          } else if (this.activeGameId === 3) {
+            this.memSequence = [];
+            this.memPlayerStep = 0;
+            this.memShowingSequence = false;
+            this.memActiveTile = null;
+
+            // Start timer immediately for Game 3
+            this.gameTimerStarted = true;
+            this.startTimerInterval();
+            this.startMemoryRound();
           }
 
           // منع التكبير خلال اللعبة (Ctrl+Scroll وCtrl+Plus/Minus/0)
@@ -6719,6 +6778,63 @@
             this.gameScoreCurrent++;
             this.playGameClickSound();
             this.resetParagraph();
+          }
+        },
+
+        sleep(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
+        },
+
+        getMemoryTileStyle(idx) {
+          const tile = this.memTiles[idx];
+          const active = this.memActiveTile === idx;
+          return 'aspect-ratio:1; border-radius:20px; display:grid; place-items:center; outline:none; cursor:' +
+                 (this.memShowingSequence ? 'default' : 'pointer') + ';' +
+                 'border: 2px solid ' + tile.color + (active ? '' : '55') + ';' +
+                 'background: ' + (active ? tile.color : 'rgba(255,255,255,0.04)') + ';' +
+                 'box-shadow: ' + (active ? '0 0 25px ' + tile.color : 'none') + ';' +
+                 'transition: background .12s ease, box-shadow .12s ease;';
+        },
+
+        startMemoryRound() {
+          this.memSequence.push(Math.floor(Math.random() * this.memTiles.length));
+          this.memPlayerStep = 0;
+          this.playMemorySequence();
+        },
+
+        async playMemorySequence() {
+          this.memShowingSequence = true;
+          this.memActiveTile = null;
+          await this.sleep(400);
+          for (let i = 0; i < this.memSequence.length; i++) {
+            if (!this.gamePlaying) return;
+            this.memActiveTile = this.memSequence[i];
+            await this.sleep(450);
+            this.memActiveTile = null;
+            await this.sleep(200);
+          }
+          if (!this.gamePlaying) return;
+          this.memShowingSequence = false;
+        },
+
+        tapMemoryTile(idx) {
+          if (!this.gamePlaying || this.memShowingSequence) return;
+
+          this.memActiveTile = idx;
+          setTimeout(() => { if (this.memActiveTile === idx) this.memActiveTile = null; }, 180);
+
+          if (idx === this.memSequence[this.memPlayerStep]) {
+            this.playGameClickSound();
+            this.memPlayerStep++;
+            if (this.memPlayerStep >= this.memSequence.length) {
+              this.gameScoreCurrent++;
+              this.memShowingSequence = true;
+              setTimeout(() => { if (this.gamePlaying) this.startMemoryRound(); }, 550);
+            }
+          } else {
+            this.memSequence = [];
+            this.memShowingSequence = true;
+            setTimeout(() => { if (this.gamePlaying) this.startMemoryRound(); }, 700);
           }
         },
 
