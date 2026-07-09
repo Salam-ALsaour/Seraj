@@ -33,7 +33,7 @@
 
   <style>
     :root{
-      --bg:#121414;
+      --bg:#0d0d0d;
       --bg2:#0c0e0e;
       --glass:rgba(255,255,255,.03);
       --glass2:rgba(255,255,255,.05);
@@ -49,7 +49,8 @@
       --txt-dim:#8b9494;
       --txt-faint:#5a6363;
       --nav-h:74px;
-      --nav-gap:16px;
+      --nav-gap:20px;
+      --nav-inset:14px;
     }
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     html,body{height:100%;overflow:hidden;}
@@ -563,12 +564,12 @@
     .admin-logout i{width:15px;height:15px;}
 
     /* ===== BOTTOM NAV (floating) ===== */
-    #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom) + var(--nav-gap));left:14px;right:14px;z-index:50;
+    #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom) + var(--nav-gap));left:var(--nav-inset);right:var(--nav-inset);z-index:50;
       height:var(--nav-h);border-radius:24px;
-      background:rgba(12,14,14,.6);backdrop-filter:blur(28px);
+      background:rgba(12,14,14,.3);backdrop-filter:blur(16px);
       -webkit-backdrop-filter:blur(28px);border:1px solid var(--stroke);
       box-shadow:0 14px 34px -12px rgba(0,0,0,.7);
-      display:flex;max-width:452px;margin:0 auto;}
+      display:flex;max-width:calc(480px - (var(--nav-inset) * 2));margin:0 auto;}
     
     .nav-btn{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:4px;cursor:pointer;color:var(--txt-faint);transition:.2s;position:relative;padding-top:10px;}
