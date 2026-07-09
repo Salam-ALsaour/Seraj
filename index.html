@@ -5707,6 +5707,7 @@
 
           if (!supabaseClient) {
             sender.wallet -= giftVal;
+            sender.total -= giftVal;
             recipient.wallet += giftVal;
             recipient.total += giftVal;
             this.activityLogs.unshift({
@@ -5732,11 +5733,13 @@
           }
 
           const newSenderWallet = sender.wallet - giftVal;
+          const newSenderTotal = sender.total - giftVal;
           const newRecipientWallet = recipient.wallet + giftVal;
           const newRecipientTotal = recipient.total + giftVal;
 
           const { error: senderErr } = await supabaseClient.from('students').update({
-            wallet: newSenderWallet
+            wallet: newSenderWallet,
+            total: newSenderTotal
           }).eq('id', sender.id);
 
           if (senderErr) {
@@ -5745,6 +5748,7 @@
             return;
           }
           sender.wallet = newSenderWallet;
+          sender.total = newSenderTotal;
 
           const { error: recErr } = await supabaseClient.from('students').update({
             wallet: newRecipientWallet,
@@ -5753,9 +5757,10 @@
 
           if (recErr) {
             console.error("Error updating recipient:", recErr);
-            // Roll back the sender's wallet since the gift didn't complete
+            // Roll back the sender's wallet/total since the gift didn't complete
             sender.wallet += giftVal;
-            await supabaseClient.from('students').update({ wallet: sender.wallet }).eq('id', sender.id);
+            sender.total += giftVal;
+            await supabaseClient.from('students').update({ wallet: sender.wallet, total: sender.total }).eq('id', sender.id);
             this.showToast('حدث خطأ أثناء إرسال الهدية، حاول مرة أخرى', 'neg');
             return;
           }
