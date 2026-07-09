@@ -33,7 +33,7 @@
 
   <style>
     :root{
-      --bg:#121414;
+      --bg:#0d0d0d;
       --bg2:#0c0e0e;
       --glass:rgba(255,255,255,.03);
       --glass2:rgba(255,255,255,.05);
@@ -49,6 +49,8 @@
       --txt-dim:#8b9494;
       --txt-faint:#5a6363;
       --nav-h:74px;
+      --nav-gap:20px;
+      --nav-inset:17px;
     }
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     html,body{height:100%;overflow:hidden;}
@@ -82,7 +84,7 @@
       background:var(--bg);
     }
     #scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-      padding:calc(env(safe-area-inset-top) + 14px) 16px calc(var(--nav-h) + env(safe-area-inset-bottom) + 18px);}
+      padding:calc(env(safe-area-inset-top) + 14px) 16px calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--nav-gap) + 18px);}
     #scroll::-webkit-scrollbar{display:none;}
 
     .glass{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -90,6 +92,11 @@
     .modal-card{background:rgba(18,20,20,0.96);border:1px solid var(--stroke2);border-radius:24px;box-shadow:0 25px 60px rgba(0,0,0,0.95);color:var(--txt);}
     .card-pane{background:rgba(255,255,255,0.03);border:1px solid var(--stroke);border-radius:16px;}
     .dropdown-card{background:rgba(18,20,20,0.98);border:1px solid var(--stroke2);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.9);color:var(--txt);}
+
+    /* game challenge card (ألعاب اللقاءات list) */
+    .game-card{padding:18px 20px;border-radius:24px;cursor:pointer;transition:border-color .3s ease,box-shadow .3s ease,background .3s ease;position:relative;text-align:right;border:1px solid var(--stroke);}
+    .game-card.is-locked{opacity:.6;cursor:not-allowed;}
+    .game-card.is-active{border-color:rgba(249,115,22,0.6);background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(255,255,255,0.02));box-shadow:0 0 15px rgba(249,115,22,0.15);}
 
     /* header */
     .app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:0 2px;}
@@ -276,7 +283,8 @@
     .admin-main-toggle button i, .admin-main-toggle button svg{width:16px;height:16px;}
 
     /* leaderboard rows */
-    .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:9px;}
+    .lb-row{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:8px;border-radius:16px;cursor:pointer;transition:border-color .3s ease,box-shadow .3s ease,background .3s ease;}
+    .lb-row.is-active{border-color:rgba(249,115,22,0.6);background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(249,115,22,0.02));box-shadow:0 0 15px rgba(249,115,22,0.2);}
     .lb-rank{width:26px;text-align:center;font-size:16px;font-weight:700;color:var(--txt-faint);flex-shrink:0;}
     .lb-av{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:16px;
       flex-shrink:0;background:linear-gradient(150deg,var(--glass2),transparent);border:1px solid var(--stroke);color:var(--txt);}
@@ -555,10 +563,13 @@
     .admin-logout:active{background:var(--glass2);}
     .admin-logout i{width:15px;height:15px;}
 
-    /* ===== BOTTOM NAV ===== */
-    #nav{position:fixed;bottom:0;left:0;right:0;z-index:50;height:calc(var(--nav-h) + env(safe-area-inset-bottom));
-      padding-bottom:env(safe-area-inset-bottom);background:rgba(12,14,14,.72);backdrop-filter:blur(28px);
-      -webkit-backdrop-filter:blur(28px);border-top:1px solid var(--stroke);display:flex;max-width:480px;margin:0 auto;}
+    /* ===== BOTTOM NAV (floating) ===== */
+    #nav{position:fixed;bottom:calc(env(safe-area-inset-bottom) + var(--nav-gap));left:var(--nav-inset);right:var(--nav-inset);z-index:50;
+      height:var(--nav-h);border-radius:24px;
+      background:rgba(12,14,14,.3);backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(28px);border:1px solid var(--stroke);
+      box-shadow:0 14px 34px -12px rgba(0,0,0,.7);
+      display:flex;max-width:calc(480px - (var(--nav-inset) * 2));margin:0 auto;}
     
     .nav-btn{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:4px;cursor:pointer;color:var(--txt-faint);transition:.2s;position:relative;padding-top:10px;}
@@ -570,7 +581,7 @@
       border-radius:3px;background:var(--orange);box-shadow:0 0 10px var(--orange-glow);}
 
     /* toast */
-    #toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 18px);left:50%;transform:translateX(-50%) translateY(20px);
+    #toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--nav-gap) + 18px);left:50%;transform:translateX(-50%) translateY(20px);
       z-index:100;padding:13px 20px;border-radius:30px;background:rgba(12,14,14,.9);backdrop-filter:blur(20px);
       border:1px solid var(--stroke2);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.35s;
       display:flex;align-items:center;gap:9px;max-width:88vw;box-shadow:0 14px 40px -10px rgba(0,0,0,.8);}
@@ -1038,12 +1049,9 @@
         <div class="glass" style="padding:8px;">
           <div>
             <template x-for="(st, index) in getSortedStudents().slice(3)" :key="st.id">
-              <div class="lb-row glass" 
-                   @click="viewOnlyStudentId = st.id" 
-                   style="border-radius:16px;margin-bottom:8px;cursor:pointer;"
-                   :style="st.id === activeId 
-                           ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;' 
-                           : ''">
+              <div class="lb-row glass"
+                   :class="{ 'is-active': st.id === activeId }"
+                   @click="viewOnlyStudentId = st.id">
                 <div class="lb-rank" x-text="index + 4"></div>
                 <div class="lb-av" 
                      style="position:relative;"
@@ -1442,45 +1450,42 @@
             <!-- vertical list of games ("الألعاب فوق بعض") -->
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
               <template x-for="g in games" :key="g.id">
-                <div class="glass" 
-                     style="padding: 16px; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; text-align: right; border: 1px solid var(--stroke);"
-                     :style="activeGameId === g.id 
-                             ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(255,255,255,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.15);' 
-                             : (!g.unlocked ? 'opacity: 0.6; cursor: not-allowed;' : 'hover:border-color: rgba(255,255,255,0.15);')"
+                <div class="glass game-card"
+                     :class="{ 'is-active': activeGameId === g.id, 'is-locked': activeGameId !== g.id && !g.unlocked }"
                      @click="if (g.unlocked) { activeGameId = g.id; $nextTick(() => lucide.createIcons()); } else { showToast('هذا التحدي مغلق حالياً، انتظر افتتاحه!', 'info', 'lock'); }">
                   
                   <!-- Card Header -->
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--stroke); display: grid; place-items: center; color: var(--orange);"
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                      <div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--stroke); display: grid; place-items: center; color: var(--orange);"
                            :style="activeGameId === g.id ? 'color: var(--orange); border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.05);' : ''">
                         <div style="width: 16px; height: 16px;" x-html="getIconSvg(g.unlocked ? g.icon : 'lock')"></div>
                       </div>
-                      <div>
-                        <div style="font-size: 14px; font-weight: 700; color: var(--txt);" x-text="g.unlocked ? g.title : 'تحدي قادم 🔒'"></div>
-                        <div style="font-size: 10px; color: var(--txt-dim);" x-text="'تحدي اللقاء ' + g.id + ' من 8'"></div>
+                      <div style="min-width: 0; flex: 1;">
+                        <div style="font-size: 14px; font-weight: 700; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="g.unlocked ? g.title : 'تحدي قادم 🔒'"></div>
+                        <div style="font-size: 10px; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="'تحدي اللقاء ' + g.id + ' من 8'"></div>
                       </div>
                     </div>
 
                     <!-- Status Badges -->
-                    <div>
+                    <div style="flex-shrink: 0;">
                       <!-- Locked -->
                       <template x-if="!g.unlocked">
-                        <span style="font-size: 10px; font-weight: 700; color: var(--txt-faint); background: rgba(255,255,255,0.05); border: 1px solid var(--stroke); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--txt-faint); background: rgba(255,255,255,0.05); border: 1px solid var(--stroke); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                           <span style="width: 10px; height: 10px;" x-html="getIconSvg('lock')"></span>
                           مغلق
                         </span>
                       </template>
                       <!-- Active / Open -->
                       <template x-if="g.unlocked && !g.ended">
-                        <span style="font-size: 10px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16,185,129,0.15);">
+                        <span style="font-size: 10px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 0 10px rgba(16,185,129,0.15);">
                           <span style="width: 10px; height: 10px;" x-html="getIconSvg('zap')"></span>
                           نشط حالياً
                         </span>
                       </template>
                       <!-- Ended -->
                       <template x-if="g.unlocked && g.ended">
-                        <span style="font-size: 10px; font-weight: 700; color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 10px; font-weight: 700; color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                           <span style="width: 10px; height: 10px;" x-html="getIconSvg('clock')"></span>
                           منتهي
                         </span>
@@ -1553,12 +1558,9 @@
         </div>
         <div class="glass" style="padding:8px;">
           <template x-for="(st, index) in [...students].sort((a,b) => getStudentGameScore(b.id, activeGameId) - getStudentGameScore(a.id, activeGameId))" :key="st.id">
-            <div class="lb-row glass" 
-                 style="border-radius:16px;margin-bottom:8px;cursor:pointer;"
-                 @click="viewOnlyStudentId = st.id"
-                 :style="st.id === activeId 
-                         ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.2) !important;' 
-                         : ''">
+            <div class="lb-row glass"
+                 :class="{ 'is-active': st.id === activeId }"
+                 @click="viewOnlyStudentId = st.id">
               <div class="lb-rank" x-text="index + 1"></div>
               <div class="lb-av" 
                    style="position:relative;"
@@ -3536,11 +3538,18 @@
             <span style="font-size: 20px; font-weight: 800; color: #ffb27a;" x-text="gameScoreCurrent"></span>
           </div>
 
-          <!-- Timer -->
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Timer (games with a time limit) -->
+          <div x-show="activeGameId !== 3" style="display: flex; align-items: center; gap: 8px;">
             <div style="width: 20px; height: 20px; color: #ef4444; filter: drop-shadow(0 0 5px rgba(239,68,68,0.5));" x-html="getIconSvg('clock')"></div>
             <span style="font-size: 12px; color: var(--txt-dim);">الزمن:</span>
             <span style="font-size: 20px; font-weight: 800; color: #ef4444;" x-text="gameTimeLeft + ' ث'"></span>
+          </div>
+
+          <!-- Max score progress (Game 3 — no timer) -->
+          <div x-show="activeGameId === 3" style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; color: var(--txt-dim);" x-html="getIconSvg('target')"></div>
+            <span style="font-size: 12px; color: var(--txt-dim);">الحد الأقصى:</span>
+            <span style="font-size: 20px; font-weight: 800; color: var(--txt);" x-text="gameScoreCurrent + ' / ' + memMaxScore"></span>
           </div>
 
           <!-- Quit Button -->
@@ -3623,6 +3632,43 @@
                 <template x-if="typeInputWord.trim() !== '' && typeWordList[currentWordIndex] && typeWordList[currentWordIndex].startsWith(typeInputWord.trim())">
                   <span style="color: #34d399; font-weight: 600;">رائع، أكمل الكتابة...</span>
                 </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- GAME 3: MEMORY SEQUENCE (تحدي تسلسل الذاكرة) -->
+          <template x-if="activeGameId === 3">
+            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; position: relative; z-index: 10;">
+
+              <!-- Instructions -->
+              <div x-show="gameScoreCurrent === 0 && memSequence.length <= 1"
+                   style="margin-bottom: 18px; font-size: 13px; color: var(--txt-dim); max-width: 280px; line-height: 1.6;">
+                <div style="width: 38px; height: 38px; margin: 0 auto 8px; color: var(--orange); animation: pulse 1.5s infinite;" x-html="getIconSvg('brain')"></div>
+                راقب تسلسل الإضاءة ثم كرره بنفس الترتيب لتكسب الشعلات!
+              </div>
+
+              <!-- Status line -->
+              <div style="margin-bottom: 18px; font-size: 12px; font-weight: 700; height: 16px;">
+                <span x-show="memShowingSequence" style="color: var(--txt-dim);">راقب التسلسل...</span>
+                <span x-show="!memShowingSequence" style="color: #ffb27a;">دورك! كرر التسلسل</span>
+              </div>
+
+              <!-- 2x2 Tile Grid -->
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; max-width: 260px;">
+                <template x-for="(tile, idx) in memTiles" :key="idx">
+                  <button @click="tapMemoryTile(idx)"
+                          type="button"
+                          :disabled="memShowingSequence"
+                          :style="getMemoryTileStyle(idx)">
+                    <div :style="'width:28px;height:28px;color:' + (memActiveTile === idx ? '#fff' : tile.color) + ';'" x-html="getIconSvg(tile.icon)"></div>
+                  </button>
+                </template>
+              </div>
+
+              <!-- Sequence length indicator -->
+              <div style="margin-top: 18px; font-size: 11px; color: var(--txt-faint);">
+                <span>طول التسلسل الحالي: </span>
+                <span style="color: #ffb27a; font-weight: 700;" x-text="memSequence.length"></span>
               </div>
             </div>
           </template>
@@ -3848,10 +3894,24 @@
         wordStatus: [],
         gameTimerStarted: false,
         gamesScores: {},
+
+        // Memory Sequence Game State (Game 3)
+        memSequence: [],
+        memPlayerStep: 0,
+        memShowingSequence: false,
+        memActiveTile: null,
+        memMistake: false,
+        memTiles: [
+          { color: '#f97316', icon: 'flame' },
+          { color: '#10b981', icon: 'sparkles' },
+          { color: '#3b82f6', icon: 'zap' },
+          { color: '#eab308', icon: 'star' }
+        ],
+        memMaxScore: 20,
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
-          { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
-          { id: 3, title: 'تحدي صيد الشعلة (الجولة الثالثة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
+          { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: true, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
+          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، بدون وقت محدد حتى تصل للحد الأقصى 20 شعلة. انتبه: أي خطأ ينهي الجولة فوراً وتبدأ من جديد!' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
@@ -6632,6 +6692,15 @@
                 this.$refs.typeInput.focus();
               }
             });
+          } else if (this.activeGameId === 3) {
+            this.memSequence = [];
+            this.memPlayerStep = 0;
+            this.memShowingSequence = false;
+            this.memActiveTile = null;
+            this.memMistake = false;
+
+            // Game 3 has no timer — one mistake ends the round
+            this.startMemoryRound();
           }
 
           // منع التكبير خلال اللعبة (Ctrl+Scroll وCtrl+Plus/Minus/0)
@@ -6739,6 +6808,67 @@
           }
         },
 
+        sleep(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
+        },
+
+        getMemoryTileStyle(idx) {
+          const tile = this.memTiles[idx];
+          const active = this.memActiveTile === idx;
+          return 'aspect-ratio:1; border-radius:20px; display:grid; place-items:center; outline:none; cursor:' +
+                 (this.memShowingSequence ? 'default' : 'pointer') + ';' +
+                 'border: 2px solid ' + tile.color + (active ? '' : '55') + ';' +
+                 'background: ' + (active ? tile.color : 'rgba(255,255,255,0.04)') + ';' +
+                 'box-shadow: ' + (active ? '0 0 25px ' + tile.color : 'none') + ';' +
+                 'transition: background .12s ease, box-shadow .12s ease;';
+        },
+
+        startMemoryRound() {
+          this.memSequence.push(Math.floor(Math.random() * this.memTiles.length));
+          this.memPlayerStep = 0;
+          this.playMemorySequence();
+        },
+
+        async playMemorySequence() {
+          this.memShowingSequence = true;
+          this.memActiveTile = null;
+          await this.sleep(400);
+          for (let i = 0; i < this.memSequence.length; i++) {
+            if (!this.gamePlaying) return;
+            this.memActiveTile = this.memSequence[i];
+            await this.sleep(450);
+            this.memActiveTile = null;
+            await this.sleep(200);
+          }
+          if (!this.gamePlaying) return;
+          this.memShowingSequence = false;
+        },
+
+        tapMemoryTile(idx) {
+          if (!this.gamePlaying || this.memShowingSequence) return;
+
+          this.memActiveTile = idx;
+          setTimeout(() => { if (this.memActiveTile === idx) this.memActiveTile = null; }, 180);
+
+          if (idx === this.memSequence[this.memPlayerStep]) {
+            this.playGameClickSound();
+            this.memPlayerStep++;
+            if (this.memPlayerStep >= this.memSequence.length) {
+              this.gameScoreCurrent++;
+              if (this.gameScoreCurrent >= this.memMaxScore) {
+                this.endGame();
+                return;
+              }
+              this.memShowingSequence = true;
+              setTimeout(() => { if (this.gamePlaying) this.startMemoryRound(); }, 550);
+            }
+          } else {
+            this.memMistake = true;
+            this.memShowingSequence = true;
+            this.endGame();
+          }
+        },
+
         async endGame() {
           this.gamePlaying = false;
           if (this.gameIntervalId) {
@@ -6755,8 +6885,15 @@
           }
 
           this.playGameEndSound();
-          this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
-          
+          if (this.activeGameId === 3 && this.gameScoreCurrent >= this.memMaxScore) {
+            this.showToast(`وصلت للحد الأقصى! ${this.gameScoreCurrent} شعلة 🎉`, 'success', 'trophy');
+          } else if (this.activeGameId === 3 && this.memMistake) {
+            this.showToast(`أخطأت بالتسلسل! انتهت الجولة، نقاطك: ${this.gameScoreCurrent}`, 'neg', 'x-circle');
+          } else {
+            this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
+          }
+          this.memMistake = false;
+
           if (this.isAdmin) {
             this.showToast('انتهت اللعبة للتجربة! لن يتم حفظ النقاط لأنك مشرف 🛡️', 'info', 'shield');
             return;
