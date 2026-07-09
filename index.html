@@ -3536,11 +3536,18 @@
             <span style="font-size: 20px; font-weight: 800; color: #ffb27a;" x-text="gameScoreCurrent"></span>
           </div>
 
-          <!-- Timer -->
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Timer (games with a time limit) -->
+          <div x-show="activeGameId !== 3" style="display: flex; align-items: center; gap: 8px;">
             <div style="width: 20px; height: 20px; color: #ef4444; filter: drop-shadow(0 0 5px rgba(239,68,68,0.5));" x-html="getIconSvg('clock')"></div>
             <span style="font-size: 12px; color: var(--txt-dim);">الزمن:</span>
             <span style="font-size: 20px; font-weight: 800; color: #ef4444;" x-text="gameTimeLeft + ' ث'"></span>
+          </div>
+
+          <!-- Max score progress (Game 3 — no timer) -->
+          <div x-show="activeGameId === 3" style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; color: var(--txt-dim);" x-html="getIconSvg('target')"></div>
+            <span style="font-size: 12px; color: var(--txt-dim);">الحد الأقصى:</span>
+            <span style="font-size: 20px; font-weight: 800; color: var(--txt);" x-text="gameScoreCurrent + ' / ' + memMaxScore"></span>
           </div>
 
           <!-- Quit Button -->
@@ -3897,10 +3904,11 @@
           { color: '#3b82f6', icon: 'zap' },
           { color: '#eab308', icon: 'star' }
         ],
+        memMaxScore: 25,
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
           { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
-          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، ولديك 30 ثانية لتجمع أكبر عدد من التسلسلات الصحيحة.' },
+          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، العب بدون وقت محدد حتى تصل للحد الأقصى 25 شعلة.' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
@@ -6670,9 +6678,7 @@
             this.memShowingSequence = false;
             this.memActiveTile = null;
 
-            // Start timer immediately for Game 3
-            this.gameTimerStarted = true;
-            this.startTimerInterval();
+            // Game 3 has no timer — play continues until the max score is reached
             this.startMemoryRound();
           }
 
@@ -6828,6 +6834,10 @@
             this.memPlayerStep++;
             if (this.memPlayerStep >= this.memSequence.length) {
               this.gameScoreCurrent++;
+              if (this.gameScoreCurrent >= this.memMaxScore) {
+                this.endGame();
+                return;
+              }
               this.memShowingSequence = true;
               setTimeout(() => { if (this.gamePlaying) this.startMemoryRound(); }, 550);
             }
@@ -6854,8 +6864,12 @@
           }
 
           this.playGameEndSound();
-          this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
-          
+          if (this.activeGameId === 3 && this.gameScoreCurrent >= this.memMaxScore) {
+            this.showToast(`وصلت للحد الأقصى! ${this.gameScoreCurrent} شعلة 🎉`, 'success', 'trophy');
+          } else {
+            this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
+          }
+
           if (this.isAdmin) {
             this.showToast('انتهت اللعبة للتجربة! لن يتم حفظ النقاط لأنك مشرف 🛡️', 'info', 'shield');
             return;
