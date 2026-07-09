@@ -91,6 +91,11 @@
     .card-pane{background:rgba(255,255,255,0.03);border:1px solid var(--stroke);border-radius:16px;}
     .dropdown-card{background:rgba(18,20,20,0.98);border:1px solid var(--stroke2);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.9);color:var(--txt);}
 
+    /* game challenge card (ألعاب اللقاءات list) */
+    .game-card{padding:18px 20px;border-radius:16px;cursor:pointer;transition:border-color .3s ease,box-shadow .3s ease,background .3s ease;position:relative;text-align:right;border:1px solid var(--stroke);}
+    .game-card.is-locked{opacity:.6;cursor:not-allowed;}
+    .game-card.is-active{border-color:rgba(249,115,22,0.6);background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(255,255,255,0.02));box-shadow:0 0 15px rgba(249,115,22,0.15);}
+
     /* header */
     .app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:0 2px;}
     .brand{display:flex;align-items:center;gap:11px;}
@@ -1442,11 +1447,8 @@
             <!-- vertical list of games ("الألعاب فوق بعض") -->
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
               <template x-for="g in games" :key="g.id">
-                <div class="glass"
-                     style="padding: 18px 20px; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; text-align: right; border: 1px solid var(--stroke);"
-                     :style="activeGameId === g.id 
-                             ? 'border-color: rgba(249,115,22,0.6) !important; background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(255,255,255,0.02)); box-shadow: 0 0 15px rgba(249,115,22,0.15);' 
-                             : (!g.unlocked ? 'opacity: 0.6; cursor: not-allowed;' : 'hover:border-color: rgba(255,255,255,0.15);')"
+                <div class="glass game-card"
+                     :class="{ 'is-active': activeGameId === g.id, 'is-locked': activeGameId !== g.id && !g.unlocked }"
                      @click="if (g.unlocked) { activeGameId = g.id; $nextTick(() => lucide.createIcons()); } else { showToast('هذا التحدي مغلق حالياً، انتظر افتتاحه!', 'info', 'lock'); }">
                   
                   <!-- Card Header -->
