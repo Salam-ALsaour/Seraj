@@ -1450,37 +1450,37 @@
                      @click="if (g.unlocked) { activeGameId = g.id; $nextTick(() => lucide.createIcons()); } else { showToast('هذا التحدي مغلق حالياً، انتظر افتتاحه!', 'info', 'lock'); }">
                   
                   <!-- Card Header -->
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--stroke); display: grid; place-items: center; color: var(--orange);"
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                      <div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--stroke); display: grid; place-items: center; color: var(--orange);"
                            :style="activeGameId === g.id ? 'color: var(--orange); border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.05);' : ''">
                         <div style="width: 16px; height: 16px;" x-html="getIconSvg(g.unlocked ? g.icon : 'lock')"></div>
                       </div>
-                      <div>
-                        <div style="font-size: 14px; font-weight: 700; color: var(--txt);" x-text="g.unlocked ? g.title : 'تحدي قادم 🔒'"></div>
-                        <div style="font-size: 10px; color: var(--txt-dim);" x-text="'تحدي اللقاء ' + g.id + ' من 8'"></div>
+                      <div style="min-width: 0; flex: 1;">
+                        <div style="font-size: 14px; font-weight: 700; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="g.unlocked ? g.title : 'تحدي قادم 🔒'"></div>
+                        <div style="font-size: 10px; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="'تحدي اللقاء ' + g.id + ' من 8'"></div>
                       </div>
                     </div>
 
                     <!-- Status Badges -->
-                    <div>
+                    <div style="flex-shrink: 0;">
                       <!-- Locked -->
                       <template x-if="!g.unlocked">
-                        <span style="font-size: 10px; font-weight: 700; color: var(--txt-faint); background: rgba(255,255,255,0.05); border: 1px solid var(--stroke); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--txt-faint); background: rgba(255,255,255,0.05); border: 1px solid var(--stroke); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                           <span style="width: 10px; height: 10px;" x-html="getIconSvg('lock')"></span>
                           مغلق
                         </span>
                       </template>
                       <!-- Active / Open -->
                       <template x-if="g.unlocked && !g.ended">
-                        <span style="font-size: 10px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16,185,129,0.15);">
+                        <span style="font-size: 10px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; box-shadow: 0 0 10px rgba(16,185,129,0.15);">
                           <span style="width: 10px; height: 10px;" x-html="getIconSvg('zap')"></span>
                           نشط حالياً
                         </span>
                       </template>
                       <!-- Ended -->
                       <template x-if="g.unlocked && g.ended">
-                        <span style="font-size: 10px; font-weight: 700; color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 10px; font-weight: 700; color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                           <span style="width: 10px; height: 10px;" x-html="getIconSvg('clock')"></span>
                           منتهي
                         </span>
@@ -3905,11 +3905,11 @@
           { color: '#3b82f6', icon: 'zap' },
           { color: '#eab308', icon: 'star' }
         ],
-        memMaxScore: 15,
+        memMaxScore: 20,
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
           { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
-          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، بدون وقت محدد حتى تصل للحد الأقصى 15 شعلة. انتبه: أي خطأ ينهي الجولة فوراً وتبدأ من جديد!' },
+          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، بدون وقت محدد حتى تصل للحد الأقصى 20 شعلة. انتبه: أي خطأ ينهي الجولة فوراً وتبدأ من جديد!' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
