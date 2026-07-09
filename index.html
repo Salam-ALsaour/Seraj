@@ -2792,9 +2792,9 @@
                        class="gift-input" 
                        style="padding:6px; border-radius:10px; font-size:12px;" />
                 
-                <button class="gift-send-btn" 
-                        style="padding:6px 12px; border-radius:10px; font-size:11px; gap:4px;" 
-                        @click="giftFlames(s.id, giftVal)">
+                <button class="gift-send-btn"
+                        style="padding:6px 12px; border-radius:10px; font-size:11px; gap:4px;"
+                        @click="sendFlamesGift(s.id, giftVal)">
                   <div style="width:11px; height:11px;" x-html="getIconSvg('send')"></div>
                   إرسال
                 </button>
@@ -5731,24 +5731,36 @@
             return;
           }
 
+          const newSenderWallet = sender.wallet - giftVal;
+          const newRecipientWallet = recipient.wallet + giftVal;
+          const newRecipientTotal = recipient.total + giftVal;
+
           const { error: senderErr } = await supabaseClient.from('students').update({
-            wallet: sender.wallet - giftVal
+            wallet: newSenderWallet
           }).eq('id', sender.id);
 
           if (senderErr) {
             console.error("Error updating sender:", senderErr);
+            this.showToast('حدث خطأ أثناء إرسال الهدية، حاول مرة أخرى', 'neg');
             return;
           }
+          sender.wallet = newSenderWallet;
 
           const { error: recErr } = await supabaseClient.from('students').update({
-            wallet: recipient.wallet + giftVal,
-            total: recipient.total + giftVal
+            wallet: newRecipientWallet,
+            total: newRecipientTotal
           }).eq('id', recipient.id);
 
           if (recErr) {
             console.error("Error updating recipient:", recErr);
+            // Roll back the sender's wallet since the gift didn't complete
+            sender.wallet += giftVal;
+            await supabaseClient.from('students').update({ wallet: sender.wallet }).eq('id', sender.id);
+            this.showToast('حدث خطأ أثناء إرسال الهدية، حاول مرة أخرى', 'neg');
             return;
           }
+          recipient.wallet = newRecipientWallet;
+          recipient.total = newRecipientTotal;
 
           await supabaseClient.from('activity_log').insert([
             {
