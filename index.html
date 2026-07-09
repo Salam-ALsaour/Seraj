@@ -3898,6 +3898,7 @@
         memPlayerStep: 0,
         memShowingSequence: false,
         memActiveTile: null,
+        memMistake: false,
         memTiles: [
           { color: '#f97316', icon: 'flame' },
           { color: '#10b981', icon: 'sparkles' },
@@ -3908,7 +3909,7 @@
         games: [
           { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
           { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: false, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
-          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، العب بدون وقت محدد حتى تصل للحد الأقصى 25 شعلة.' },
+          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، بدون وقت محدد حتى تصل للحد الأقصى 25 شعلة. انتبه: أي خطأ ينهي الجولة فوراً وتبدأ من جديد!' },
           { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
           { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
@@ -6677,8 +6678,9 @@
             this.memPlayerStep = 0;
             this.memShowingSequence = false;
             this.memActiveTile = null;
+            this.memMistake = false;
 
-            // Game 3 has no timer — play continues until the max score is reached
+            // Game 3 has no timer — one mistake ends the round
             this.startMemoryRound();
           }
 
@@ -6842,9 +6844,9 @@
               setTimeout(() => { if (this.gamePlaying) this.startMemoryRound(); }, 550);
             }
           } else {
-            this.memSequence = [];
+            this.memMistake = true;
             this.memShowingSequence = true;
-            setTimeout(() => { if (this.gamePlaying) this.startMemoryRound(); }, 700);
+            this.endGame();
           }
         },
 
@@ -6866,9 +6868,12 @@
           this.playGameEndSound();
           if (this.activeGameId === 3 && this.gameScoreCurrent >= this.memMaxScore) {
             this.showToast(`وصلت للحد الأقصى! ${this.gameScoreCurrent} شعلة 🎉`, 'success', 'trophy');
+          } else if (this.activeGameId === 3 && this.memMistake) {
+            this.showToast(`أخطأت بالتسلسل! انتهت الجولة، نقاطك: ${this.gameScoreCurrent}`, 'neg', 'x-circle');
           } else {
             this.showToast(`انتهت اللعبة! نقاطك: ${this.gameScoreCurrent}`, 'info', 'flame');
           }
+          this.memMistake = false;
 
           if (this.isAdmin) {
             this.showToast('انتهت اللعبة للتجربة! لن يتم حفظ النقاط لأنك مشرف 🛡️', 'info', 'shield');
