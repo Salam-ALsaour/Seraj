@@ -1444,7 +1444,7 @@
           <div>
             <div class="sect-title" style="margin-bottom:12px;">
               <div style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-left:6px; color:var(--orange);" x-html="getIconSvg('dices')"></div>
-              ألعاب اللقاءات
+              قائمة الألعاب
             </div>
 
             <!-- vertical list of games ("الألعاب فوق بعض") -->
@@ -1452,7 +1452,7 @@
               <template x-for="g in games" :key="g.id">
                 <div class="glass game-card"
                      :class="{ 'is-active': activeGameId === g.id, 'is-locked': activeGameId !== g.id && !g.unlocked }"
-                     @click="if (g.unlocked) { activeGameId = g.id; $nextTick(() => lucide.createIcons()); } else { showToast('هذا التحدي مغلق حالياً، انتظر افتتاحه!', 'info', 'lock'); }">
+                     @click="if (g.unlocked) { activeGameId = g.id; $nextTick(() => lucide.createIcons()); } else { showToast('هذه اللعبة مغلقة حالياً، انتظر افتتاحها!', 'info', 'lock'); }">
                   
                   <!-- Card Header -->
                   <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
@@ -1462,8 +1462,8 @@
                         <div style="width: 16px; height: 16px;" x-html="getIconSvg(g.unlocked ? g.icon : 'lock')"></div>
                       </div>
                       <div style="min-width: 0; flex: 1;">
-                        <div style="font-size: 14px; font-weight: 700; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="g.unlocked ? g.title : 'تحدي قادم 🔒'"></div>
-                        <div style="font-size: 10px; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="'تحدي اللقاء ' + g.id + ' من 8'"></div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="g.unlocked ? g.title : 'لعبة قادمة 🔒'"></div>
+                        <div style="font-size: 10px; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="'لعبة اللقاء ' + g.id"></div>
                       </div>
                     </div>
 
@@ -1520,7 +1520,7 @@
                           </button>
                           <template x-if="g.ended && isAdmin">
                             <div style="font-size: 10px; color: var(--txt-dim); margin-top: 6px;">
-                              (التحدي منتهي، لكن يمكنك اللعب للتجربة بصفتك مسؤولاً)
+                              (اللعبة منتهية، لكن يمكنك اللعب للتجربة بصفتك مسؤولاً)
                             </div>
                           </template>
                         </div>
@@ -1530,7 +1530,7 @@
                       <template x-if="g.ended && !isAdmin">
                         <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); padding: 8px 14px; border-radius: 10px; color: #f87171;">
                           <div style="width: 14px; height: 14px;" x-html="getIconSvg('clock')"></div>
-                          <span style="font-size: 12px; font-weight: 600;">انتهت مدة هذا التحدي ولا يمكن اللعب الآن</span>
+                          <span style="font-size: 12px; font-weight: 600;">انتهت مدة هذه اللعبة ولا يمكن اللعب الآن</span>
                         </div>
                       </template>
                     </div>
@@ -3948,14 +3948,9 @@
         ],
         memMaxScore: 20,
         games: [
-          { id: 1, title: 'تحدي صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
-          { id: 2, title: 'تحدي فارس الحروف', icon: 'feather', unlocked: true, ended: true, desc: 'تحدي سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
-          { id: 3, title: 'تحدي تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، بدون وقت محدد حتى تصل للحد الأقصى 20 شعلة. انتبه: أي خطأ ينهي الجولة فوراً وتبدأ من جديد!' },
-          { id: 4, title: 'تحدي صيد الشعلة (الجولة الرابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
-          { id: 5, title: 'تحدي صيد الشعلة (الجولة الخامسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
-          { id: 6, title: 'تحدي صيد الشعلة (الجولة السادسة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
-          { id: 7, title: 'تحدي صيد الشعلة (الجولة السابعة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' },
-          { id: 8, title: 'تحدي صيد الشعلة (الجولة الثامنة)', icon: 'help-circle', unlocked: false, ended: false, desc: 'سيتم الإعلان عنه قريباً.' }
+          { id: 1, title: 'لعبة صيد الشعلة', icon: 'flame', unlocked: true, ended: true, desc: 'لديك 30 ثانية لصيد أكبر عدد ممكن من الشعلات المضيئة التي تظهر عشوائياً.' },
+          { id: 2, title: 'لعبة فارس الحروف', icon: 'feather', unlocked: true, ended: true, desc: 'لعبة سرعة الكتابة والتركيز! اكتب الكلمات التي تظهر أمامك بدقة وبأقصى سرعة ممكنة قبل انتهاء الوقت بقيمة شعلة لكل كلمة صحيحة في 30 ثانية.' },
+          { id: 3, title: 'لعبة تسلسل الذاكرة', icon: 'brain', unlocked: true, ended: false, desc: 'راقب تسلسل إضاءة المربعات جيداً ثم كرره بنفس الترتيب! كل تسلسل تكمله بنجاح يطول أكثر ويمنحك شعلة، بدون وقت محدد حتى تصل للحد الأقصى 20 شعلة. انتبه: أي خطأ ينهي الجولة فوراً وتبدأ من جديد!' }
         ],
 
         mapStudentFromDB(dbStudent) {
@@ -4189,7 +4184,7 @@
         navItems: [
           { id: 'leaderboard', label: 'الصدارة', icon: 'trophy' },
           { id: 'store', label: 'المتجر', icon: 'gift' },
-          { id: 'challenge', label: 'المسابقة', icon: 'dices' },
+          { id: 'challenge', label: 'الألعاب', icon: 'dices' },
           { id: 'weekly', label: 'التحدي', icon: 'calendar' },
           { id: 'admin', label: 'الإدارة', icon: 'settings' }
         ],
@@ -5289,7 +5284,7 @@
           return {
             profile: 'الملف الشخصي',
             store: 'المتجر المضيء',
-            challenge: 'المسابقة والتحدي',
+            challenge: 'الألعاب',
             weekly: 'التحدي الأسبوعي',
             admin: 'غرفة الإدارة'
           }[this.currentScreen] || item.label;
@@ -6650,7 +6645,7 @@
         async resetAllGameScores() {
           const gameId = this.activeGameId;
           const gameName = this.games.find(g => g.id === gameId)?.title || `اللعبة ${gameId}`;
-          if (!confirm(`هل أنت متأكد من تصفير جميع نتائج (${gameName}) للطلاب لبدء تحدٍ جديد؟`)) return;
+          if (!confirm(`هل أنت متأكد من تصفير جميع نتائج (${gameName}) للطلاب لبدء جولة جديدة؟`)) return;
           
           this.students.forEach(st => {
             if (gameId === 1) {
@@ -6705,7 +6700,7 @@
         startGame() {
           const activeGame = this.games.find(g => g.id === this.activeGameId);
           if (activeGame && activeGame.ended && !this.isAdmin) {
-            this.showToast('انتهت مدة هذه اللعبة والتحدي مغلق حالياً!', 'neg', 'alert-circle');
+            this.showToast('انتهت مدة هذه اللعبة ولا يمكن اللعب الآن!', 'neg', 'alert-circle');
             return;
           }
           
