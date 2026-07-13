@@ -1892,17 +1892,6 @@
                             </button>
                           </div>
                         </template>
-
-                        <!-- Notice for confirmation-only challenges (like Week 2) when not submitted yet -->
-                        <template x-if="!ch.questions || ch.questions.length === 0">
-                          <div class="glass" style="padding: 22px 20px; text-align: center; border: 1.5px solid rgba(239,68,68,0.2); background: linear-gradient(160deg, rgba(239,68,68,0.04), transparent); border-radius: 18px;">
-                            <div style="width: 44px; height: 44px; margin: 0 auto 10px; color: #f87171; filter: drop-shadow(0 0 8px rgba(239,68,68,0.3));" x-html="getIconSvg('alert-circle')"></div>
-                            <div style="font-size: 16px; font-weight: 800; color: #fca5a5; margin-bottom: 6px;">لم تقم بتسليم المشاركة بعد</div>
-                            <div style="font-size: 12px; color: var(--txt-dim); line-height: 1.6;">
-                              يرجى تسليم النموذج الورقي أو النموذج الإلكتروني ليقوم المشرف بتسجيل اسمك وتحديث حالتك.
-                            </div>
-                          </div>
-                        </template>
                       </div>
                     </template>
                   </div>
