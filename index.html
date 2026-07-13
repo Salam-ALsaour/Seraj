@@ -1724,6 +1724,51 @@
               </div>
             </template>
 
+            <!-- Challenge Details for Week 3 (Visible to all: Students and Admin, only while open) -->
+            <template x-if="ch.week === 3 && !ch.ended">
+              <div style="text-align: right; margin-bottom: 20px;">
+
+                <!-- Premium Challenge Card Info -->
+                <div class="glass" style="padding: 16px; margin-bottom: 16px; border: 1px solid rgba(249,115,22,0.2); background: linear-gradient(165deg, rgba(249,115,22,0.04), transparent); border-radius: 18px;">
+                  <div style="font-size: 15px; font-weight: 800; color: #ffb27a; margin-bottom: 12px;">معايير التقييم:</div>
+                  <ul style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 13px; color: var(--txt-dim); line-height: 1.8;">
+                    <li style="margin-bottom: 6px;">• <strong>توثيق الجهد اليومي:</strong> تحقيق الأهداف وتعبئة خانات الأيام.</li>
+                    <li style="margin-bottom: 8px;">• <strong>الالتزام اليومي (الاستمرارية):</strong> والتقييم نهاية كل يوم.</li>
+                  </ul>
+
+                  <div style="font-size: 14px; font-weight: 800; color: #ffb27a; margin-bottom: 6px;">طريقة المشاركة:</div>
+                  <div style="font-size: 12.5px; color: var(--txt-dim); line-height: 1.6; margin-bottom: 14px;">
+                    يتم تعبئة النموذج المرفق أدناه عن طريق طباعته وتعبئته يدوياً أو عن طريق الكمبيوتر، مع العلم أن وضوح الخط والتنظيم سيكون جزءاً من التقييم وتحصل على شعلات إضافية.
+                  </div>
+
+                  <div style="font-size: 13px; font-weight: 700; color: #fca5a5; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+                    <div style="width:14px; height:14px; color:#ef4444;" x-html="getIconSvg('clock')"></div>
+                    <span>موعد تسليم المشاركات: <strong>يوم الأربعاء</strong> بعد تسجيل الإنجاز يومياً من السبت إلى الأربعاء</span>
+                  </div>
+
+                  <!-- WhatsApp submission link -->
+                  <a href="https://wa.me/966501275905" target="_blank"
+                     style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: linear-gradient(135deg, #25D366, #128C7E); border: none; border-radius: 12px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; box-shadow: 0 4px 15px rgba(37,211,102,0.3); transition: all 0.2s;"
+                     onmouseover="this.style.transform='translateY(-2px)'"
+                     onmouseout="this.style.transform='translateY(0)'">
+                    <div style="width:16px; height:16px;" x-html="getIconSvg('message-circle')"></div>
+                    <span>إرسال المشاركة إلى عمر القادري (واتساب)</span>
+                  </a>
+                </div>
+
+                <!-- Image Display -->
+                <div style="margin-bottom: 20px; text-align: center;">
+                  <div style="font-size: 11px; color: var(--txt-faint); margin-bottom: 6px; text-align: right;">انقر على الصورة لفتحها بحجم كامل:</div>
+                  <a href="week_plan.jpeg" target="_blank">
+                    <img src="week_plan.jpeg" alt="نموذج المتابعة الأسبوعية"
+                         style="width: 100%; border-radius: 16px; border: 1.5px solid var(--stroke); box-shadow: 0 8px 30px rgba(0,0,0,0.4); transition: transform 0.25s ease;"
+                         onmouseover="this.style.transform='scale(1.02)'"
+                         onmouseout="this.style.transform='scale(1)'" />
+                  </a>
+                </div>
+              </div>
+            </template>
+
             <!-- ============ STUDENT VIEW ============ -->
             <template x-if="!isAdmin">
               <div>
@@ -3788,7 +3833,9 @@
           { week: 2, title: 'تحدي الأسبوع الثاني من رحلة سراج', icon: 'target', unlocked: true, ended: true,
             desc: 'تحدي صياغة خطتك وأهدافك الصيفية وفق معايير واضحة وقابلة للقياس والإنجاز.',
             questions: [] },
-          { week: 3, title: 'تحدي الأسبوع الثالث', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 3, title: 'تحدي الأسبوع الثالث من رحلة سراج', icon: 'calendar-check', unlocked: true, ended: false,
+            desc: 'تحدي توثيق الجهد اليومي لتحقيق أهدافك الصيفية والالتزام بتعبئة النموذج والتقييم يومياً.',
+            questions: [] },
           { week: 4, title: 'تحدي الأسبوع الرابع', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
           { week: 5, title: 'تحدي الأسبوع الخامس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
           { week: 6, title: 'تحدي الأسبوع السادس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
