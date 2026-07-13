@@ -1624,9 +1624,9 @@
                     <div class="wc-criteria">
                       <div class="wc-criteria-title">معايير التقييم</div>
                       <div class="wc-criteria-list">
-                        <div>1 - الابداع والتميز</div>
-                        <div>2 - الفائدة والأثر</div>
-                        <div>3 - قابلية التنفيذ</div>
+                        <template x-for="(c, ci) in ch.criteria" :key="ci">
+                          <div x-text="(ci + 1) + ' - ' + c"></div>
+                        </template>
                       </div>
                     </div>
                     <template x-if="ch.ended">
@@ -3829,12 +3829,15 @@
         weeklyChallenges: [
           { week: 1, title: 'تحدي تطوير منصة سراج', icon: 'rocket', unlocked: true, ended: true,
             desc: 'شارك بفكرتك لتطوير منصة سراج! أجب على الأسئلة التالية وقدّم رؤيتك الإبداعية.',
+            criteria: ['الابداع والتميز', 'الفائدة والأثر', 'قابلية التنفيذ'],
             questions: ['ما اسم الفكرة؟', 'ما هي الفكرة باختصار وما الهدف منها؟', 'ما هي المشكلة التي تحلها الفكرة أو الميزة التي تضيفها؟'] },
           { week: 2, title: 'تحدي الأسبوع الثاني من رحلة سراج', icon: 'target', unlocked: true, ended: true,
             desc: 'تحدي صياغة خطتك وأهدافك الصيفية وفق معايير واضحة وقابلة للقياس والإنجاز.',
+            criteria: ['وضوح الهدف وأهميته', 'القابلية للإنجاز', 'القابلية للقياس'],
             questions: [] },
           { week: 3, title: 'تحدي الأسبوع الثالث من رحلة سراج', icon: 'calendar-check', unlocked: true, ended: false,
             desc: 'تحدي توثيق الجهد اليومي لتحقيق أهدافك الصيفية والالتزام بتعبئة النموذج والتقييم يومياً.',
+            criteria: ['توثيق الجهد اليومي وتعبئة خانات الأيام', 'الالتزام اليومي (الاستمرارية) والتقييم نهاية كل يوم'],
             questions: [] },
           { week: 4, title: 'تحدي الأسبوع الرابع', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
           { week: 5, title: 'تحدي الأسبوع الخامس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
