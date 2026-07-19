@@ -6065,14 +6065,20 @@
         },
 
         async persistWeeklySubmissions() {
-          if (!supabaseClient) return;
-          await Promise.all(
+          if (!supabaseClient) return true;
+          const results = await Promise.all(
             Object.values(this.weeklySubmissions)
               .filter(sub => sub._dbId)
               .map(sub => supabaseClient.from('weekly_submissions').update({
                 evaluation: sub.evaluation || null
               }).eq('id', sub._dbId))
           );
+          const failed = results.filter(r => r.error);
+          if (failed.length > 0) {
+            console.error('Error persisting weekly submissions:', failed.map(f => f.error));
+            return false;
+          }
+          return true;
         },
 
         async saveWeeklyEvaluation(week, studentId) {
@@ -6087,7 +6093,11 @@
             updatedBy: this.activeId
           };
           this.weeklySubmissions = { ...this.weeklySubmissions, [key]: sub };
-          await this.persistWeeklySubmissions();
+          const persisted = await this.persistWeeklySubmissions();
+          if (!persisted) {
+            this.showToast('⚠️ فشل حفظ المسودة، حاول مرة أخرى', 'neg', 'alert-triangle');
+            return;
+          }
           this.showToast('تم حفظ المسودة', 'success', 'check');
         },
 
@@ -6152,7 +6162,7 @@
                   await this.awardWeeklyFlames(sub.studentId, flames, `تقييم التحدي الأسبوعي (${title})`);
                 }
                 const key = this.getWeeklySubmissionKey(sub.studentId, week);
-                this.weeklySubmissions[key] = {
+                const updatedSub = {
                   ...this.weeklySubmissions[key],
                   evaluation: {
                     ...(this.weeklySubmissions[key].evaluation || {}),
@@ -6162,9 +6172,25 @@
                     awardedBy: this.activeId
                   }
                 };
+                this.weeklySubmissions[key] = updatedSub;
+                this.weeklySubmissions = { ...this.weeklySubmissions };
+
+                // Persist this student's "published" mark immediately (not batched at
+                // the end) — if something interrupts the loop partway (page reload,
+                // network drop), already-processed students are safely marked in the
+                // DB and won't be re-awarded on retry, instead of the whole batch
+                // silently staying stuck at "draft" despite flames already being paid.
+                if (supabaseClient && updatedSub._dbId) {
+                  const { error } = await supabaseClient.from('weekly_submissions')
+                    .update({ evaluation: updatedSub.evaluation })
+                    .eq('id', updatedSub._dbId);
+                  if (error) {
+                    console.error('Error persisting published evaluation:', error);
+                    this.showToast(`⚠️ تم منح الشعلات لـ${sub.studentName} لكن فشل حفظ حالة النشر — أعد تحميل الصفحة وتحقق قبل إعادة المحاولة`, 'neg', 'alert-triangle');
+                    return;
+                  }
+                }
               }
-              this.weeklySubmissions = { ...this.weeklySubmissions };
-              await this.persistWeeklySubmissions();
               this.showToast('تم تسليم التقييم ومنح الشعلات', 'success', 'check-circle');
             }
           );
