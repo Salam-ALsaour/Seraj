@@ -1646,10 +1646,10 @@
                 <!-- Locked challenge card -->
                 <template x-if="!ch.unlocked">
                   <div class="wc-card wc-locked">
-                    <div class="wc-lock-ic" x-html="getIconSvg('lock')"></div>
+                    <div class="wc-lock-ic" x-html="getIconSvg(ch.isRest ? 'coffee' : 'lock')"></div>
                     <div class="wc-lock-week" x-text="'الأسبوع ' + ch.week"></div>
-                    <div class="wc-lock-title">مقفول</div>
-                    <div class="wc-lock-sub">سيتم فتحه قريباً، ترقّب!</div>
+                    <div class="wc-lock-title" x-text="ch.isRest ? 'استراحة' : 'مقفول'"></div>
+                    <div class="wc-lock-sub" x-text="ch.isRest ? 'لا يوجد تحدي هذا الأسبوع، استريحوا!' : 'سيتم فتحه قريباً، ترقّب!'"></div>
                   </div>
                 </template>
               </div>
@@ -3867,11 +3867,11 @@
             desc: 'تحدي توثيق الجهد اليومي لتحقيق أهدافك الصيفية والالتزام بتعبئة النموذج والتقييم يومياً.',
             criteria: ['توثيق الجهد اليومي وتعبئة خانات الأيام', 'الالتزام اليومي (الاستمرارية) والتقييم نهاية كل يوم'],
             questions: [] },
-          { week: 4, title: 'تحدي أقل وقت شاشة', icon: 'smartphone', unlocked: true, ended: false,
+          { week: 4, title: 'تحدي أقل وقت شاشة', icon: 'smartphone', unlocked: true, ended: true,
             desc: 'الفائز هو صاحب أقل وقت شاشة إجمالي خلال أيام التحدي، بغض النظر عن استخدامه قبل بدء التحدي. الهدف هو الابتعاد عن الهاتف قدر الإمكان.',
             criteria: ['أقل متوسط وقت شاشة يومي خلال فترة التحدي', 'الالتزام بإرسال تقرير الاستخدام اليومي موثقاً بالتاريخ'],
             questions: [] },
-          { week: 5, title: 'تحدي الأسبوع الخامس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 5, title: 'استراحة', icon: 'coffee', unlocked: false, isRest: true, desc: 'لا يوجد تحدي هذا الأسبوع.', questions: [] },
           { week: 6, title: 'تحدي الأسبوع السادس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
           { week: 7, title: 'تحدي الأسبوع السابع', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
           { week: 8, title: 'تحدي الأسبوع الثامن', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] }
