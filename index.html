@@ -1808,6 +1808,37 @@
               </div>
             </template>
 
+            <!-- Challenge Details for Week 6 (Visible to all: Students and Admin, only while open) -->
+            <template x-if="ch.week === 6 && !ch.ended">
+              <div style="text-align: right; margin-bottom: 20px;">
+
+                <!-- Premium Challenge Card Info -->
+                <div class="glass" style="padding: 16px; margin-bottom: 16px; border: 1px solid rgba(249,115,22,0.2); background: linear-gradient(165deg, rgba(249,115,22,0.04), transparent); border-radius: 18px;">
+                  <div style="font-size: 15px; font-weight: 800; color: #ffb27a; margin-bottom: 12px;">معايير التقييم:</div>
+                  <ul style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 13px; color: var(--txt-dim); line-height: 1.8;">
+                    <li style="margin-bottom: 6px;">• <strong>الإبداع وفكرة اللعبة:</strong> هل الفكرة أصلية ومميزة، وليست نسخة مكررة من لعبة شائعة أو نمطية.</li>
+                    <li style="margin-bottom: 6px;">• <strong>المتعة وتجربة اللعب:</strong> هل اللعبة ممتعة فعلاً وتجربة اللعب مشوّقة، ومستوى الصعوبة متوازن.</li>
+                    <li style="margin-bottom: 6px;">• <strong>وضوح الهدف والتعليمات:</strong> هل هدف اللعبة وطريقة لعبها وتعليماتها واضحة ومفهومة من أول لحظة.</li>
+                    <li style="margin-bottom: 8px;">• <strong>قلة الثغرات:</strong> هل اللعبة تعمل بثبات دون أخطاء تعطّلها أو تكسر تجربة اللعب.</li>
+                  </ul>
+
+                  <div style="font-size: 14px; font-weight: 800; color: #ffb27a; margin-bottom: 6px;">طريقة المشاركة:</div>
+                  <div style="font-size: 12.5px; color: var(--txt-dim); line-height: 1.6; margin-bottom: 14px;">
+                    صمم لعبتك بمساعدة الذكاء الاصطناعي، ثم أرسل ملف الـ HTML الخاص بلعبتك إلى عمر القادري.
+                  </div>
+
+                  <!-- WhatsApp submission link -->
+                  <a href="https://wa.me/966501275905" target="_blank"
+                     style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: linear-gradient(135deg, #25D366, #128C7E); border: none; border-radius: 12px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; box-shadow: 0 4px 15px rgba(37,211,102,0.3); transition: all 0.2s;"
+                     onmouseover="this.style.transform='translateY(-2px)'"
+                     onmouseout="this.style.transform='translateY(0)'">
+                    <div style="width:16px; height:16px;" x-html="getIconSvg('message-circle')"></div>
+                    <span>إرسال ملف اللعبة إلى عمر القادري (واتساب)</span>
+                  </a>
+                </div>
+              </div>
+            </template>
+
             <!-- ============ STUDENT VIEW ============ -->
             <template x-if="!isAdmin">
               <div>
@@ -3872,7 +3903,10 @@
             criteria: ['أقل متوسط وقت شاشة يومي خلال فترة التحدي', 'الالتزام بإرسال تقرير الاستخدام اليومي موثقاً بالتاريخ'],
             questions: [] },
           { week: 5, title: 'استراحة', icon: 'coffee', unlocked: false, isRest: true, desc: 'لا يوجد تحدي هذا الأسبوع.', questions: [] },
-          { week: 6, title: 'تحدي الأسبوع السادس', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
+          { week: 6, title: 'تحدي أفضل لعبة بالذكاء الاصطناعي', icon: 'gamepad-2', unlocked: true, ended: false,
+            desc: 'صمم لعبة بسيطة باستخدام الذكاء الاصطناعي وسلّمها كملف HTML واحد، وتنافس على لقب أفضل لعبة.',
+            criteria: ['الإبداع وفكرة اللعبة', 'المتعة وتجربة اللعب', 'وضوح الهدف والتعليمات', 'قلة الثغرات'],
+            questions: [] },
           { week: 7, title: 'تحدي الأسبوع السابع', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] },
           { week: 8, title: 'تحدي الأسبوع الثامن', icon: 'help-circle', unlocked: false, desc: 'سيتم الإعلان عنه قريباً.', questions: [] }
         ],
